@@ -178,7 +178,7 @@ const getImageFilesFromTransfer = (
 // Build safe markdown image text after the upload API returns a public URL.
 const createImageMarkdown = (file: File, imageUrl: string) => {
   const fallbackName = file.name.replace(/\.[^.]+$/, "").trim();
-  const altText = (fallbackName || "Uploaded image").replace(/[\[\]\n\r]/g, " ");
+  const altText = (fallbackName || "Uploaded image").replace(/[[\]\n\r]/g, " ");
 
   return `![${altText}](${imageUrl})`;
 };

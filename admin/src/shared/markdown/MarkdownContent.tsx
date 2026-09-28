@@ -18,7 +18,6 @@ const getText = (child: React.ReactNode): string => {
   if (typeof child === "string" || typeof child === "number")
     return String(child);
   if (Array.isArray(child)) return child.map(getText).join("");
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return getText((child as any)?.props?.children);
 };
 

@@ -1,16 +1,29 @@
 import { GEMINI_API_KEY } from "../config/config";
 import type { ICrawledData } from "../types/Blog";
 
+interface LLMMessage {
+  role: string;
+  content: string;
+}
+
+interface GeminiResponse {
+  candidates?: Array<{
+    content?: { parts?: Array<{ text?: string }> };
+  }>;
+}
+
+// Extract a JSON value from plain text or a fenced Gemini response.
 function extractJson(text: string): string {
   if (!text) return "";
 
-  let raw: any = text.trim();
+  let raw: unknown = text.trim();
 
   // 1. If the entire text is a JSON string → parse it first
   // E.g., "{ \"text\": \"```json ...```\" }"
   if (
-    (raw.startsWith('"') && raw.endsWith('"')) ||
-    (raw.startsWith("'") && raw.endsWith("'"))
+    typeof raw === "string" &&
+    ((raw.startsWith('"') && raw.endsWith('"')) ||
+      (raw.startsWith("'") && raw.endsWith("'")))
   ) {
     try {
       raw = JSON.parse(raw);
@@ -20,7 +33,12 @@ function extractJson(text: string): string {
   }
 
   // 2. If is an object with text property → use it
-  if (typeof raw === "object" && raw?.text) {
+  if (
+    typeof raw === "object" &&
+    raw !== null &&
+    "text" in raw &&
+    typeof raw.text === "string"
+  ) {
     raw = raw.text;
   }
 
@@ -28,40 +46,42 @@ function extractJson(text: string): string {
     return JSON.stringify(raw);
   }
 
-  raw = raw.trim();
+  let normalized = raw.trim();
 
   // 3. Remove ```json ... ``` or ``` ... ```
   const codeBlockRegex = /```(?:json)?\s*([\s\S]*?)\s*```/i;
-  const match = raw.match(codeBlockRegex);
+  const match = normalized.match(codeBlockRegex);
   if (match?.[1]) {
-    raw = match[1].trim();
+    normalized = match[1].trim();
   }
 
   // 4. If is a valid JSON array → return it
-  if (raw.startsWith("[") && raw.endsWith("]")) {
-    return raw;
+  if (normalized.startsWith("[") && normalized.endsWith("]")) {
+    return normalized;
   }
 
   // 5. if JSON is valid → return
-  if (raw.startsWith("{") && raw.endsWith("}")) {
-    return raw;
+  if (normalized.startsWith("{") && normalized.endsWith("}")) {
+    return normalized;
   }
 
   // 6. Fallback: find array
-  const arrayMatch = raw.match(/\[[\s\S]*\]/);
+  const arrayMatch = normalized.match(/\[[\s\S]*\]/);
   if (arrayMatch) {
     return arrayMatch[0];
   }
 
   // 7. Fallback: object
-  const objectMatch = raw.match(/{[\s\S]*}/);
+  const objectMatch = normalized.match(/{[\s\S]*}/);
   if (objectMatch) {
     return objectMatch[0];
   }
 
   return "";
 }
-export async function callLLM(messages: any) {
+
+// Send a normalized chat transcript to Gemini and return its JSON payload.
+export async function callLLM(messages: LLMMessage[]) {
   const res = await fetch(
     `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
     {
@@ -70,20 +90,21 @@ export async function callLLM(messages: any) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        contents: messages.map((m: any) => ({
-          role: m.role === "user" ? "user" : "model",
-          parts: [{ text: m.content }],
+        contents: messages.map((message) => ({
+          role: message.role === "user" ? "user" : "model",
+          parts: [{ text: message.content }],
         })),
       }),
     },
   );
 
-  const data = await res.json();
+  const data = (await res.json()) as GeminiResponse;
 
   const output = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
   return extractJson(output);
 }
 
+// Convert crawled reference content into a compact prompt context.
 export const buildContextFromCrawData = (crawData: ICrawledData[]) => {
   if (!crawData?.length) return "";
 

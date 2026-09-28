@@ -13,6 +13,7 @@ import InputField from "../../../shared/input/InputField";
 import SelectField from "../../../shared/select/SelectField";
 import BlogGenerate from "./components/BlogGenerate";
 
+// Render the legacy AI title and blog generation workflow.
 const AgentCreateBlog = () => {
   const [blogTitles, setBlogTitles] = useState<string[]>([]);
   const [keyword, setKeyword] = useState<string>("");
@@ -22,6 +23,7 @@ const AgentCreateBlog = () => {
   const [isOpenPopupBlogGenerate, setIsOpenPopupBlogGenerate] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Request AI-generated titles for the selected topic and language.
   const handleGenerateTitles = async () => {
     if (!keyword.trim()) {
       toast.error("Please enter a keyword");
@@ -46,16 +48,18 @@ const AgentCreateBlog = () => {
       }
       console.log("Generated titles:", titles);
       setBlogTitles(titles);
-    } catch (error) {
+    } catch {
       toast.error("Error generating titles from AI");
     } finally {
       setIsLoading(false);
     }
   };
+  // Remove a generated title before starting content generation.
   const handleDeleteTitle = (index: number) => {
     setBlogTitles((prev) => prev.filter((_, i) => i !== index));
   };
 
+  // Open the content generator only when at least one title is available.
   const handleGenerateBlogContent = () => {
     if (blogTitles.length === 0) {
       toast.error("Please generate at least one title first");
@@ -64,6 +68,7 @@ const AgentCreateBlog = () => {
     setIsOpenPopupBlogGenerate(true);
   };
 
+  // Close the generator and reset its title selection.
   const handleClosePopupBlogGenerate = () => {
     setIsOpenPopupBlogGenerate(false);
     setBlogTitles([]);

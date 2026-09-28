@@ -28,6 +28,7 @@ import {
 import type { IBlogItemData } from "../../../../types/Blog";
 import LoadingPage from "../../../../shared/loading/LoadingPage";
 
+// Render pending blogs and their approval controls.
 const ListBlogsPending: React.FC = () => {
   const {
     data: blogsPending,
@@ -44,6 +45,7 @@ const ListBlogsPending: React.FC = () => {
 
   const queryClient = useQueryClient();
 
+  // Update one blog state and refresh each affected list.
   const handleUpdateStateBlogPost = async (
     blogId: string,
     state: "PENDING" | "APPROVED" | "REJECTED",
@@ -73,6 +75,7 @@ const ListBlogsPending: React.FC = () => {
     }
   };
 
+  // Approve every pending blog while reporting partial failures.
   const handleApproveAll = async () => {
     if (!blogsPending || blogsPending.length === 0) {
       toast.info("No pending blogs to approve");
@@ -102,7 +105,7 @@ const ListBlogsPending: React.FC = () => {
             state: "APPROVED",
           });
           successCount++;
-        } catch (error) {
+        } catch {
           failedCount++;
         }
       }
@@ -117,7 +120,7 @@ const ListBlogsPending: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ["blogs"] });
       queryClient.invalidateQueries({ queryKey: ["blogs", "pending"] });
       queryClient.invalidateQueries({ queryKey: ["blogs", "approved"] });
-    } catch (err) {
+    } catch {
       toast.update(loadingToastId, {
         render: "Something went wrong. Please try again later.",
         type: "error",
