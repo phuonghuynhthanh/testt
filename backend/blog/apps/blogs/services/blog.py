@@ -1,0 +1,479 @@
+import re
+from contextlib import contextmanager
+from datetime import timedelta
+from typing import List, Optional
+
+from fastapi import HTTPException, UploadFile, status
+from psycopg2 import IntegrityError
+from slugify import slugify
+from sqlalchemy import desc, func, select
+
+from apps.blogs import schemas
+from apps.blogs.models import Blog
+from apps.core.storage import StorageService
+from apps.core.date_time import DateTime
+from apps.openai.services.gemini_ai import GeminiAiService
+from config import settings
+from config.database import DatabaseManager
+
+
+class BlogServices:
+    @staticmethod
+    @contextmanager
+    def get_db_session():
+        """Context manager for database sessions"""
+        session = DatabaseManager.session
+        try:
+            yield session
+        finally:
+            session.close()
+
+    @staticmethod
+    def delete_image_url(url: str) -> None:
+        if url:
+            try:
+                StorageService.delete_image(url)
+            except Exception:
+                pass
+
+    @staticmethod
+    def _create_seo_data(
+        seo_input: schemas.SEODataSchema,
+        banner_url: Optional[str],
+        is_update: bool = False,
+        existing_published_time: str = None,
+    ) -> dict:
+        """Create SEO data dictionary"""
+        current_time = str(DateTime.now())
+        return {
+            "title": seo_input.title,
+            "description": seo_input.description,
+            "banner_url": banner_url,
+            "url": seo_input.url,
+            "keywords": seo_input.keywords,
+            "author": seo_input.author,
+            "published_time": existing_published_time if is_update else current_time,
+            "modified_time": current_time,
+        }
+
+    @classmethod
+    def create_blog(
+        cls,
+        blog_data: schemas.BlogCreate,
+        image: Optional[UploadFile] = None,
+    ):
+        """
+        Creates a new blog with the provided data.
+        If the blog already exists, it raises an HTTPException.
+        """
+        try:
+            ex_link = Blog.filter(Blog.link_post == blog_data.link_post).first()
+            if ex_link:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Blog with link '{blog_data.link_post}' already exists",
+                )
+            banner_url = (
+                StorageService.upload_image(image, folder=blog_data.link_post)
+                if image
+                else blog_data.banner_url if blog_data.banner_url else ""
+            )
+
+            seo_data = cls._create_seo_data(blog_data.seo, banner_url)
+            blog = Blog.create(
+                tag=blog_data.tag,
+                title=blog_data.title,
+                banner_url=banner_url,
+                link_post=blog_data.link_post,
+                content=blog_data.content,
+                state=schemas.BlogState.PENDING,
+                category=blog_data.category,
+                seo=seo_data,
+            )
+        except IntegrityError:
+            cls.delete_image_url(banner_url)
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Blog already exists",
+            )
+        except HTTPException:
+            raise
+        except Exception:
+            cls.delete_image_url(banner_url)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to create blog",
+            )
+
+        return blog
+
+    @classmethod
+    def update_blog(
+        cls,
+        id: str,
+        data: Optional[schemas.BlogUpdate] = None,
+        image: Optional[UploadFile] = None,
+    ):
+        """
+        Updates an existing blog with the provided data.
+        If the blog is not found, it raises an HTTPException.
+        """
+        try:
+            with cls.get_db_session() as session:
+                blog = session.query(Blog).filter(Blog.id == id).first()
+                ex_link = (
+                    session.query(Blog.link_post)
+                    .filter((Blog.link_post == data.link_post) & (Blog.id != id))
+                    .first()
+                )
+                if ex_link:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail=f"Blog with link '{data.link_post}' already exists",
+                    )
+
+            if not blog:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Blog not found",
+                )
+
+            update_data = {"modified_at": DateTime.now()}
+
+            field_mappings = {
+                "title": data.title,
+                "link_post": data.link_post,
+                "content": data.content,
+                "tag": data.tag,
+                "state": data.state,
+                "category": data.category,
+            }
+
+            for field_name, field_value in field_mappings.items():
+                if field_value is not None:
+                    update_data[field_name] = field_value
+            new_banner_url = blog.banner_url
+
+            if image is not None:
+                if blog.banner_url:
+                    StorageService.delete_image(blog.banner_url)
+                folder_for_new_banner = data.link_post or blog.link_post
+                new_banner_url = StorageService.upload_image(
+                    image, folder=folder_for_new_banner
+                )
+            elif (data.banner_url is not None) & (data.banner_url != ""):
+                new_banner_url = data.banner_url
+            update_data["banner_url"] = new_banner_url
+
+            # Handle SEO update
+            if data.seo is not None:
+                existing_published_time = blog.seo["published_time"]
+                seo_data = cls._create_seo_data(
+                    data.seo,
+                    new_banner_url,
+                    is_update=True,
+                    existing_published_time=existing_published_time,
+                )
+                update_data["seo"] = seo_data
+
+            return Blog.update(id, **update_data)
+        except HTTPException:
+            raise
+        except Exception as e:
+            if image is not None:
+                cls.delete_image_url(new_banner_url)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to update blog: {str(e)}",
+            )
+
+    @classmethod
+    def delete_blog(cls, id: str) -> dict:
+        """
+        Deletes a blog with the provided id.
+        Raises HTTPException if blog not found or deletion fails.
+        """
+        try:
+            with cls.get_db_session() as session:
+                blog = session.query(Blog).filter(Blog.id == id).first()
+
+                if not blog:
+                    raise HTTPException(
+                        status_code=status.HTTP_404_NOT_FOUND,
+                        detail="Blog not found",
+                    )
+
+                banner_url = blog.banner_url
+                link_post = blog.link_post
+                session.delete(blog)
+                session.commit()
+                cls.delete_image_url(banner_url)
+                StorageService.delete_key(link_post)
+                return {"message": "Blog deleted successfully"}
+        except HTTPException:
+            raise
+        except IntegrityError:
+            session.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="An error occurred while deleting the blog",
+            )
+
+    @classmethod
+    def get_blogs_for_admin(
+        cls, state: Optional[str] = None
+    ) -> List[schemas.ListBlogAdmin]:
+        query = select(
+            Blog.id,
+            Blog.tag,
+            Blog.title,
+            Blog.banner_url,
+            Blog.link_post,
+            Blog.created_at,
+            Blog.modified_at,
+            Blog.state,
+            Blog.seo,
+            Blog.category,
+        )
+
+        if state is not None:
+            query = query.filter(Blog.state == state)
+
+        query = query.order_by(desc(Blog.modified_at))
+
+        with cls.get_db_session() as session:
+            blogs = session.execute(query).mappings().all()
+            return list(blogs) if blogs else []
+
+    @classmethod
+    def get_blog_for_client(
+        cls,
+        num_of_blogs: int,
+        category: str,
+        limit: int = 10,
+        base_url: str = "blog/client/blogs",
+    ) -> schemas.BlogForClient:
+        """
+        Load-more pagination using num_of_blogs from FE.
+        Returns blogs and next request URL if more data exists.
+        """
+        with cls.get_db_session() as session:
+            query = select(
+                Blog.id,
+                Blog.tag,
+                Blog.title,
+                Blog.banner_url,
+                Blog.link_post,
+                Blog.created_at,
+                Blog.modified_at,
+                Blog.seo,
+                Blog.category,
+            ).filter(Blog.state == schemas.BlogState.APPROVED)
+            if category != "ALL":
+                query = query.filter(Blog.category == category.upper())
+            total_query = select(func.count()).select_from(query.subquery())
+            total = session.execute(total_query).scalar()
+
+            blog_query = (
+                query.order_by(desc(Blog.created_at)).offset(num_of_blogs).limit(limit)
+            )
+            blogs = session.execute(blog_query).mappings().all()
+
+            next_offset = num_of_blogs + len(blogs)
+            has_next = next_offset < total
+
+            next_params = ""
+            if has_next:
+                next_params += f"?num_of_blogs={next_offset}"
+                next_req = f"{base_url}{next_params}"
+            else:
+                next_req = None
+
+            return schemas.BlogForClient(
+                blogs=list(blogs),
+                next_req=next_req,
+            )
+
+    @classmethod
+    def get_blog_by_id(cls, blog_id: str):
+        try:
+            with cls.get_db_session() as session:
+                blog = Blog.filter(Blog.id == blog_id).first()
+                if not blog:
+                    raise HTTPException(
+                        status_code=status.HTTP_404_NOT_FOUND,
+                        detail="Not found",
+                    )
+                return {
+                    "id": blog.id,
+                    "tag": blog.tag,
+                    "title": blog.title,
+                    "banner_url": blog.banner_url,
+                    "link_post": blog.link_post,
+                    "content": blog.content,
+                    "seo": blog.seo,
+                    "category": blog.category,
+                    "state": blog.state,
+                    "created_at": blog.created_at,
+                    "modified_at": blog.modified_at,
+                    "related_blogs": [],
+                }
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to get blog: {str(e)}",
+            )
+
+    @classmethod
+    def get_blog_by_url(cls, link_post: str, limit: int):
+        """
+        Retrieves blog by blog_id.
+        """
+        try:
+            with cls.get_db_session() as session:
+
+                blog = Blog.filter(
+                    (Blog.link_post == link_post)
+                    & (Blog.state == schemas.BlogState.APPROVED)
+                ).first()
+                if not blog:
+                    raise HTTPException(
+                        status_code=status.HTTP_404_NOT_FOUND,
+                        detail="Not found",
+                    )
+                related_blogs = cls.related_blog(current_blog=blog.id, limit=limit)
+                return {
+                    "id": blog.id,
+                    "tag": blog.tag,
+                    "title": blog.title,
+                    "banner_url": blog.banner_url,
+                    "link_post": blog.link_post,
+                    "content": blog.content,
+                    "category": blog.category,
+                    "seo": blog.seo,
+                    "state": blog.state,
+                    "created_at": blog.created_at,
+                    "modified_at": blog.modified_at,
+                    "related_blogs": related_blogs,
+                }
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to get blog: {str(e)}",
+            )
+
+    @staticmethod
+    def _create_url(title: str) -> str:
+        title = re.sub(r"[^a-zA-Z0-9 ]", "", title)
+        slug = slugify(title, lowercase=True, separator="-")
+        return slug
+
+    @classmethod
+    async def ai_generate_blog_markdown_with_title(
+        cls, title: str, category: str
+    ) -> str:
+        try:
+            url = cls._create_url(title)
+            ex_link = Blog.filter(Blog.link_post == url).first()
+            if ex_link:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Blog with link '{url}' already exists",
+                )
+
+            # Generate content and SEO
+            markdown_output = await GeminiAiService.generate_blog_markdown(title)
+            seo_dict = await GeminiAiService.generate_seo_keywords_and_description(
+                title, markdown_output.blog_content
+            )
+            seo = schemas.SEODataSchema(
+                title=title,
+                description=seo_dict["description"],
+                url=f"{settings.DOMAIN_URL}/blog/{url}",
+                keywords=seo_dict["keywords"],
+                author=settings.AUTHOR,
+            )
+            tag = await GeminiAiService.generate_tag_base_on_title(title=title)
+            blog = schemas.BlogCreate(
+                tag=tag,
+                title=title,
+                link_post=url,
+                content=markdown_output.blog_content,
+                seo=seo,
+                category=category,
+            )
+            blog = cls.create_blog(blog_data=blog)
+            return {
+                "id": blog.id,
+                "message": "Blog created successfully",
+                "statusCode": status.HTTP_200_OK,
+            }
+        except HTTPException as e:
+            raise HTTPException(
+                status_code=e.status_code,
+                detail=f"Failed to create blog: {str(e)}",
+            )
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to create blog: {str(e)}",
+            )
+
+    @classmethod
+    def is_duplicate_link_post(cls, link_post: str):
+        """
+        Validates if link_post is already in use.
+        Returns True if link_post is available, False otherwise.
+        If link_post is available, returns the blog_id of the blog that is using it.
+        """
+        blog = Blog.filter(Blog.link_post == link_post).first()
+        return blog is not None
+
+    @classmethod
+    def related_blog(cls, current_blog: str, limit: int):
+        try:
+            with cls.get_db_session() as session:
+                blog = Blog.filter(Blog.id == current_blog).first()
+                if not blog:
+                    raise HTTPException(
+                        status_code=status.HTTP_404_NOT_FOUND,
+                        detail="Not found",
+                    )
+                start_time = blog.created_at - timedelta(minutes=10)
+                end_time = blog.created_at + timedelta(minutes=10)
+
+                query = (
+                    select(
+                        Blog.id,
+                        Blog.tag,
+                        Blog.title,
+                        Blog.seo,
+                        Blog.banner_url,
+                        Blog.link_post,
+                        Blog.created_at,
+                        Blog.modified_at,
+                        Blog.category,
+                    )
+                    .filter(Blog.id != current_blog)
+                    .filter(
+                        (Blog.tag == blog.tag)
+                        & (Blog.state == schemas.BlogState.APPROVED)
+                    )
+                    .filter(
+                        (Blog.created_at >= start_time) & (Blog.created_at <= end_time)
+                    )
+                    .order_by(func.random())
+                    .limit(limit)
+                )
+                return session.execute(query).mappings().all()
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to get related blogs: {str(e)}",
+            )

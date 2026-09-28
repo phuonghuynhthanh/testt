@@ -1,0 +1,16 @@
+export const PATH = {
+  HOME: "/",
+  LOGIN: "/login",
+  BLOG: "/blog",
+  CREATE_BLOG: "/blog/create-blog",
+  EDIT_BLOG: "/blog/default/:blog_id",
+  AGENT_CREATE_BLOG: "/blog/agent-create-blog",
+  COURSE: "/course",
+  STUDENT_MANAGEMENT: "/course/student-management",
+  STUDENT_MANAGEMENT_DETAIL: "/course/student-management/:studentId",
+  STUDENT_TEST_SUMMARY: "/course/student-management/test-summary",
+  COURSE_USERS: "/course/users",
+  COURSE_USERS_DETAIL: "/course/users/:userId",
+  COURSE_USER_STRATEGY_DETAIL: "/course/users/:userId/strategies/:botId",
+  COURSE_CERTIFICATES: "/course/certificates",
+};

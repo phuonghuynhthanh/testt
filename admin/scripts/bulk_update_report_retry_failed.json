@@ -1,0 +1,246 @@
+{
+  "source": "admin/scripts/bulk_retry_failed_source.json",
+  "base_url": "https://be.quantvn.com",
+  "total": 30,
+  "success": 27,
+  "failed": 3,
+  "results": [
+    {
+      "index": 1,
+      "id": "e5f7c9be-bc47-4fec-ac8b-f211a7891c64",
+      "title": "Quant interview: Hướng dẫn cơ bản và ứng dụng cho người mới",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 2,
+      "id": "c01612a5-f8db-4ad6-b91a-b0bc7933f704",
+      "title": "Quant developer: Hướng dẫn cơ bản và ứng dụng cho người mới",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 3,
+      "id": "e94bb67b-3dfe-4b37-ae90-5782a571ea15",
+      "title": "Machine learning for trading: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 4,
+      "id": "ccb8b69f-0d89-472f-a066-8293115c40d4",
+      "title": "Stock prediction AI: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 5,
+      "id": "1893bbcb-f586-41be-a2a1-5f3f317a57a9",
+      "title": "Hedge fund là gì: Hướng dẫn cơ bản và ứng dụng cho người mới",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 6,
+      "id": "509ae486-d79a-4e68-ad9a-8713281f1608",
+      "title": "Paper trading là gì: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 7,
+      "id": "c7fe9a9c-6218-4211-aa99-2ed421126341",
+      "title": "Pandas cho chứng khoán: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 8,
+      "id": "b6581ab0-4896-4433-bda1-9b266c39cf91",
+      "title": "Yfinance Python hướng dẫn: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 9,
+      "id": "7ffbdfb8-8dc2-481c-9dbd-0ab914471a21",
+      "title": "Cách cài Python cho trading: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 10,
+      "id": "83afc129-cdd0-419d-83f4-5b70c76d4dac",
+      "title": "Thuật toán giao dịch là gì: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 11,
+      "id": "94e87033-c57c-4265-9bec-9ee65bb1f0f6",
+      "title": "Quantitative analyst là gì: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 12,
+      "id": "56099067-138a-4f9d-bf98-214c8f1d3c94",
+      "title": "Alpha beta là gì trong đầu tư: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 13,
+      "id": "42fdae82-11c0-46ff-9132-d0927ce89185",
+      "title": "Quantitative finance Việt Nam: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 14,
+      "id": "29aa70cf-c6fc-4a4b-b362-32f106ef8b4a",
+      "title": "Dữ liệu chứng khoán miễn phí cho backtest: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 15,
+      "id": "27093645-882f-4644-bb49-cc05b1d4a537",
+      "title": "Volatility là gì trong trading: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 16,
+      "id": "39b89d0c-45a9-48d8-94d9-81b0701ce2c7",
+      "title": "Drawdown là gì: Hướng dẫn cơ bản và ứng dụng cho người mới",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 17,
+      "id": "450621d3-c888-4e03-8435-cb015674851a",
+      "title": "Sharpe ratio là gì: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 18,
+      "id": "80b3cba2-af53-4391-85f4-6c636a4052a3",
+      "title": "Cách đọc equity curve: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 19,
+      "id": "07385dd2-163e-48b5-b49b-45129a76eff5",
+      "title": "Tài chính định lượng là gì: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 20,
+      "id": "6e1a6948-bf4e-4d02-bbdc-d40e9c315342",
+      "title": "Quant là gì: Hướng dẫn cơ bản và ứng dụng cho người mới",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 21,
+      "id": "e9dbddf8-1041-46a9-aa98-f6a829732574",
+      "title": "Quant trader là gì: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 22,
+      "id": "a50f85b0-0eeb-4402-95e2-139f41194906",
+      "title": "Học quantitative finance: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 23,
+      "id": "9875da4c-752a-41e8-9363-4384cdd59319",
+      "title": "Học quant từ đầu: Hướng dẫn cơ bản và ứng dụng cho người mới",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 24,
+      "id": "34bd2a59-5e20-4196-ba5c-cd343e61b4e8",
+      "title": "Roadmap quantitative finance: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 25,
+      "id": "857e8e11-ff17-45a1-beaf-92f61b10ee2a",
+      "title": "Python cho trading: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 26,
+      "id": "5e97f10b-52f2-4234-8992-4be7378b9f1b",
+      "title": "Backtest python: Hướng dẫn cơ bản và ứng dụng cho người mới",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 27,
+      "id": "02d575dd-caad-4424-97da-315dba72cee5",
+      "title": "AI trading là gì: Hướng dẫn cơ bản và ứng dụng cho người mới",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 28,
+      "id": "67efe34f-9f2f-48cd-afc9-68fc95c765a9",
+      "title": "Machine learning trading: Hướng dẫn cho người mới học quant",
+      "status": "failed",
+      "error": "402 This request requires more credits, or fewer max_tokens. You requested up to 65536 tokens, but can only afford 15637. To increase, visit https://openrouter.ai/settings/credits and add more credits"
+    },
+    {
+      "index": 29,
+      "id": "6f68ba04-3e22-4ec6-9582-d9e040b79c59",
+      "title": "Algorithmic trading là gì: Hướng dẫn cho người mới học quant",
+      "status": "failed",
+      "error": "402 This request requires more credits, or fewer max_tokens. You requested up to 65536 tokens, but can only afford 15637. To increase, visit https://openrouter.ai/settings/credits and add more credits"
+    },
+    {
+      "index": 30,
+      "id": "da328208-f3f1-4ade-9b26-e9edbe9ee78b",
+      "title": "Bot trading python: Hướng dẫn cho người mới học quant",
+      "status": "failed",
+      "error": "402 This request requires more credits, or fewer max_tokens. You requested up to 65536 tokens, but can only afford 15637. To increase, visit https://openrouter.ai/settings/credits and add more credits"
+    }
+  ]
+}

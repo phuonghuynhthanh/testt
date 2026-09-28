@@ -1,0 +1,779 @@
+{
+  "source": "api:/blog/admin/blogs",
+  "base_url": "https://be.quantvn.com",
+  "total": 100,
+  "success": 70,
+  "failed": 30,
+  "results": [
+    {
+      "index": 1,
+      "id": "49a6d3c8-854f-4b66-b0f5-f595ff6a0b1f",
+      "title": "Stochastic calculus finance: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 2,
+      "id": "315ce0e5-a24b-49dc-bfe0-ca591a942e86",
+      "title": "Mô hình slippage trong backtest",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 3,
+      "id": "d6d1f509-77a3-4c6a-a81a-25260c2c3b6a",
+      "title": "LLM finance: Hướng dẫn cơ bản và ứng dụng cho người mới",
+      "status": "updated",
+      "model": "openai/gpt-5-image",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 4,
+      "id": "ac33c050-aaac-4563-b93d-3f5bf1f5359c",
+      "title": "PCA trading: Hướng dẫn cơ bản và ứng dụng cho người mới",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 5,
+      "id": "1488f505-567a-4eee-aa3c-0b5e098f9f5a",
+      "title": "Factor investing Python: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 6,
+      "id": "be9717ea-5aee-49a5-94c8-0392d669e5ef",
+      "title": "Kalman filter trong trading: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 7,
+      "id": "64ae71bf-898b-44f1-baa5-cb1a603013fb",
+      "title": "Cointegration cho pair trading: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 8,
+      "id": "4f356a60-5138-4e5b-b656-d65ceada776c",
+      "title": "Bayesian portfolio optimization: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 9,
+      "id": "6e00fe1a-a344-4dab-b3d9-82e989902a41",
+      "title": "Thuật toán execution TWAP và VWAP: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 10,
+      "id": "384b1bc9-42e0-45c6-b487-a93aba01e9c1",
+      "title": "Reinforcement learning trading research: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 11,
+      "id": "d45612c3-bd49-4d87-ab84-9f5b58291510",
+      "title": "Community Discord cho người học quant: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 12,
+      "id": "d88ba80c-49ae-4f14-8fad-fe385694454f",
+      "title": "Khóa học backtest Python: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 13,
+      "id": "f6eef56a-27cc-4260-8974-cfc3072f41ce",
+      "title": "Học thống kê cho trading: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 14,
+      "id": "62fa0c01-af20-42e6-b85a-c38330ec3717",
+      "title": "Bootcamp quantitative finance: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 15,
+      "id": "b41a0938-1492-495f-96d2-95d239536d86",
+      "title": "Transformer time series forecasting: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 16,
+      "id": "55c804b8-f406-4519-b4c7-c762adbd9b39",
+      "title": "High frequency trading: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 17,
+      "id": "1f2a5254-eb75-4787-8ab0-8f96bdf6abcb",
+      "title": "Latency arbitrage: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 18,
+      "id": "dc0ddf98-2973-4b1f-8ba6-a99f25da5d20",
+      "title": "Orderbook imbalance: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 19,
+      "id": "3a6ce516-ff2d-4d39-ad4a-4422a6c54c0e",
+      "title": "Luyện đề interview quant intern: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 20,
+      "id": "a30bb1f0-3ffd-477e-8045-0685b3805079",
+      "title": "Portfolio cho quant intern cần gì: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 21,
+      "id": "be52fe97-2e44-4afb-82dc-5adb787c3fb0",
+      "title": "Market microstructure: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 22,
+      "id": "47b1b138-bae7-40a4-b62e-d352126ae705",
+      "title": "Học quant online bằng tiếng Việt: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 23,
+      "id": "19ede518-e25b-49db-af96-d339dda682d7",
+      "title": "Self-study quantitative finance cho sinh viên: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 24,
+      "id": "48085fb9-dd37-465f-a75a-5db96ff11f6e",
+      "title": "Mẫu CV quantitative analyst: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 25,
+      "id": "7dbaad4d-5c77-41e3-9b05-cbfb3ed7f405",
+      "title": "Bộ câu hỏi quant interview Python: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 26,
+      "id": "7d070f1e-e45a-43b6-945c-cafab4536afa",
+      "title": "Roadmap từ data analyst sang quant: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 27,
+      "id": "4e2ff6d9-a3b4-4bc8-a986-71b8c7b44ea4",
+      "title": "Thực tập quantitative analyst: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 28,
+      "id": "2afcd054-0574-42ac-ba45-d3512f86eb3b",
+      "title": "Chứng chỉ cho quant trader: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 29,
+      "id": "e4812b97-85ed-482b-b2b8-c20fa4c48964",
+      "title": "Lộ trình học quant 6 tháng: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 30,
+      "id": "da3b2302-cf74-46de-a9de-ad880294ae84",
+      "title": "Cộng đồng quant Việt Nam: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 31,
+      "id": "2c370ecb-ed08-4146-b018-3f1d5d1c4d9f",
+      "title": "Học machine learning cho trading: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 32,
+      "id": "b33612c7-b688-4dae-8ca8-7b5c3c28bcf9",
+      "title": "Cách trở thành quant trader: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 33,
+      "id": "b0059588-6013-4e8a-87e6-9d9221ce68b0",
+      "title": "Học AI trading: Hướng dẫn cơ bản và ứng dụng cho người mới",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 34,
+      "id": "f17e8893-b40e-4f16-a654-972bc1fa46a5",
+      "title": "Mentor quantitative finance Việt Nam: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 35,
+      "id": "f64189cf-cb02-4145-9cf7-fbc07c8e3b51",
+      "title": "Học algorithmic trading online: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 36,
+      "id": "55cc8f91-439d-4d5a-a7bb-7095381548ab",
+      "title": "Quant trader roadmap: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 37,
+      "id": "4ccf96f7-c64f-4e3b-9dd8-0cae901a18aa",
+      "title": "GitHub quant project: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 38,
+      "id": "ade6159a-e27a-4f9d-ab94-a3cb4c14d39e",
+      "title": "CV quant intern: Hướng dẫn cơ bản và ứng dụng cho người mới",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 39,
+      "id": "863ccade-1aef-42ec-b1a6-56d535cd7995",
+      "title": "Portfolio quant project: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 40,
+      "id": "95117ae5-689c-42b7-b766-9c7f14672ffd",
+      "title": "Quantitative finance course VN: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 41,
+      "id": "e5c24c0f-2adc-4b95-871f-4120ae084293",
+      "title": "Khóa học quantitative finance: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 42,
+      "id": "8d4153d4-d23b-4d2a-a253-b9653140671c",
+      "title": "Học Python cho chứng khoán: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 43,
+      "id": "81f28e37-9225-4b6c-8e89-5ba788605af8",
+      "title": "Quant roadmap Việt Nam: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 44,
+      "id": "614f5201-39a9-482c-9340-c91a9abdf2bb",
+      "title": "Quant intern: Hướng dẫn cơ bản và ứng dụng cho người mới",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 45,
+      "id": "c3b66d1f-b907-40da-86b7-2c270476c4c7",
+      "title": "Lương quant trader: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 46,
+      "id": "2d0dd7ec-fedd-4f36-a210-5ac959dc1d27",
+      "title": "Quản trị rủi ro danh mục định lượng: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 47,
+      "id": "2e5aa9d4-5e1b-40ae-882c-763a5f2d1c9e",
+      "title": "Event-driven backtesting: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 48,
+      "id": "04043ca8-db6a-40e7-8db9-55ab2cd33515",
+      "title": "Sentiment analysis chứng khoán: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 49,
+      "id": "1a453693-b5a3-465e-a7d3-13ad5296ef5e",
+      "title": "Risk parity strategy: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 50,
+      "id": "e164909c-904b-454a-b0bc-81e35b8bdb0a",
+      "title": "Feature engineering cho trading: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 51,
+      "id": "68ceca17-1798-464c-8e33-0b32c398e398",
+      "title": "Time series forecasting cho chứng khoán: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 52,
+      "id": "14a3dce5-7f88-434f-b220-db112fe340de",
+      "title": "Data pipeline cho trading bot: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 53,
+      "id": "c9ff1979-f23c-48b3-9725-59613d6944a9",
+      "title": "Options pricing Python: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 54,
+      "id": "57a5ee7e-8746-47a7-ae7f-1abe6fba68f9",
+      "title": "Market regime detection: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 55,
+      "id": "fa1a1255-9f4f-4c79-a98c-c6239f73672e",
+      "title": "Value at risk là gì: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 56,
+      "id": "ca8648b2-c8f5-4223-9540-20ea69b2627c",
+      "title": "Pair trading strategy: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 57,
+      "id": "37865e5f-18a8-4e79-a102-c6f6a35743b3",
+      "title": "Factor investing: Hướng dẫn cơ bản và ứng dụng cho người mới",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 58,
+      "id": "51b78111-36e7-4ba9-b66a-de0c37729c5d",
+      "title": "Monte carlo simulation finance: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 59,
+      "id": "833656cb-67c4-41e1-8f28-64db3ee95610",
+      "title": "Portfolio optimization Python: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 60,
+      "id": "04185aed-6a42-43aa-8524-3f1215eec802",
+      "title": "Walk forward optimization: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 61,
+      "id": "615daa94-aa4d-4585-b522-9b36de0f6ca2",
+      "title": "Reinforcement learning for trading: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 62,
+      "id": "cc5677c2-c6d0-4c41-8f04-429eb4298f74",
+      "title": "Trading strategy python: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 63,
+      "id": "b635eab5-5297-4c00-8efd-be4f9ffaa460",
+      "title": "Mean reversion: Hướng dẫn cơ bản và ứng dụng cho người mới",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 64,
+      "id": "9ae90d8a-bb97-4c5f-a5fe-60ab1f16b2de",
+      "title": "Statistical arbitrage: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 65,
+      "id": "7a3d9b13-82f0-4d17-988a-6a08c6f63388",
+      "title": "Quantitative finance: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 66,
+      "id": "a928fe4d-145c-46f4-8290-26e05a4264ca",
+      "title": "Algorithmic trading: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 67,
+      "id": "ceac64ef-70a1-449a-932b-31a26b6a9467",
+      "title": "Momentum trading: Hướng dẫn cơ bản và ứng dụng cho người mới",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 68,
+      "id": "26765628-bf92-432e-a37f-a4ffc5c8f3e9",
+      "title": "Python finance: Hướng dẫn cơ bản và ứng dụng cho người mới",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 69,
+      "id": "d48263ce-2a33-4e32-bd56-e7e891666610",
+      "title": "Backtesting strategy: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 70,
+      "id": "cfa5665f-8b6c-4932-8997-56cf32498af7",
+      "title": "AI stock trading: Hướng dẫn cơ bản và ứng dụng cho người mới",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 71,
+      "id": "e5f7c9be-bc47-4fec-ac8b-f211a7891c64",
+      "title": "Quant interview: Hướng dẫn cơ bản và ứng dụng cho người mới",
+      "status": "failed",
+      "error": "Response ended prematurely"
+    },
+    {
+      "index": 72,
+      "id": "c01612a5-f8db-4ad6-b91a-b0bc7933f704",
+      "title": "Quant developer: Hướng dẫn cơ bản và ứng dụng cho người mới",
+      "status": "failed",
+      "error": "HTTPSConnectionPool(host='openrouter.ai', port=443): Max retries exceeded with url: /api/v1/chat/completions (Caused by NameResolutionError(\"HTTPSConnection(host='openrouter.ai', port=443): Failed to resolve 'openrouter.ai' ([Errno 11001] getaddrinfo failed)\"))"
+    },
+    {
+      "index": 73,
+      "id": "e94bb67b-3dfe-4b37-ae90-5782a571ea15",
+      "title": "Machine learning for trading: Hướng dẫn cho người mới học quant",
+      "status": "failed",
+      "error": "HTTPSConnectionPool(host='openrouter.ai', port=443): Max retries exceeded with url: /api/v1/chat/completions (Caused by NameResolutionError(\"HTTPSConnection(host='openrouter.ai', port=443): Failed to resolve 'openrouter.ai' ([Errno 11001] getaddrinfo failed)\"))"
+    },
+    {
+      "index": 74,
+      "id": "ccb8b69f-0d89-472f-a066-8293115c40d4",
+      "title": "Stock prediction AI: Hướng dẫn cho người mới học quant",
+      "status": "failed",
+      "error": "HTTPSConnectionPool(host='openrouter.ai', port=443): Max retries exceeded with url: /api/v1/chat/completions (Caused by NameResolutionError(\"HTTPSConnection(host='openrouter.ai', port=443): Failed to resolve 'openrouter.ai' ([Errno 11001] getaddrinfo failed)\"))"
+    },
+    {
+      "index": 75,
+      "id": "1893bbcb-f586-41be-a2a1-5f3f317a57a9",
+      "title": "Hedge fund là gì: Hướng dẫn cơ bản và ứng dụng cho người mới",
+      "status": "failed",
+      "error": "HTTPSConnectionPool(host='openrouter.ai', port=443): Max retries exceeded with url: /api/v1/chat/completions (Caused by NameResolutionError(\"HTTPSConnection(host='openrouter.ai', port=443): Failed to resolve 'openrouter.ai' ([Errno 11001] getaddrinfo failed)\"))"
+    },
+    {
+      "index": 76,
+      "id": "509ae486-d79a-4e68-ad9a-8713281f1608",
+      "title": "Paper trading là gì: Hướng dẫn cho người mới học quant",
+      "status": "failed",
+      "error": "HTTPSConnectionPool(host='openrouter.ai', port=443): Max retries exceeded with url: /api/v1/chat/completions (Caused by NameResolutionError(\"HTTPSConnection(host='openrouter.ai', port=443): Failed to resolve 'openrouter.ai' ([Errno 11001] getaddrinfo failed)\"))"
+    },
+    {
+      "index": 77,
+      "id": "c7fe9a9c-6218-4211-aa99-2ed421126341",
+      "title": "Pandas cho chứng khoán: Hướng dẫn cho người mới học quant",
+      "status": "failed",
+      "error": "HTTPSConnectionPool(host='openrouter.ai', port=443): Max retries exceeded with url: /api/v1/chat/completions (Caused by NameResolutionError(\"HTTPSConnection(host='openrouter.ai', port=443): Failed to resolve 'openrouter.ai' ([Errno 11001] getaddrinfo failed)\"))"
+    },
+    {
+      "index": 78,
+      "id": "b6581ab0-4896-4433-bda1-9b266c39cf91",
+      "title": "Yfinance Python hướng dẫn: Hướng dẫn cho người mới học quant",
+      "status": "failed",
+      "error": "HTTPSConnectionPool(host='openrouter.ai', port=443): Max retries exceeded with url: /api/v1/chat/completions (Caused by NameResolutionError(\"HTTPSConnection(host='openrouter.ai', port=443): Failed to resolve 'openrouter.ai' ([Errno 11001] getaddrinfo failed)\"))"
+    },
+    {
+      "index": 79,
+      "id": "7ffbdfb8-8dc2-481c-9dbd-0ab914471a21",
+      "title": "Cách cài Python cho trading: Hướng dẫn cho người mới học quant",
+      "status": "failed",
+      "error": "HTTPSConnectionPool(host='openrouter.ai', port=443): Max retries exceeded with url: /api/v1/chat/completions (Caused by NameResolutionError(\"HTTPSConnection(host='openrouter.ai', port=443): Failed to resolve 'openrouter.ai' ([Errno 11001] getaddrinfo failed)\"))"
+    },
+    {
+      "index": 80,
+      "id": "83afc129-cdd0-419d-83f4-5b70c76d4dac",
+      "title": "Thuật toán giao dịch là gì: Hướng dẫn cho người mới học quant",
+      "status": "failed",
+      "error": "HTTPSConnectionPool(host='openrouter.ai', port=443): Max retries exceeded with url: /api/v1/chat/completions (Caused by NameResolutionError(\"HTTPSConnection(host='openrouter.ai', port=443): Failed to resolve 'openrouter.ai' ([Errno 11001] getaddrinfo failed)\"))"
+    },
+    {
+      "index": 81,
+      "id": "94e87033-c57c-4265-9bec-9ee65bb1f0f6",
+      "title": "Quantitative analyst là gì: Hướng dẫn cho người mới học quant",
+      "status": "failed",
+      "error": "HTTPSConnectionPool(host='openrouter.ai', port=443): Max retries exceeded with url: /api/v1/chat/completions (Caused by NameResolutionError(\"HTTPSConnection(host='openrouter.ai', port=443): Failed to resolve 'openrouter.ai' ([Errno 11001] getaddrinfo failed)\"))"
+    },
+    {
+      "index": 82,
+      "id": "56099067-138a-4f9d-bf98-214c8f1d3c94",
+      "title": "Alpha beta là gì trong đầu tư: Hướng dẫn cho người mới học quant",
+      "status": "failed",
+      "error": "HTTPSConnectionPool(host='openrouter.ai', port=443): Max retries exceeded with url: /api/v1/chat/completions (Caused by NameResolutionError(\"HTTPSConnection(host='openrouter.ai', port=443): Failed to resolve 'openrouter.ai' ([Errno 11001] getaddrinfo failed)\"))"
+    },
+    {
+      "index": 83,
+      "id": "42fdae82-11c0-46ff-9132-d0927ce89185",
+      "title": "Quantitative finance Việt Nam: Hướng dẫn cho người mới học quant",
+      "status": "failed",
+      "error": "HTTPSConnectionPool(host='openrouter.ai', port=443): Max retries exceeded with url: /api/v1/chat/completions (Caused by NameResolutionError(\"HTTPSConnection(host='openrouter.ai', port=443): Failed to resolve 'openrouter.ai' ([Errno 11001] getaddrinfo failed)\"))"
+    },
+    {
+      "index": 84,
+      "id": "29aa70cf-c6fc-4a4b-b362-32f106ef8b4a",
+      "title": "Dữ liệu chứng khoán miễn phí cho backtest: Hướng dẫn cho người mới học quant",
+      "status": "failed",
+      "error": "HTTPSConnectionPool(host='openrouter.ai', port=443): Max retries exceeded with url: /api/v1/chat/completions (Caused by NameResolutionError(\"HTTPSConnection(host='openrouter.ai', port=443): Failed to resolve 'openrouter.ai' ([Errno 11001] getaddrinfo failed)\"))"
+    },
+    {
+      "index": 85,
+      "id": "27093645-882f-4644-bb49-cc05b1d4a537",
+      "title": "Volatility là gì trong trading: Hướng dẫn cho người mới học quant",
+      "status": "failed",
+      "error": "HTTPSConnectionPool(host='openrouter.ai', port=443): Max retries exceeded with url: /api/v1/chat/completions (Caused by NameResolutionError(\"HTTPSConnection(host='openrouter.ai', port=443): Failed to resolve 'openrouter.ai' ([Errno 11001] getaddrinfo failed)\"))"
+    },
+    {
+      "index": 86,
+      "id": "39b89d0c-45a9-48d8-94d9-81b0701ce2c7",
+      "title": "Drawdown là gì: Hướng dẫn cơ bản và ứng dụng cho người mới",
+      "status": "failed",
+      "error": "HTTPSConnectionPool(host='openrouter.ai', port=443): Max retries exceeded with url: /api/v1/chat/completions (Caused by NameResolutionError(\"HTTPSConnection(host='openrouter.ai', port=443): Failed to resolve 'openrouter.ai' ([Errno 11001] getaddrinfo failed)\"))"
+    },
+    {
+      "index": 87,
+      "id": "450621d3-c888-4e03-8435-cb015674851a",
+      "title": "Sharpe ratio là gì: Hướng dẫn cho người mới học quant",
+      "status": "failed",
+      "error": "HTTPSConnectionPool(host='openrouter.ai', port=443): Max retries exceeded with url: /api/v1/chat/completions (Caused by NameResolutionError(\"HTTPSConnection(host='openrouter.ai', port=443): Failed to resolve 'openrouter.ai' ([Errno 11001] getaddrinfo failed)\"))"
+    },
+    {
+      "index": 88,
+      "id": "80b3cba2-af53-4391-85f4-6c636a4052a3",
+      "title": "Cách đọc equity curve: Hướng dẫn cho người mới học quant",
+      "status": "failed",
+      "error": "HTTPSConnectionPool(host='openrouter.ai', port=443): Max retries exceeded with url: /api/v1/chat/completions (Caused by NameResolutionError(\"HTTPSConnection(host='openrouter.ai', port=443): Failed to resolve 'openrouter.ai' ([Errno 11001] getaddrinfo failed)\"))"
+    },
+    {
+      "index": 89,
+      "id": "07385dd2-163e-48b5-b49b-45129a76eff5",
+      "title": "Tài chính định lượng là gì: Hướng dẫn cho người mới học quant",
+      "status": "failed",
+      "error": "HTTPSConnectionPool(host='openrouter.ai', port=443): Max retries exceeded with url: /api/v1/chat/completions (Caused by NameResolutionError(\"HTTPSConnection(host='openrouter.ai', port=443): Failed to resolve 'openrouter.ai' ([Errno 11001] getaddrinfo failed)\"))"
+    },
+    {
+      "index": 90,
+      "id": "6e1a6948-bf4e-4d02-bbdc-d40e9c315342",
+      "title": "Quant là gì: Hướng dẫn cơ bản và ứng dụng cho người mới",
+      "status": "failed",
+      "error": "HTTPSConnectionPool(host='openrouter.ai', port=443): Max retries exceeded with url: /api/v1/chat/completions (Caused by NameResolutionError(\"HTTPSConnection(host='openrouter.ai', port=443): Failed to resolve 'openrouter.ai' ([Errno 11001] getaddrinfo failed)\"))"
+    },
+    {
+      "index": 91,
+      "id": "e9dbddf8-1041-46a9-aa98-f6a829732574",
+      "title": "Quant trader là gì: Hướng dẫn cho người mới học quant",
+      "status": "failed",
+      "error": "HTTPSConnectionPool(host='openrouter.ai', port=443): Max retries exceeded with url: /api/v1/chat/completions (Caused by NameResolutionError(\"HTTPSConnection(host='openrouter.ai', port=443): Failed to resolve 'openrouter.ai' ([Errno 11001] getaddrinfo failed)\"))"
+    },
+    {
+      "index": 92,
+      "id": "a50f85b0-0eeb-4402-95e2-139f41194906",
+      "title": "Học quantitative finance: Hướng dẫn cho người mới học quant",
+      "status": "failed",
+      "error": "HTTPSConnectionPool(host='openrouter.ai', port=443): Max retries exceeded with url: /api/v1/chat/completions (Caused by NameResolutionError(\"HTTPSConnection(host='openrouter.ai', port=443): Failed to resolve 'openrouter.ai' ([Errno 11001] getaddrinfo failed)\"))"
+    },
+    {
+      "index": 93,
+      "id": "9875da4c-752a-41e8-9363-4384cdd59319",
+      "title": "Học quant từ đầu: Hướng dẫn cơ bản và ứng dụng cho người mới",
+      "status": "failed",
+      "error": "HTTPSConnectionPool(host='openrouter.ai', port=443): Max retries exceeded with url: /api/v1/chat/completions (Caused by NameResolutionError(\"HTTPSConnection(host='openrouter.ai', port=443): Failed to resolve 'openrouter.ai' ([Errno 11001] getaddrinfo failed)\"))"
+    },
+    {
+      "index": 94,
+      "id": "34bd2a59-5e20-4196-ba5c-cd343e61b4e8",
+      "title": "Roadmap quantitative finance: Hướng dẫn cho người mới học quant",
+      "status": "failed",
+      "error": "HTTPSConnectionPool(host='openrouter.ai', port=443): Max retries exceeded with url: /api/v1/chat/completions (Caused by NameResolutionError(\"HTTPSConnection(host='openrouter.ai', port=443): Failed to resolve 'openrouter.ai' ([Errno 11001] getaddrinfo failed)\"))"
+    },
+    {
+      "index": 95,
+      "id": "857e8e11-ff17-45a1-beaf-92f61b10ee2a",
+      "title": "Python cho trading: Hướng dẫn cho người mới học quant",
+      "status": "failed",
+      "error": "HTTPSConnectionPool(host='openrouter.ai', port=443): Max retries exceeded with url: /api/v1/chat/completions (Caused by NameResolutionError(\"HTTPSConnection(host='openrouter.ai', port=443): Failed to resolve 'openrouter.ai' ([Errno 11001] getaddrinfo failed)\"))"
+    },
+    {
+      "index": 96,
+      "id": "5e97f10b-52f2-4234-8992-4be7378b9f1b",
+      "title": "Backtest python: Hướng dẫn cơ bản và ứng dụng cho người mới",
+      "status": "failed",
+      "error": "HTTPSConnectionPool(host='openrouter.ai', port=443): Max retries exceeded with url: /api/v1/chat/completions (Caused by NameResolutionError(\"HTTPSConnection(host='openrouter.ai', port=443): Failed to resolve 'openrouter.ai' ([Errno 11001] getaddrinfo failed)\"))"
+    },
+    {
+      "index": 97,
+      "id": "02d575dd-caad-4424-97da-315dba72cee5",
+      "title": "AI trading là gì: Hướng dẫn cơ bản và ứng dụng cho người mới",
+      "status": "failed",
+      "error": "HTTPSConnectionPool(host='openrouter.ai', port=443): Max retries exceeded with url: /api/v1/chat/completions (Caused by NameResolutionError(\"HTTPSConnection(host='openrouter.ai', port=443): Failed to resolve 'openrouter.ai' ([Errno 11001] getaddrinfo failed)\"))"
+    },
+    {
+      "index": 98,
+      "id": "67efe34f-9f2f-48cd-afc9-68fc95c765a9",
+      "title": "Machine learning trading: Hướng dẫn cho người mới học quant",
+      "status": "failed",
+      "error": "HTTPSConnectionPool(host='openrouter.ai', port=443): Max retries exceeded with url: /api/v1/chat/completions (Caused by NameResolutionError(\"HTTPSConnection(host='openrouter.ai', port=443): Failed to resolve 'openrouter.ai' ([Errno 11001] getaddrinfo failed)\"))"
+    },
+    {
+      "index": 99,
+      "id": "6f68ba04-3e22-4ec6-9582-d9e040b79c59",
+      "title": "Algorithmic trading là gì: Hướng dẫn cho người mới học quant",
+      "status": "failed",
+      "error": "HTTPSConnectionPool(host='openrouter.ai', port=443): Max retries exceeded with url: /api/v1/chat/completions (Caused by NameResolutionError(\"HTTPSConnection(host='openrouter.ai', port=443): Failed to resolve 'openrouter.ai' ([Errno 11001] getaddrinfo failed)\"))"
+    },
+    {
+      "index": 100,
+      "id": "da328208-f3f1-4ade-9b26-e9edbe9ee78b",
+      "title": "Bot trading python: Hướng dẫn cho người mới học quant",
+      "status": "failed",
+      "error": "HTTPSConnectionPool(host='openrouter.ai', port=443): Max retries exceeded with url: /api/v1/chat/completions (Caused by NameResolutionError(\"HTTPSConnection(host='openrouter.ai', port=443): Failed to resolve 'openrouter.ai' ([Errno 11001] getaddrinfo failed)\"))"
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "source": "api:/blog/admin/blogs",
+  "base_url": "https://be.quantvn.com",
+  "state_scope": "APPROVED",
+  "total": 3,
+  "updated": 0,
+  "skipped": 3,
+  "failed": 0,
+  "cta_line": "**Khám phá chiến lược trading tại** [quantvn.com](https://quantvn.com)",
+  "report_path": "admin\\scripts\\blog_internal_link_report_sample_rerun.json",
+  "results": [
+    {
+      "index": 1,
+      "id": "49a6d3c8-854f-4b66-b0f5-f595ff6a0b1f",
+      "title": "Stochastic calculus finance",
+      "link_post": "stochastic-calculus-finance",
+      "status": "skipped",
+      "old_content_length": 7663,
+      "new_content_length": 7663
+    },
+    {
+      "index": 2,
+      "id": "be9717ea-5aee-49a5-94c8-0392d669e5ef",
+      "title": "Kalman filter trong trading",
+      "link_post": "kalman-filter-trong-trading",
+      "status": "skipped",
+      "old_content_length": 7663,
+      "new_content_length": 7663
+    },
+    {
+      "index": 3,
+      "id": "d45612c3-bd49-4d87-ab84-9f5b58291510",
+      "title": "Community Discord cho người học quant",
+      "link_post": "community-discord-cho-nguoi-hoc-quant",
+      "status": "skipped",
+      "old_content_length": 7810,
+      "new_content_length": 7810
+    }
+  ]
+}

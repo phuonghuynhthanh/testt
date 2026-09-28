@@ -1,0 +1,224 @@
+/* Blog-specific styles */
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
+
+:root {
+  /* Base colors */
+  --border-color: #ffffff;
+  --bg-black: #222222;
+  --bg-code: #121212;
+
+  /* Typography highlight colors */
+  --heading-main: #ffffff;
+  --heading-green: #07e86c;
+  --heading-green-dark: #00be73;
+
+  /* Table colors */
+  --table-border: #485563;
+  --table-border-light: #7b8e99;
+
+  /* Misc */
+  --text-muted: #ffffffb5;
+  --text-primary: #ffffff;
+
+  --toolbar-bg: #121212; /* nền toolbar */
+  --toolbar-border: #374151;
+  --toolbar-btn-bg: transparent;
+  --toolbar-btn-hover: #111827;
+  --toolbar-btn-active: #1f2937;
+  --toolbar-icon: #e5e7eb; /* màu icon / chữ */
+  --toolbar-icon-active: #60a5fa;
+}
+
+.main-container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  font-family: "lexend", sans-serif;
+}
+
+/* Markdown Content Styling */
+
+.markdown-container p {
+  color: #ececec;
+  margin-bottom: 1rem;
+}
+
+.markdown-container a {
+  color: #3d63dd;
+  text-decoration: none;
+}
+
+.markdown-container a:hover {
+  text-decoration: underline;
+}
+
+.markdown-container ul {
+  padding-left: 24px;
+}
+
+.markdown-container ol {
+  margin-bottom: 16px;
+  margin-left: 24px;
+  padding-left: 24px;
+}
+
+.markdown-container li {
+  margin-bottom: 8px;
+  line-height: 1.75;
+}
+
+h3::before {
+  content: "";
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #07e86c;
+  flex-shrink: 0;
+}
+
+.markdown-container h2,
+.markdown-container h3,
+.markdown-container h4,
+.markdown-container h5,
+.markdown-container h6 {
+  color: var(--heading-green-dark);
+}
+
+.ck-content {
+  min-height: 400px;
+  padding: 20px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+.ck-content h3.category {
+  background: #f8fafc;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #64748b;
+  margin-bottom: 16px;
+  display: inline-block;
+}
+
+.ck-content h2.document-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 8px;
+  line-height: 1.2;
+}
+
+.ck-content h3.document-subtitle {
+  font-size: 18px;
+  font-weight: 500;
+  color: #64748b;
+  margin-bottom: 24px;
+  line-height: 1.4;
+}
+
+.ck-content p.info-box {
+  background: #f0f9ff;
+  border: 1px solid #0ea5e9;
+  border-radius: 8px;
+  padding: 16px;
+  margin: 16px 0;
+  position: relative;
+}
+
+.ck-content p.info-box::before {
+  content: "ℹ️";
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  font-size: 18px;
+}
+
+.ck-content p.info-box {
+  padding-left: 48px;
+}
+
+.ck-content blockquote.side-quote {
+  background: #f8fafc;
+  border-left: 4px solid #3b82f6;
+  padding: 16px 20px;
+  margin: 20px 0;
+  font-style: italic;
+  color: #475569;
+  position: relative;
+}
+
+.ck-content blockquote.side-quote::before {
+  content: "";
+  position: absolute;
+  top: -8px;
+  left: 16px;
+  font-size: 48px;
+  color: #cbd5e1;
+  font-family: serif;
+  line-height: 1;
+}
+
+.ck-content blockquote.side-quote p {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.ck-content blockquote.side-quote p:last-child:not(:first-child) {
+  margin-top: 8px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.ck-content span.marker {
+  background: yellow;
+}
+
+.ck-content span.spoiler {
+  background: #1e293b;
+  color: #1e293b;
+  padding: 2px 4px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.ck-content span.spoiler:hover {
+  color: #f1f5f9;
+}
+
+.ck-content pre.fancy-code {
+  background: #1e293b;
+  color: #f1f5f9;
+  padding: 20px;
+  border-radius: 8px;
+  overflow-x: auto;
+  position: relative;
+}
+
+.ck-content pre.fancy-code::before {
+  content: "Code";
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  background: #334155;
+  color: #94a3b8;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.ck-content pre.fancy-code-dark {
+  background: #0f172a;
+  color: #e2e8f0;
+}
+
+.ck-content pre.fancy-code-bright {
+  background: #fef3c7;
+  color: #92400e;
+}

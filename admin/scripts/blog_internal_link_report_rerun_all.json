@@ -1,0 +1,1417 @@
+{
+  "source": "api:/blog/admin/blogs",
+  "base_url": "https://be.quantvn.com",
+  "state_scope": "APPROVED",
+  "total": 156,
+  "updated": 0,
+  "skipped": 156,
+  "failed": 0,
+  "cta_line": "**Khám phá chiến lược trading tại** [quantvn.com](https://quantvn.com)",
+  "report_path": "admin\\scripts\\blog_internal_link_report_rerun_all.json",
+  "results": [
+    {
+      "index": 1,
+      "id": "c0009400-0f9f-4aea-9173-8e739b0a75f4",
+      "title": "Factor Investing: Đầu Tư Theo Nhân Tố — Bí Quyết Của Các Quỹ Lớn Toàn Cầu",
+      "link_post": "factor-investing-au-tu-theo-nhan-to-bi-quyet-cua-cac-quy-lon-toan-cau",
+      "status": "skipped",
+      "old_content_length": 1895,
+      "new_content_length": 1895
+    },
+    {
+      "index": 2,
+      "id": "c1228cca-5756-4507-bea9-38c08c4ba7a0",
+      "title": "Kiếm Tiền Online Từ Autotrading: Sự Thật Và Chiến Lược Thực Tế Năm 2025",
+      "link_post": "kiem-tien-online-tu-autotrading-su-that-va-chien-luoc-thuc-te-nam-2025",
+      "status": "skipped",
+      "old_content_length": 4606,
+      "new_content_length": 4606
+    },
+    {
+      "index": 3,
+      "id": "514ff887-a1d2-46e5-b576-4dfc1a45dd8d",
+      "title": "Internship Tài Chính Tại Việt Nam: Hướng Dẫn Tìm Và Làm Nổi Bật Bản Thân",
+      "link_post": "internship-tai-chinh-tai-viet-nam-huong-dan-tim-va-lam-noi-bat-ban-than",
+      "status": "skipped",
+      "old_content_length": 2855,
+      "new_content_length": 2855
+    },
+    {
+      "index": 4,
+      "id": "a91fd796-081c-4d32-af7e-315c8405987f",
+      "title": "Copy Trading Là Gì? Ưu Nhược Điểm Và Cách Chọn Trader Để Sao Chép",
+      "link_post": "copy-trading-la-gi-uu-nhuoc-iem-va-cach-chon-trader-e-sao-chep",
+      "status": "skipped",
+      "old_content_length": 3048,
+      "new_content_length": 3048
+    },
+    {
+      "index": 5,
+      "id": "bf169940-7391-45e5-a65e-172811ed61ac",
+      "title": "DCA Là Gì? Chiến Lược Đầu Tư Định Kỳ Giúp Triệu Người Tích Lũy Tài Sản",
+      "link_post": "dca-la-gi-chien-luoc-au-tu-inh-ky-giup-trieu-nguoi-tich-luy-tai-san",
+      "status": "skipped",
+      "old_content_length": 2595,
+      "new_content_length": 2595
+    },
+    {
+      "index": 6,
+      "id": "c8a6947c-5f41-46e1-8f40-d6ffe354e525",
+      "title": "High Frequency Trading (HFT): Thế Giới Giao Dịch Tốc Độ Ánh Sáng",
+      "link_post": "high-frequency-trading-hft-the-gioi-giao-dich-toc-o-anh-sang",
+      "status": "skipped",
+      "old_content_length": 2835,
+      "new_content_length": 2835
+    },
+    {
+      "index": 7,
+      "id": "d28a79cd-bd64-4743-9dcf-a1b95b65f176",
+      "title": "Python Cho Tài Chính: Lộ Trình Học Từ Cơ Bản Đến Xây Dựng Bot Giao Dịch",
+      "link_post": "python-cho-tai-chinh-lo-trinh-hoc-tu-co-ban-en-xay-dung-bot-giao-dich",
+      "status": "skipped",
+      "old_content_length": 3192,
+      "new_content_length": 3192
+    },
+    {
+      "index": 8,
+      "id": "2d5c76bd-01d4-48fb-9b6b-3ad6174e926e",
+      "title": "Position Sizing: Khoa Học Xác Định Kích Thước Lệnh Để Tối Đa Hóa Lợi Nhuận",
+      "link_post": "position-sizing-khoa-hoc-xac-inh-kich-thuoc-lenh-e-toi-a-hoa-loi-nhuan",
+      "status": "skipped",
+      "old_content_length": 2843,
+      "new_content_length": 2843
+    },
+    {
+      "index": 9,
+      "id": "ae99c91d-f982-454b-bae0-a50e8d5dd88e",
+      "title": "Phân Tích Kỹ Thuật Cơ Bản: Nền Tảng Xây Dựng Chiến Lược Bot Autotrading",
+      "link_post": "phan-tich-ky-thuat-co-ban-nen-tang-xay-dung-chien-luoc-bot-autotrading",
+      "status": "skipped",
+      "old_content_length": 2912,
+      "new_content_length": 2912
+    },
+    {
+      "index": 10,
+      "id": "af4ea57f-fcf5-4a57-a63d-d9c6a523d93c",
+      "title": "Pairs Trading: Chiến Lược Market Neutral Kiếm Lời Bất Kể Thị Trường Tăng Hay Giảm",
+      "link_post": "pairs-trading-chien-luoc-market-neutral-kiem-loi-bat-ke-thi-truong-tang-hay-giam",
+      "status": "skipped",
+      "old_content_length": 3078,
+      "new_content_length": 3078
+    },
+    {
+      "index": 11,
+      "id": "b724d9ac-5a83-4206-b220-120f19d8c05f",
+      "title": "Nhân Viên Quỹ Đầu Tư: Nghề Nghiệp, Mức Lương Và Con Đường Sự Nghiệp Chi Tiết",
+      "link_post": "nhan-vien-quy-au-tu-nghe-nghiep-muc-luong-va-con-uong-su-nghiep-chi-tiet",
+      "status": "skipped",
+      "old_content_length": 5395,
+      "new_content_length": 5395
+    },
+    {
+      "index": 12,
+      "id": "65b2cfce-842a-4e81-99ed-aa8b1403ba66",
+      "title": "Ngân Hàng Đầu Tư Tại Việt Nam: Cơ Hội Nghề Nghiệp Và Lộ Trình Phát Triển",
+      "link_post": "ngan-hang-au-tu-tai-viet-nam-co-hoi-nghe-nghiep-va-lo-trinh-phat-trien",
+      "status": "skipped",
+      "old_content_length": 2788,
+      "new_content_length": 2788
+    },
+    {
+      "index": 13,
+      "id": "46bf7cf1-af83-48b8-8975-66bd159acda2",
+      "title": "MACD Strategy: Hướng Dẫn Sử Dụng MACD Để Xây Dựng Bot Giao Dịch",
+      "link_post": "macd-strategy-huong-dan-su-dung-macd-e-xay-dung-bot-giao-dich",
+      "status": "skipped",
+      "old_content_length": 2815,
+      "new_content_length": 2815
+    },
+    {
+      "index": 14,
+      "id": "8a277c18-76d8-45a6-8875-f68e3505f867",
+      "title": "IPO Việt Nam: Cơ Hội Đầu Tư Vàng Hay Bẫy Cho Nhà Đầu Tư Mới?",
+      "link_post": "ipo-viet-nam-co-hoi-au-tu-vang-hay-bay-cho-nha-au-tu-moi",
+      "status": "skipped",
+      "old_content_length": 3005,
+      "new_content_length": 3005
+    },
+    {
+      "index": 15,
+      "id": "8aaab47a-47b1-41ee-a27d-a3fafeeb5bce",
+      "title": "Drawdown Trong Trading: Hiểu Và Quản Lý Sụt Giảm Vốn Hiệu Quả",
+      "link_post": "drawdown-trong-trading-hieu-va-quan-ly-sut-giam-von-hieu-qua",
+      "status": "skipped",
+      "old_content_length": 2908,
+      "new_content_length": 2908
+    },
+    {
+      "index": 16,
+      "id": "d9b97318-2aa3-4d07-a982-c772e437fd5b",
+      "title": "Fintech Việt Nam 2025: Bức Tranh Toàn Cảnh Và Cơ Hội Đầu Tư",
+      "link_post": "fintech-viet-nam-2025-buc-tranh-toan-canh-va-co-hoi-au-tu",
+      "status": "skipped",
+      "old_content_length": 2342,
+      "new_content_length": 2342
+    },
+    {
+      "index": 17,
+      "id": "2ed556ad-2e9b-4d47-baf1-1ce652098311",
+      "title": "AI Trong Tài Chính: Cuộc Cách Mạng Đang Định Hình Lại Ngành Đầu Tư",
+      "link_post": "ai-trong-tai-chinh-cuoc-cach-mang-ang-inh-hinh-lai-nganh-au-tu",
+      "status": "skipped",
+      "old_content_length": 3362,
+      "new_content_length": 3362
+    },
+    {
+      "index": 18,
+      "id": "aefac17f-1ed9-40cd-a51e-54ea5e05549d",
+      "title": "Chỉ giao dịch long khi thị trường bull",
+      "link_post": "chi-giao-dich-long-khi-thi-truong-bull",
+      "status": "skipped",
+      "old_content_length": 2493,
+      "new_content_length": 2493
+    },
+    {
+      "index": 19,
+      "id": "e328214a-2ea8-482f-9735-b4afbf88e8e4",
+      "title": "Sharpe Ratio Là Gì? Chỉ Số Vàng Để Đánh Giá Hiệu Suất Đầu Tư",
+      "link_post": "sharpe-ratio-la-gi-chi-so-vang-de-danh-gia-hieu-suat-dau-tu",
+      "status": "skipped",
+      "old_content_length": 2398,
+      "new_content_length": 2398
+    },
+    {
+      "index": 20,
+      "id": "13fb0e59-71c3-457e-b097-e901b6494229",
+      "title": "Mức Lương Ngành Tài Chính Việt Nam 2025: Bảng Lương Chi Tiết Từng Vị Trí",
+      "link_post": "muc-luong-nganh-tai-chinh-viet-nam-2025-bang-luong-chi-tiet-tung-vi-tri",
+      "status": "skipped",
+      "old_content_length": 3211,
+      "new_content_length": 3211
+    },
+    {
+      "index": 21,
+      "id": "8c9e1bf7-8c3a-495d-90fb-c235563a6a02",
+      "title": "Tự Do Tài Chính Qua Trading: Lộ Trình Thực Tế Và Con Số Cụ Thể",
+      "link_post": "tu-do-tai-chinh-qua-trading-lo-trinh-thuc-te-va-con-so-cu-the",
+      "status": "skipped",
+      "old_content_length": 2929,
+      "new_content_length": 2929
+    },
+    {
+      "index": 22,
+      "id": "76816875-d188-4645-8d74-0fa853a7d9ac",
+      "title": "Việc Làm Quỹ Đầu Tư 2025: Top Vị Trí Hot, Yêu Cầu Và Nơi Tìm Việc Hiệu Quả",
+      "link_post": "viec-lam-quy-dau-tu-2025-top-vi-tri-hot-yeu-cau-va-noi-tim-viec-hieu-qua",
+      "status": "skipped",
+      "old_content_length": 6291,
+      "new_content_length": 6291
+    },
+    {
+      "index": 23,
+      "id": "f3fa3aef-a0cb-4395-a89f-4d38c0fb82e2",
+      "title": "Tâm Lý Giao Dịch: Kẻ Thù Lớn Nhất Của Trader Và Cách Chiến Thắng",
+      "link_post": "tam-ly-giao-dich-ke-thu-lon-nhat-cua-trader-va-cach-chien-thang",
+      "status": "skipped",
+      "old_content_length": 2724,
+      "new_content_length": 2724
+    },
+    {
+      "index": 24,
+      "id": "b1a14ba6-36b3-49ea-84f6-b7e0ab8e3d16",
+      "title": "Bollinger Bands Strategy: Giao Dịch Với Dải Bollinger Từ Cơ Bản Đến Nâng Cao",
+      "link_post": "bollinger-bands-strategy-giao-dich-voi-dai-bollinger-tu-co-ban-den-nang-cao",
+      "status": "skipped",
+      "old_content_length": 2306,
+      "new_content_length": 2306
+    },
+    {
+      "index": 25,
+      "id": "5f403706-9daa-4695-aabe-1ce544e525e9",
+      "title": "Algorithmic Trading Tại Việt Nam: Cơ Hội Vàng Cho Nhà Đầu Tư Công Nghệ",
+      "link_post": "algorithmic-trading-tai-viet-nam-co-hoi-vang-cho-nha-dau-tu-cong-nghe",
+      "status": "skipped",
+      "old_content_length": 2606,
+      "new_content_length": 2606
+    },
+    {
+      "index": 26,
+      "id": "7b621b7e-c499-4561-879e-1770bcf34d04",
+      "title": "Backtesting Chiến Lược Giao Dịch: Hướng Dẫn Toàn Diện Và Những Sai Lầm Cần Tránh",
+      "link_post": "backtesting-chien-luoc-giao-dich-huong-dan-toan-dien-va-nhung-sai-lam-can-tranh",
+      "status": "skipped",
+      "old_content_length": 3075,
+      "new_content_length": 3075
+    },
+    {
+      "index": 27,
+      "id": "3d126ea5-0584-412f-bef4-afc7331c6cdb",
+      "title": "Grid Trading Bot: Chiến Lược Kiếm Tiền Từ Thị Trường Dao Động",
+      "link_post": "grid-trading-bot-chien-luoc-kiem-tien-tu-thi-truong-dao-dong",
+      "status": "skipped",
+      "old_content_length": 2724,
+      "new_content_length": 2724
+    },
+    {
+      "index": 28,
+      "id": "0743ef5e-02f6-44fc-8dd3-4f2621000c3d",
+      "title": "Statistical Arbitrage: Kiếm Lợi Từ Chênh Lệch Giá Bằng Thống Kê",
+      "link_post": "statistical-arbitrage-kiem-loi-tu-chenh-lech-gia-bang-thong-ke",
+      "status": "skipped",
+      "old_content_length": 2165,
+      "new_content_length": 2165
+    },
+    {
+      "index": 29,
+      "id": "c8626a16-32e3-4dd4-af89-4c87163fcc6b",
+      "title": "Thị Trường Chứng Khoán Việt Nam 2025: Cơ Hội Và Thách Thức Sau Nâng Hạng",
+      "link_post": "thi-truong-chung-khoan-viet-nam-2025-co-hoi-va-thach-thuc-sau-nang-hang",
+      "status": "skipped",
+      "old_content_length": 2475,
+      "new_content_length": 2475
+    },
+    {
+      "index": 30,
+      "id": "8187c77b-ae05-4015-96b0-ec87d896ecfe",
+      "title": "Stop Loss và Take Profit: Nghệ Thuật Quản Lý Lệnh Trong Giao Dịch",
+      "link_post": "stop-loss-va-take-profit-nghe-thuat-quan-ly-lenh-trong-giao-dich",
+      "status": "skipped",
+      "old_content_length": 2860,
+      "new_content_length": 2860
+    },
+    {
+      "index": 31,
+      "id": "747dfb00-0877-4eda-acbe-5f49147d5509",
+      "title": "Chiến Lược Đầu Tư Dài Hạn: Xây Dựng Tài Sản Bền Vững Trong 10-20 Năm",
+      "link_post": "chien-luoc-dau-tu-dai-han-xay-dung-tai-san-ben-vung-trong-10-20-nam",
+      "status": "skipped",
+      "old_content_length": 2688,
+      "new_content_length": 2688
+    },
+    {
+      "index": 32,
+      "id": "fdc1c8b4-2845-4e5f-b555-1b32d64aef87",
+      "title": "Quant Trading Là Gì? Hướng Dẫn Toàn Diện Cho Nhà Đầu Tư Việt Nam 2025",
+      "link_post": "quant-trading-la-gi-huong-dan-toan-dien-cho-nha-dau-tu-viet-nam-2025",
+      "status": "skipped",
+      "old_content_length": 4793,
+      "new_content_length": 4793
+    },
+    {
+      "index": 33,
+      "id": "dd05242a-974c-4ccb-a069-fd50adf687cb",
+      "title": "Chứng Chỉ CFA: Hướng Dẫn Toàn Diện Cho Người Việt Nam Muốn Chinh Phục",
+      "link_post": "chung-chi-cfa-huong-dan-toan-dien-cho-nguoi-viet-nam-muon-chinh-phuc",
+      "status": "skipped",
+      "old_content_length": 2581,
+      "new_content_length": 2581
+    },
+    {
+      "index": 34,
+      "id": "712f934e-b927-49f2-949d-2f302e23e31b",
+      "title": "Cổ Phiếu Blue Chip Việt Nam: Top Cổ Phiếu Nền Tảng Cho Danh Mục Dài Hạn",
+      "link_post": "co-phieu-blue-chip-viet-nam-top-co-phieu-nen-tang-cho-danh-muc-dai-han",
+      "status": "skipped",
+      "old_content_length": 2444,
+      "new_content_length": 2444
+    },
+    {
+      "index": 35,
+      "id": "dd431c13-30fa-4ff7-a524-13adb3282e4d",
+      "title": "ETF Việt Nam 2025: Hướng Dẫn Đầu Tư Quỹ Chỉ Số Cho Người Mới Bắt Đầu",
+      "link_post": "etf-viet-nam-2025-huong-dan-dau-tu-quy-chi-so-cho-nguoi-moi-bat-dau",
+      "status": "skipped",
+      "old_content_length": 2239,
+      "new_content_length": 2239
+    },
+    {
+      "index": 36,
+      "id": "3dd67dc1-a259-4eab-8562-f42f529a32a6",
+      "title": "Quản Lý Rủi Ro Trong Quant Trading: Bí Quyết Bảo Vệ Vốn Của Các Hedge Fund",
+      "link_post": "quan-ly-rui-ro-trong-quant-trading-bi-quyet-bao-ve-von-cua-cac-hedge-fund",
+      "status": "skipped",
+      "old_content_length": 2778,
+      "new_content_length": 2778
+    },
+    {
+      "index": 37,
+      "id": "cbc778f2-09b3-498f-934d-d7c920f95372",
+      "title": "Chứng Khoán Phái Sinh Việt Nam: Hướng Dẫn Toàn Diện Cho Trader 2025",
+      "link_post": "chung-khoan-phai-sinh-viet-nam-huong-dan-toan-dien-cho-trader-2025",
+      "status": "skipped",
+      "old_content_length": 2681,
+      "new_content_length": 2681
+    },
+    {
+      "index": 38,
+      "id": "ce92b4aa-90d0-4e0f-b71a-d3ecd51cc26f",
+      "title": "RSI Strategy: Cách Giao Dịch Hiệu Quả Với Chỉ Báo RSI",
+      "link_post": "rsi-strategy-cach-giao-dich-hieu-qua-voi-chi-bao-rsi",
+      "status": "skipped",
+      "old_content_length": 2720,
+      "new_content_length": 2720
+    },
+    {
+      "index": 39,
+      "id": "6dc5e5f3-8c84-4664-8a92-8e4951b28f55",
+      "title": "Crypto Trading Bot Việt Nam: Hướng Dẫn Xây Dựng Bot Giao Dịch Tiền Điện Tử",
+      "link_post": "crypto-trading-bot-viet-nam-huong-dan-xay-dung-bot-giao-dich-tien-dien-tu",
+      "status": "skipped",
+      "old_content_length": 2907,
+      "new_content_length": 2907
+    },
+    {
+      "index": 40,
+      "id": "3b1e5974-130c-42a1-b47d-00259e2f85b7",
+      "title": "Học Làm Bot Autotrading: Hướng Dẫn Từng Bước Từ Zero Đến Có Bot Chạy Thật",
+      "link_post": "hoc-lam-bot-autotrading-huong-dan-tung-buoc-tu-zero-den-co-bot-chay-that",
+      "status": "skipped",
+      "old_content_length": 4826,
+      "new_content_length": 4826
+    },
+    {
+      "index": 41,
+      "id": "c2a2da7e-4439-448d-a2bb-680897b215ef",
+      "title": "Prop Trading Là Gì? Cơ Hội Giao Dịch Bằng Vốn Của Công Ty Với Lợi Nhuận Khủng",
+      "link_post": "prop-trading-la-gi-co-hoi-giao-dich-bang-von-cua-cong-ty-voi-loi-nhuan-khung",
+      "status": "skipped",
+      "old_content_length": 2815,
+      "new_content_length": 2815
+    },
+    {
+      "index": 42,
+      "id": "d27e34d3-f1d8-4482-b5a6-20664f434a8e",
+      "title": "Overfitting Trong Quant Trading: Nguyên Nhân, Nhận Diện Và Cách Phòng Tránh",
+      "link_post": "overfitting-trong-quant-trading-nguyen-nhan-nhan-dien-va-cach-phong-tranh",
+      "status": "skipped",
+      "old_content_length": 2961,
+      "new_content_length": 2961
+    },
+    {
+      "index": 43,
+      "id": "b4f67ffe-9258-400c-b00d-0ecdd686c68f",
+      "title": "Paper Trading Là Gì? Tại Sao Đây Là Bước Bắt Buộc Trước Khi Dùng Tiền Thật",
+      "link_post": "paper-trading-la-gi-tai-sao-day-la-buoc-bat-buoc-truoc-khi-dung-tien-that",
+      "status": "skipped",
+      "old_content_length": 2798,
+      "new_content_length": 2798
+    },
+    {
+      "index": 44,
+      "id": "9a34a9e8-ada1-4691-8931-9a25de8a0ea6",
+      "title": "Portfolio Optimization: Xây Dựng Danh Mục Đầu Tư Tối Ưu Theo Phương Pháp Khoa Học",
+      "link_post": "portfolio-optimization-xay-dung-danh-muc-dau-tu-toi-uu-theo-phuong-phap-khoa-hoc",
+      "status": "skipped",
+      "old_content_length": 2889,
+      "new_content_length": 2889
+    },
+    {
+      "index": 45,
+      "id": "5d466c2d-4b3a-4943-aa6f-a0a694e8b5ee",
+      "title": "DCF — Mô Hình Định Giá Cổ Phiếu Bằng Chiết Khấu Dòng Tiền",
+      "link_post": "dcf-mo-hinh-dinh-gia-co-phieu-bang-chiet-khau-dong-tien",
+      "status": "skipped",
+      "old_content_length": 2830,
+      "new_content_length": 2830
+    },
+    {
+      "index": 46,
+      "id": "406b9551-97c2-4d03-bee5-ff124585c024",
+      "title": "Machine Learning Trong Đầu Tư: Từ Lý Thuyết Đến Chiến Lược Giao Dịch Thực Tế",
+      "link_post": "machine-learning-trong-dau-tu-tu-ly-thuyet-den-chien-luoc-giao-dich-thuc-te",
+      "status": "skipped",
+      "old_content_length": 3055,
+      "new_content_length": 3055
+    },
+    {
+      "index": 47,
+      "id": "746bf7d6-035e-4cf7-ac55-032d1accd94e",
+      "title": "MA Crossover Strategy: Chiến Lược Golden Cross và Death Cross Cho Bot Trading",
+      "link_post": "ma-crossover-strategy-chien-luoc-golden-cross-death-cross-cho-bot-trading",
+      "status": "skipped",
+      "old_content_length": 2900,
+      "new_content_length": 2900
+    },
+    {
+      "index": 48,
+      "id": "fd95ef22-d70a-4c49-a6e0-b67d2e1376b3",
+      "title": "Nhân Viên Phân Tích Định Lượng Là Gì? Cơ Hội Nghề Nghiệp Hot Nhất Tài Chính 2025",
+      "link_post": "nhan-vien-phan-tich-inh-luong-la-gi-co-hoi-nghe-nghiep-hot-nhat-tai-chinh-2025",
+      "status": "skipped",
+      "old_content_length": 5292,
+      "new_content_length": 5292
+    },
+    {
+      "index": 49,
+      "id": "31224f54-0c60-481c-8281-2432be7bf9b6",
+      "title": "Hướng dẫn đọc lệnh tín hiệu chiến lược của đội ngũ QuantVN",
+      "link_post": "huong-dan-oc-lenh-tin-hieu-chien-luoc-cua-oi-ngu-quantvn",
+      "status": "skipped",
+      "old_content_length": 3673,
+      "new_content_length": 3673
+    },
+    {
+      "index": 50,
+      "id": "1ef0b53f-bc77-4fd1-90f1-751727d3460e",
+      "title": "Đầu Tư Giá Trị: Triết Lý Warren Buffett Và Cách Áp Dụng Tại Việt Nam",
+      "link_post": "au-tu-gia-tri-triet-ly-warren-buffett-va-cach-ap-dung-tai-viet-nam",
+      "status": "skipped",
+      "old_content_length": 2805,
+      "new_content_length": 2805
+    },
+    {
+      "index": 51,
+      "id": "2552206f-47b3-4311-8d58-9bbfed5c6ca7",
+      "title": "Mean Reversion: Chiến Lược Hồi Quy Trung Bình Và Cách Áp Dụng Tại Thị Trường VN",
+      "link_post": "mean-reversion-chien-luoc-hoi-quy-trung-binh-va-cach-ap-dung-tai-thi-truong-vn",
+      "status": "skipped",
+      "old_content_length": 2394,
+      "new_content_length": 2394
+    },
+    {
+      "index": 52,
+      "id": "a89fc1b7-2409-4e39-b168-1636f5ab9965",
+      "title": "Momentum Trading: Chiến Lược Giao Dịch Theo Đà Được Kiểm Chứng Qua 100 Năm",
+      "link_post": "momentum-trading-chien-luoc-giao-dich-theo-a-uoc-kiem-chung-qua-100-nam",
+      "status": "skipped",
+      "old_content_length": 2991,
+      "new_content_length": 2991
+    },
+    {
+      "index": 53,
+      "id": "633f3931-8da2-4cff-9e55-53e15574d8fc",
+      "title": "Giao Dịch Forex Cho Người Mới: Nền Tảng Cơ Bản Bạn Cần Biết",
+      "link_post": "giao-dich-forex-cho-nguoi-moi-nen-tang-co-ban-ban-can-biet",
+      "status": "skipped",
+      "old_content_length": 2604,
+      "new_content_length": 2604
+    },
+    {
+      "index": 54,
+      "id": "11dd3151-d99f-439f-b8f5-95079064a28f",
+      "title": "Data Science Trong Tài Chính: Kỹ Năng Hot Nhất Cho Quant Trader 2025",
+      "link_post": "data-science-trong-tai-chinh-ky-nang-hot-nhat-cho-quant-trader-2025",
+      "status": "skipped",
+      "old_content_length": 3136,
+      "new_content_length": 3136
+    },
+    {
+      "index": 55,
+      "id": "fc3ee6cf-9aa6-4799-abda-fd63999cfb03",
+      "title": "Equity Research Là Gì? Cách Viết Báo Cáo Phân Tích Cổ Phiếu Chuyên Nghiệp",
+      "link_post": "equity-research-la-gi-cach-viet-bao-cao-phan-tich-co-phieu-chuyen-nghiep",
+      "status": "skipped",
+      "old_content_length": 3019,
+      "new_content_length": 3019
+    },
+    {
+      "index": 56,
+      "id": "0dc93ff3-f897-4fbe-b5fa-ed4f361969e2",
+      "title": "Bất Động Sản Hay Chứng Khoán? Phân Tích Khoa Học Để Đưa Ra Quyết Định Đúng",
+      "link_post": "bat-ong-san-hay-chung-khoan-phan-tich-khoa-hoc-e-ua-ra-quyet-inh-ung",
+      "status": "skipped",
+      "old_content_length": 2668,
+      "new_content_length": 2668
+    },
+    {
+      "index": 57,
+      "id": "67efe34f-9f2f-48cd-afc9-68fc95c765a9",
+      "title": "Machine learning trading: Hướng dẫn cho người mới học quant",
+      "link_post": "machine-learning-trading",
+      "status": "skipped",
+      "old_content_length": 7618,
+      "new_content_length": 7618
+    },
+    {
+      "index": 58,
+      "id": "02d575dd-caad-4424-97da-315dba72cee5",
+      "title": "AI trading là gì: Hướng dẫn cơ bản và ứng dụng cho người mới",
+      "link_post": "ai-trading-la-gi",
+      "status": "skipped",
+      "old_content_length": 7450,
+      "new_content_length": 7450
+    },
+    {
+      "index": 59,
+      "id": "a50f85b0-0eeb-4402-95e2-139f41194906",
+      "title": "Học quantitative finance: Hướng dẫn cho người mới học quant",
+      "link_post": "hoc-quantitative-finance",
+      "status": "skipped",
+      "old_content_length": 7615,
+      "new_content_length": 7615
+    },
+    {
+      "index": 60,
+      "id": "857e8e11-ff17-45a1-beaf-92f61b10ee2a",
+      "title": "Python cho trading: Hướng dẫn cho người mới học quant",
+      "link_post": "python-cho-trading",
+      "status": "skipped",
+      "old_content_length": 7550,
+      "new_content_length": 7550
+    },
+    {
+      "index": 61,
+      "id": "5e97f10b-52f2-4234-8992-4be7378b9f1b",
+      "title": "Backtest python: Hướng dẫn cơ bản và ứng dụng cho người mới",
+      "link_post": "backtest-python",
+      "status": "skipped",
+      "old_content_length": 7505,
+      "new_content_length": 7505
+    },
+    {
+      "index": 62,
+      "id": "34bd2a59-5e20-4196-ba5c-cd343e61b4e8",
+      "title": "Roadmap quantitative finance: Hướng dẫn cho người mới học quant",
+      "link_post": "roadmap-quantitative-finance",
+      "status": "skipped",
+      "old_content_length": 7675,
+      "new_content_length": 7675
+    },
+    {
+      "index": 63,
+      "id": "9875da4c-752a-41e8-9363-4384cdd59319",
+      "title": "Học quant từ đầu: Hướng dẫn cơ bản và ứng dụng cho người mới",
+      "link_post": "hoc-quant-tu-dau",
+      "status": "skipped",
+      "old_content_length": 7495,
+      "new_content_length": 7495
+    },
+    {
+      "index": 64,
+      "id": "6e1a6948-bf4e-4d02-bbdc-d40e9c315342",
+      "title": "Quant là gì: Hướng dẫn cơ bản và ứng dụng cho người mới",
+      "link_post": "quant-la-gi",
+      "status": "skipped",
+      "old_content_length": 7375,
+      "new_content_length": 7375
+    },
+    {
+      "index": 65,
+      "id": "e9dbddf8-1041-46a9-aa98-f6a829732574",
+      "title": "Quant trader là gì: Hướng dẫn cho người mới học quant",
+      "link_post": "quant-trader-la-gi",
+      "status": "skipped",
+      "old_content_length": 7480,
+      "new_content_length": 7480
+    },
+    {
+      "index": 66,
+      "id": "07385dd2-163e-48b5-b49b-45129a76eff5",
+      "title": "Tài chính định lượng là gì: Hướng dẫn cho người mới học quant",
+      "link_post": "tai-chinh-dinh-luong-la-gi",
+      "status": "skipped",
+      "old_content_length": 7600,
+      "new_content_length": 7600
+    },
+    {
+      "index": 67,
+      "id": "42fdae82-11c0-46ff-9132-d0927ce89185",
+      "title": "Quantitative finance Việt Nam: Hướng dẫn cho người mới học quant",
+      "link_post": "quantitative-finance-viet-nam",
+      "status": "skipped",
+      "old_content_length": 7708,
+      "new_content_length": 7708
+    },
+    {
+      "index": 68,
+      "id": "39b89d0c-45a9-48d8-94d9-81b0701ce2c7",
+      "title": "Drawdown là gì: Hướng dẫn cơ bản và ứng dụng cho người mới",
+      "link_post": "drawdown-la-gi",
+      "status": "skipped",
+      "old_content_length": 7420,
+      "new_content_length": 7420
+    },
+    {
+      "index": 69,
+      "id": "29aa70cf-c6fc-4a4b-b362-32f106ef8b4a",
+      "title": "Dữ liệu chứng khoán miễn phí cho backtest: Hướng dẫn cho người mới học quant",
+      "link_post": "du-lieu-chung-khoan-mien-phi-cho-backtest",
+      "status": "skipped",
+      "old_content_length": 7895,
+      "new_content_length": 7895
+    },
+    {
+      "index": 70,
+      "id": "56099067-138a-4f9d-bf98-214c8f1d3c94",
+      "title": "Alpha beta là gì trong đầu tư: Hướng dẫn cho người mới học quant",
+      "link_post": "alpha-beta-la-gi-trong-dau-tu",
+      "status": "skipped",
+      "old_content_length": 7645,
+      "new_content_length": 7645
+    },
+    {
+      "index": 71,
+      "id": "80b3cba2-af53-4391-85f4-6c636a4052a3",
+      "title": "Cách đọc equity curve: Hướng dẫn cho người mới học quant",
+      "link_post": "cach-doc-equity-curve",
+      "status": "skipped",
+      "old_content_length": 7573,
+      "new_content_length": 7573
+    },
+    {
+      "index": 72,
+      "id": "450621d3-c888-4e03-8435-cb015674851a",
+      "title": "Sharpe ratio là gì: Hướng dẫn cho người mới học quant",
+      "link_post": "sharpe-ratio-la-gi",
+      "status": "skipped",
+      "old_content_length": 7480,
+      "new_content_length": 7480
+    },
+    {
+      "index": 73,
+      "id": "27093645-882f-4644-bb49-cc05b1d4a537",
+      "title": "Volatility là gì trong trading: Hướng dẫn cho người mới học quant",
+      "link_post": "volatility-la-gi-trong-trading",
+      "status": "skipped",
+      "old_content_length": 7660,
+      "new_content_length": 7660
+    },
+    {
+      "index": 74,
+      "id": "83afc129-cdd0-419d-83f4-5b70c76d4dac",
+      "title": "Thuật toán giao dịch là gì: Hướng dẫn cho người mới học quant",
+      "link_post": "thuat-toan-giao-dich-la-gi",
+      "status": "skipped",
+      "old_content_length": 7600,
+      "new_content_length": 7600
+    },
+    {
+      "index": 75,
+      "id": "94e87033-c57c-4265-9bec-9ee65bb1f0f6",
+      "title": "Quantitative analyst là gì: Hướng dẫn cho người mới học quant",
+      "link_post": "quantitative-analyst-la-gi",
+      "status": "skipped",
+      "old_content_length": 7600,
+      "new_content_length": 7600
+    },
+    {
+      "index": 76,
+      "id": "509ae486-d79a-4e68-ad9a-8713281f1608",
+      "title": "Paper trading là gì: Hướng dẫn cho người mới học quant",
+      "link_post": "paper-trading-la-gi",
+      "status": "skipped",
+      "old_content_length": 7495,
+      "new_content_length": 7495
+    },
+    {
+      "index": 77,
+      "id": "e94bb67b-3dfe-4b37-ae90-5782a571ea15",
+      "title": "Machine learning for trading: Hướng dẫn cho người mới học quant",
+      "link_post": "machine-learning-for-trading",
+      "status": "skipped",
+      "old_content_length": 7678,
+      "new_content_length": 7678
+    },
+    {
+      "index": 78,
+      "id": "c7fe9a9c-6218-4211-aa99-2ed421126341",
+      "title": "Pandas cho chứng khoán: Hướng dẫn cho người mới học quant",
+      "link_post": "pandas-cho-chung-khoan",
+      "status": "skipped",
+      "old_content_length": 7610,
+      "new_content_length": 7610
+    },
+    {
+      "index": 79,
+      "id": "b6581ab0-4896-4433-bda1-9b266c39cf91",
+      "title": "Yfinance Python hướng dẫn: Hướng dẫn cho người mới học quant",
+      "link_post": "yfinance-python-huong-dan",
+      "status": "skipped",
+      "old_content_length": 7655,
+      "new_content_length": 7655
+    },
+    {
+      "index": 80,
+      "id": "c01612a5-f8db-4ad6-b91a-b0bc7933f704",
+      "title": "Quant developer: Hướng dẫn cơ bản và ứng dụng cho người mới",
+      "link_post": "quant-developer",
+      "status": "skipped",
+      "old_content_length": 7483,
+      "new_content_length": 7483
+    },
+    {
+      "index": 81,
+      "id": "1893bbcb-f586-41be-a2a1-5f3f317a57a9",
+      "title": "Hedge fund là gì: Hướng dẫn cơ bản và ứng dụng cho người mới",
+      "link_post": "hedge-fund-la-gi",
+      "status": "skipped",
+      "old_content_length": 7450,
+      "new_content_length": 7450
+    },
+    {
+      "index": 82,
+      "id": "ccb8b69f-0d89-472f-a066-8293115c40d4",
+      "title": "Stock prediction AI: Hướng dẫn cho người mới học quant",
+      "link_post": "stock-prediction-ai",
+      "status": "skipped",
+      "old_content_length": 7543,
+      "new_content_length": 7543
+    },
+    {
+      "index": 83,
+      "id": "7ffbdfb8-8dc2-481c-9dbd-0ab914471a21",
+      "title": "Cách cài Python cho trading: Hướng dẫn cho người mới học quant",
+      "link_post": "cach-cai-python-cho-trading",
+      "status": "skipped",
+      "old_content_length": 7685,
+      "new_content_length": 7685
+    },
+    {
+      "index": 84,
+      "id": "a928fe4d-145c-46f4-8290-26e05a4264ca",
+      "title": "Algorithmic trading: Hướng dẫn cho người mới học quant",
+      "link_post": "algorithmic-trading",
+      "status": "skipped",
+      "old_content_length": 7543,
+      "new_content_length": 7543
+    },
+    {
+      "index": 85,
+      "id": "7a3d9b13-82f0-4d17-988a-6a08c6f63388",
+      "title": "Quantitative finance: Hướng dẫn cho người mới học quant",
+      "link_post": "quantitative-finance",
+      "status": "skipped",
+      "old_content_length": 7558,
+      "new_content_length": 7558
+    },
+    {
+      "index": 86,
+      "id": "9ae90d8a-bb97-4c5f-a5fe-60ab1f16b2de",
+      "title": "Statistical arbitrage: Hướng dẫn cho người mới học quant",
+      "link_post": "statistical-arbitrage",
+      "status": "skipped",
+      "old_content_length": 7573,
+      "new_content_length": 7573
+    },
+    {
+      "index": 87,
+      "id": "b635eab5-5297-4c00-8efd-be4f9ffaa460",
+      "title": "Mean reversion: Hướng dẫn cơ bản và ứng dụng cho người mới",
+      "link_post": "mean-reversion",
+      "status": "skipped",
+      "old_content_length": 7468,
+      "new_content_length": 7468
+    },
+    {
+      "index": 88,
+      "id": "e5f7c9be-bc47-4fec-ac8b-f211a7891c64",
+      "title": "Quant interview: Hướng dẫn cơ bản và ứng dụng cho người mới",
+      "link_post": "quant-interview",
+      "status": "skipped",
+      "old_content_length": 7483,
+      "new_content_length": 7483
+    },
+    {
+      "index": 89,
+      "id": "ceac64ef-70a1-449a-932b-31a26b6a9467",
+      "title": "Momentum trading: Hướng dẫn cơ bản và ứng dụng cho người mới",
+      "link_post": "momentum-trading",
+      "status": "skipped",
+      "old_content_length": 7498,
+      "new_content_length": 7498
+    },
+    {
+      "index": 90,
+      "id": "d48263ce-2a33-4e32-bd56-e7e891666610",
+      "title": "Backtesting strategy: Hướng dẫn cho người mới học quant",
+      "link_post": "backtesting-strategy",
+      "status": "skipped",
+      "old_content_length": 7580,
+      "new_content_length": 7580
+    },
+    {
+      "index": 91,
+      "id": "26765628-bf92-432e-a37f-a4ffc5c8f3e9",
+      "title": "Python finance: Hướng dẫn cơ bản và ứng dụng cho người mới",
+      "link_post": "python-finance",
+      "status": "skipped",
+      "old_content_length": 7490,
+      "new_content_length": 7490
+    },
+    {
+      "index": 92,
+      "id": "cfa5665f-8b6c-4932-8997-56cf32498af7",
+      "title": "AI stock trading: Hướng dẫn cơ bản và ứng dụng cho người mới",
+      "link_post": "ai-stock-trading",
+      "status": "skipped",
+      "old_content_length": 7498,
+      "new_content_length": 7498
+    },
+    {
+      "index": 93,
+      "id": "615daa94-aa4d-4585-b522-9b36de0f6ca2",
+      "title": "Reinforcement learning for trading: Hướng dẫn cho người mới học quant",
+      "link_post": "reinforcement-learning-for-trading",
+      "status": "skipped",
+      "old_content_length": 7768,
+      "new_content_length": 7768
+    },
+    {
+      "index": 94,
+      "id": "ca8648b2-c8f5-4223-9540-20ea69b2627c",
+      "title": "Pair trading strategy: Hướng dẫn cho người mới học quant",
+      "link_post": "pair-trading-strategy",
+      "status": "skipped",
+      "old_content_length": 7573,
+      "new_content_length": 7573
+    },
+    {
+      "index": 95,
+      "id": "cc5677c2-c6d0-4c41-8f04-429eb4298f74",
+      "title": "Trading strategy python: Hướng dẫn cho người mới học quant",
+      "link_post": "trading-strategy-python",
+      "status": "skipped",
+      "old_content_length": 7625,
+      "new_content_length": 7625
+    },
+    {
+      "index": 96,
+      "id": "c9ff1979-f23c-48b3-9725-59613d6944a9",
+      "title": "Options pricing Python: Hướng dẫn cho người mới học quant",
+      "link_post": "options-pricing-python",
+      "status": "skipped",
+      "old_content_length": 7610,
+      "new_content_length": 7610
+    },
+    {
+      "index": 97,
+      "id": "51b78111-36e7-4ba9-b66a-de0c37729c5d",
+      "title": "Monte carlo simulation finance: Hướng dẫn cho người mới học quant",
+      "link_post": "monte-carlo-simulation-finance",
+      "status": "skipped",
+      "old_content_length": 7708,
+      "new_content_length": 7708
+    },
+    {
+      "index": 98,
+      "id": "04185aed-6a42-43aa-8524-3f1215eec802",
+      "title": "Walk forward optimization: Hướng dẫn cho người mới học quant",
+      "link_post": "walk-forward-optimization",
+      "status": "skipped",
+      "old_content_length": 7633,
+      "new_content_length": 7633
+    },
+    {
+      "index": 99,
+      "id": "fa1a1255-9f4f-4c79-a98c-c6239f73672e",
+      "title": "Value at risk là gì: Hướng dẫn cho người mới học quant",
+      "link_post": "value-at-risk-la-gi",
+      "status": "skipped",
+      "old_content_length": 7495,
+      "new_content_length": 7495
+    },
+    {
+      "index": 100,
+      "id": "833656cb-67c4-41e1-8f28-64db3ee95610",
+      "title": "Portfolio optimization Python: Hướng dẫn cho người mới học quant",
+      "link_post": "portfolio-optimization-python",
+      "status": "skipped",
+      "old_content_length": 7715,
+      "new_content_length": 7715
+    },
+    {
+      "index": 101,
+      "id": "37865e5f-18a8-4e79-a102-c6f6a35743b3",
+      "title": "Factor investing: Hướng dẫn cơ bản và ứng dụng cho người mới",
+      "link_post": "factor-investing",
+      "status": "skipped",
+      "old_content_length": 7498,
+      "new_content_length": 7498
+    },
+    {
+      "index": 102,
+      "id": "57a5ee7e-8746-47a7-ae7f-1abe6fba68f9",
+      "title": "Market regime detection: Hướng dẫn cho người mới học quant",
+      "link_post": "market-regime-detection",
+      "status": "skipped",
+      "old_content_length": 7603,
+      "new_content_length": 7603
+    },
+    {
+      "index": 103,
+      "id": "e164909c-904b-454a-b0bc-81e35b8bdb0a",
+      "title": "Feature engineering cho trading: Hướng dẫn cho người mới học quant",
+      "link_post": "feature-engineering-cho-trading",
+      "status": "skipped",
+      "old_content_length": 7723,
+      "new_content_length": 7723
+    },
+    {
+      "index": 104,
+      "id": "2d0dd7ec-fedd-4f36-a210-5ac959dc1d27",
+      "title": "Quản trị rủi ro danh mục định lượng: Hướng dẫn cho người mới học quant",
+      "link_post": "quan-tri-rui-ro-danh-muc-dinh-luong",
+      "status": "skipped",
+      "old_content_length": 7783,
+      "new_content_length": 7783
+    },
+    {
+      "index": 105,
+      "id": "2e5aa9d4-5e1b-40ae-882c-763a5f2d1c9e",
+      "title": "Event-driven backtesting: Hướng dẫn cho người mới học quant",
+      "link_post": "event-driven-backtesting",
+      "status": "skipped",
+      "old_content_length": 7640,
+      "new_content_length": 7640
+    },
+    {
+      "index": 106,
+      "id": "04043ca8-db6a-40e7-8db9-55ab2cd33515",
+      "title": "Sentiment analysis chứng khoán: Hướng dẫn cho người mới học quant",
+      "link_post": "sentiment-analysis-chung-khoan",
+      "status": "skipped",
+      "old_content_length": 7708,
+      "new_content_length": 7708
+    },
+    {
+      "index": 107,
+      "id": "68ceca17-1798-464c-8e33-0b32c398e398",
+      "title": "Time series forecasting cho chứng khoán: Hướng dẫn cho người mới học quant",
+      "link_post": "time-series-forecasting-cho-chung-khoan",
+      "status": "skipped",
+      "old_content_length": 7843,
+      "new_content_length": 7843
+    },
+    {
+      "index": 108,
+      "id": "1a453693-b5a3-465e-a7d3-13ad5296ef5e",
+      "title": "Risk parity strategy: Hướng dẫn cho người mới học quant",
+      "link_post": "risk-parity-strategy",
+      "status": "skipped",
+      "old_content_length": 7558,
+      "new_content_length": 7558
+    },
+    {
+      "index": 109,
+      "id": "14a3dce5-7f88-434f-b220-db112fe340de",
+      "title": "Data pipeline cho trading bot: Hướng dẫn cho người mới học quant",
+      "link_post": "data-pipeline-cho-trading-bot",
+      "status": "skipped",
+      "old_content_length": 7715,
+      "new_content_length": 7715
+    },
+    {
+      "index": 110,
+      "id": "e5c24c0f-2adc-4b95-871f-4120ae084293",
+      "title": "Khóa học quantitative finance: Hướng dẫn cho người mới học quant",
+      "link_post": "khoa-hoc-quantitative-finance",
+      "status": "skipped",
+      "old_content_length": 7690,
+      "new_content_length": 7690
+    },
+    {
+      "index": 111,
+      "id": "c3b66d1f-b907-40da-86b7-2c270476c4c7",
+      "title": "Lương quant trader: Hướng dẫn cho người mới học quant",
+      "link_post": "luong-quant-trader",
+      "status": "skipped",
+      "old_content_length": 7528,
+      "new_content_length": 7528
+    },
+    {
+      "index": 112,
+      "id": "81f28e37-9225-4b6c-8e89-5ba788605af8",
+      "title": "Quant roadmap Việt Nam: Hướng dẫn cho người mới học quant",
+      "link_post": "quant-roadmap-viet-nam",
+      "status": "skipped",
+      "old_content_length": 7585,
+      "new_content_length": 7585
+    },
+    {
+      "index": 113,
+      "id": "614f5201-39a9-482c-9340-c91a9abdf2bb",
+      "title": "Quant intern: Hướng dẫn cơ bản và ứng dụng cho người mới",
+      "link_post": "quant-intern",
+      "status": "skipped",
+      "old_content_length": 7438,
+      "new_content_length": 7438
+    },
+    {
+      "index": 114,
+      "id": "863ccade-1aef-42ec-b1a6-56d535cd7995",
+      "title": "Portfolio quant project: Hướng dẫn cho người mới học quant",
+      "link_post": "portfolio-quant-project",
+      "status": "skipped",
+      "old_content_length": 7603,
+      "new_content_length": 7603
+    },
+    {
+      "index": 115,
+      "id": "95117ae5-689c-42b7-b766-9c7f14672ffd",
+      "title": "Quantitative finance course VN: Hướng dẫn cho người mới học quant",
+      "link_post": "quantitative-finance-course-vn",
+      "status": "skipped",
+      "old_content_length": 7708,
+      "new_content_length": 7708
+    },
+    {
+      "index": 116,
+      "id": "8d4153d4-d23b-4d2a-a253-b9653140671c",
+      "title": "Học Python cho chứng khoán: Hướng dẫn cho người mới học quant",
+      "link_post": "hoc-python-cho-chung-khoan",
+      "status": "skipped",
+      "old_content_length": 7670,
+      "new_content_length": 7670
+    },
+    {
+      "index": 117,
+      "id": "ade6159a-e27a-4f9d-ab94-a3cb4c14d39e",
+      "title": "CV quant intern: Hướng dẫn cơ bản và ứng dụng cho người mới",
+      "link_post": "cv-quant-intern",
+      "status": "skipped",
+      "old_content_length": 7483,
+      "new_content_length": 7483
+    },
+    {
+      "index": 118,
+      "id": "4ccf96f7-c64f-4e3b-9dd8-0cae901a18aa",
+      "title": "GitHub quant project: Hướng dẫn cho người mới học quant",
+      "link_post": "github-quant-project",
+      "status": "skipped",
+      "old_content_length": 7558,
+      "new_content_length": 7558
+    },
+    {
+      "index": 119,
+      "id": "f64189cf-cb02-4145-9cf7-fbc07c8e3b51",
+      "title": "Học algorithmic trading online: Hướng dẫn cho người mới học quant",
+      "link_post": "hoc-algorithmic-trading-online",
+      "status": "skipped",
+      "old_content_length": 7705,
+      "new_content_length": 7705
+    },
+    {
+      "index": 120,
+      "id": "55cc8f91-439d-4d5a-a7bb-7095381548ab",
+      "title": "Quant trader roadmap: Hướng dẫn cho người mới học quant",
+      "link_post": "quant-trader-roadmap",
+      "status": "skipped",
+      "old_content_length": 7555,
+      "new_content_length": 7555
+    },
+    {
+      "index": 121,
+      "id": "b33612c7-b688-4dae-8ca8-7b5c3c28bcf9",
+      "title": "Cách trở thành quant trader: Hướng dẫn cho người mới học quant",
+      "link_post": "cach-tro-thanh-quant-trader",
+      "status": "skipped",
+      "old_content_length": 7663,
+      "new_content_length": 7663
+    },
+    {
+      "index": 122,
+      "id": "b0059588-6013-4e8a-87e6-9d9221ce68b0",
+      "title": "Học AI trading: Hướng dẫn cơ bản và ứng dụng cho người mới",
+      "link_post": "hoc-ai-trading",
+      "status": "skipped",
+      "old_content_length": 7465,
+      "new_content_length": 7465
+    },
+    {
+      "index": 123,
+      "id": "f17e8893-b40e-4f16-a654-972bc1fa46a5",
+      "title": "Mentor quantitative finance Việt Nam: Hướng dẫn cho người mới học quant",
+      "link_post": "mentor-quantitative-finance-viet-nam",
+      "status": "skipped",
+      "old_content_length": 7813,
+      "new_content_length": 7813
+    },
+    {
+      "index": 124,
+      "id": "da3b2302-cf74-46de-a9de-ad880294ae84",
+      "title": "Cộng đồng quant Việt Nam: Hướng dẫn cho người mới học quant",
+      "link_post": "cong-dong-quant-viet-nam",
+      "status": "skipped",
+      "old_content_length": 7633,
+      "new_content_length": 7633
+    },
+    {
+      "index": 125,
+      "id": "e4812b97-85ed-482b-b2b8-c20fa4c48964",
+      "title": "Lộ trình học quant 6 tháng: Hướng dẫn cho người mới học quant",
+      "link_post": "lo-trinh-hoc-quant-6-thang",
+      "status": "skipped",
+      "old_content_length": 7645,
+      "new_content_length": 7645
+    },
+    {
+      "index": 126,
+      "id": "2c370ecb-ed08-4146-b018-3f1d5d1c4d9f",
+      "title": "Học machine learning cho trading: Hướng dẫn cho người mới học quant",
+      "link_post": "hoc-machine-learning-cho-trading",
+      "status": "skipped",
+      "old_content_length": 7735,
+      "new_content_length": 7735
+    },
+    {
+      "index": 127,
+      "id": "2afcd054-0574-42ac-ba45-d3512f86eb3b",
+      "title": "Chứng chỉ cho quant trader: Hướng dẫn cho người mới học quant",
+      "link_post": "chung-chi-cho-quant-trader",
+      "status": "skipped",
+      "old_content_length": 7648,
+      "new_content_length": 7648
+    },
+    {
+      "index": 128,
+      "id": "4e2ff6d9-a3b4-4bc8-a986-71b8c7b44ea4",
+      "title": "Thực tập quantitative analyst: Hướng dẫn cho người mới học quant",
+      "link_post": "thuc-tap-quantitative-analyst",
+      "status": "skipped",
+      "old_content_length": 7693,
+      "new_content_length": 7693
+    },
+    {
+      "index": 129,
+      "id": "7d070f1e-e45a-43b6-945c-cafab4536afa",
+      "title": "Roadmap từ data analyst sang quant: Hướng dẫn cho người mới học quant",
+      "link_post": "roadmap-tu-data-analyst-sang-quant",
+      "status": "skipped",
+      "old_content_length": 7765,
+      "new_content_length": 7765
+    },
+    {
+      "index": 130,
+      "id": "be52fe97-2e44-4afb-82dc-5adb787c3fb0",
+      "title": "Market microstructure: Hướng dẫn cho người mới học quant",
+      "link_post": "market-microstructure",
+      "status": "skipped",
+      "old_content_length": 7573,
+      "new_content_length": 7573
+    },
+    {
+      "index": 131,
+      "id": "47b1b138-bae7-40a4-b62e-d352126ae705",
+      "title": "Học quant online bằng tiếng Việt: Hướng dẫn cho người mới học quant",
+      "link_post": "hoc-quant-online-bang-tieng-viet",
+      "status": "skipped",
+      "old_content_length": 7735,
+      "new_content_length": 7735
+    },
+    {
+      "index": 132,
+      "id": "48085fb9-dd37-465f-a75a-5db96ff11f6e",
+      "title": "Mẫu CV quantitative analyst: Hướng dẫn cho người mới học quant",
+      "link_post": "mau-cv-quantitative-analyst",
+      "status": "skipped",
+      "old_content_length": 7663,
+      "new_content_length": 7663
+    },
+    {
+      "index": 133,
+      "id": "7dbaad4d-5c77-41e3-9b05-cbfb3ed7f405",
+      "title": "Bộ câu hỏi quant interview Python: Hướng dẫn cho người mới học quant",
+      "link_post": "bo-cau-hoi-quant-interview-python",
+      "status": "skipped",
+      "old_content_length": 7775,
+      "new_content_length": 7775
+    },
+    {
+      "index": 134,
+      "id": "19ede518-e25b-49db-af96-d339dda682d7",
+      "title": "Self-study quantitative finance cho sinh viên: Hướng dẫn cho người mới học quant",
+      "link_post": "self-study-quantitative-finance-cho-sinh-vien",
+      "status": "skipped",
+      "old_content_length": 7933,
+      "new_content_length": 7933
+    },
+    {
+      "index": 135,
+      "id": "a30bb1f0-3ffd-477e-8045-0685b3805079",
+      "title": "Portfolio cho quant intern cần gì: Hướng dẫn cho người mới học quant",
+      "link_post": "portfolio-cho-quant-intern-can-gi",
+      "status": "skipped",
+      "old_content_length": 7753,
+      "new_content_length": 7753
+    },
+    {
+      "index": 136,
+      "id": "3a6ce516-ff2d-4d39-ad4a-4422a6c54c0e",
+      "title": "Luyện đề interview quant intern: Hướng dẫn cho người mới học quant",
+      "link_post": "luyen-de-interview-quant-intern",
+      "status": "skipped",
+      "old_content_length": 7723,
+      "new_content_length": 7723
+    },
+    {
+      "index": 137,
+      "id": "1f2a5254-eb75-4787-8ab0-8f96bdf6abcb",
+      "title": "Latency arbitrage: Hướng dẫn cho người mới học quant",
+      "link_post": "latency-arbitrage",
+      "status": "skipped",
+      "old_content_length": 7513,
+      "new_content_length": 7513
+    },
+    {
+      "index": 138,
+      "id": "dc0ddf98-2973-4b1f-8ba6-a99f25da5d20",
+      "title": "Orderbook imbalance: Hướng dẫn cho người mới học quant",
+      "link_post": "orderbook-imbalance",
+      "status": "skipped",
+      "old_content_length": 7543,
+      "new_content_length": 7543
+    },
+    {
+      "index": 139,
+      "id": "f6eef56a-27cc-4260-8974-cfc3072f41ce",
+      "title": "Học thống kê cho trading: Hướng dẫn cho người mới học quant",
+      "link_post": "hoc-thong-ke-cho-trading",
+      "status": "skipped",
+      "old_content_length": 7615,
+      "new_content_length": 7615
+    },
+    {
+      "index": 140,
+      "id": "62fa0c01-af20-42e6-b85a-c38330ec3717",
+      "title": "Bootcamp quantitative finance: Hướng dẫn cho người mới học quant",
+      "link_post": "bootcamp-quantitative-finance",
+      "status": "skipped",
+      "old_content_length": 7693,
+      "new_content_length": 7693
+    },
+    {
+      "index": 141,
+      "id": "b41a0938-1492-495f-96d2-95d239536d86",
+      "title": "Transformer time series forecasting: Hướng dẫn cho người mới học quant",
+      "link_post": "transformer-time-series-forecasting",
+      "status": "skipped",
+      "old_content_length": 7783,
+      "new_content_length": 7783
+    },
+    {
+      "index": 142,
+      "id": "d88ba80c-49ae-4f14-8fad-fe385694454f",
+      "title": "Khóa học backtest Python: Hướng dẫn cho người mới học quant",
+      "link_post": "khoa-hoc-backtest-python",
+      "status": "skipped",
+      "old_content_length": 7640,
+      "new_content_length": 7640
+    },
+    {
+      "index": 143,
+      "id": "55c804b8-f406-4519-b4c7-c762adbd9b39",
+      "title": "High frequency trading: Hướng dẫn cho người mới học quant",
+      "link_post": "high-frequency-trading",
+      "status": "skipped",
+      "old_content_length": 7588,
+      "new_content_length": 7588
+    },
+    {
+      "index": 144,
+      "id": "384b1bc9-42e0-45c6-b487-a93aba01e9c1",
+      "title": "Reinforcement learning trading research: Hướng dẫn cho người mới học quant",
+      "link_post": "reinforcement-learning-trading-research",
+      "status": "skipped",
+      "old_content_length": 7843,
+      "new_content_length": 7843
+    },
+    {
+      "index": 145,
+      "id": "6e00fe1a-a344-4dab-b3d9-82e989902a41",
+      "title": "Thuật toán execution TWAP và VWAP: Hướng dẫn cho người mới học quant",
+      "link_post": "thuat-toan-execution-twap-va-vwap",
+      "status": "skipped",
+      "old_content_length": 7753,
+      "new_content_length": 7753
+    },
+    {
+      "index": 146,
+      "id": "4f356a60-5138-4e5b-b656-d65ceada776c",
+      "title": "Bayesian portfolio optimization: Hướng dẫn cho người mới học quant",
+      "link_post": "bayesian-portfolio-optimization",
+      "status": "skipped",
+      "old_content_length": 7723,
+      "new_content_length": 7723
+    },
+    {
+      "index": 147,
+      "id": "1488f505-567a-4eee-aa3c-0b5e098f9f5a",
+      "title": "Factor investing Python: Hướng dẫn cho người mới học quant",
+      "link_post": "factor-investing-python",
+      "status": "skipped",
+      "old_content_length": 7625,
+      "new_content_length": 7625
+    },
+    {
+      "index": 148,
+      "id": "ac33c050-aaac-4563-b93d-3f5bf1f5359c",
+      "title": "PCA trading: Hướng dẫn cơ bản và ứng dụng cho người mới",
+      "link_post": "pca-trading",
+      "status": "skipped",
+      "old_content_length": 7423,
+      "new_content_length": 7423
+    },
+    {
+      "index": 149,
+      "id": "64ae71bf-898b-44f1-baa5-cb1a603013fb",
+      "title": "Cointegration cho pair trading: Hướng dẫn cho người mới học quant",
+      "link_post": "cointegration-cho-pair-trading",
+      "status": "skipped",
+      "old_content_length": 7708,
+      "new_content_length": 7708
+    },
+    {
+      "index": 150,
+      "id": "315ce0e5-a24b-49dc-bfe0-ca591a942e86",
+      "title": "Mô hình slippage trong backtest",
+      "link_post": "mo-hinh-slippage-trong-backtest",
+      "status": "skipped",
+      "old_content_length": 7745,
+      "new_content_length": 7745
+    },
+    {
+      "index": 151,
+      "id": "d6d1f509-77a3-4c6a-a81a-25260c2c3b6a",
+      "title": "LLM finance",
+      "link_post": "llm-finance",
+      "status": "skipped",
+      "old_content_length": 7423,
+      "new_content_length": 7423
+    },
+    {
+      "index": 152,
+      "id": "6f68ba04-3e22-4ec6-9582-d9e040b79c59",
+      "title": "Algorithmic trading là gì",
+      "link_post": "algorithmic-trading-la-gi",
+      "status": "skipped",
+      "old_content_length": 7585,
+      "new_content_length": 7585
+    },
+    {
+      "index": 153,
+      "id": "da328208-f3f1-4ade-9b26-e9edbe9ee78b",
+      "title": "Bot trading python",
+      "link_post": "bot-trading-python",
+      "status": "skipped",
+      "old_content_length": 7550,
+      "new_content_length": 7550
+    },
+    {
+      "index": 154,
+      "id": "49a6d3c8-854f-4b66-b0f5-f595ff6a0b1f",
+      "title": "Stochastic calculus finance",
+      "link_post": "stochastic-calculus-finance",
+      "status": "skipped",
+      "old_content_length": 7663,
+      "new_content_length": 7663
+    },
+    {
+      "index": 155,
+      "id": "be9717ea-5aee-49a5-94c8-0392d669e5ef",
+      "title": "Kalman filter trong trading",
+      "link_post": "kalman-filter-trong-trading",
+      "status": "skipped",
+      "old_content_length": 7663,
+      "new_content_length": 7663
+    },
+    {
+      "index": 156,
+      "id": "d45612c3-bd49-4d87-ab84-9f5b58291510",
+      "title": "Community Discord cho người học quant",
+      "link_post": "community-discord-cho-nguoi-hoc-quant",
+      "status": "skipped",
+      "old_content_length": 7810,
+      "new_content_length": 7810
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "source": "admin/scripts/bulk_retry_remaining_3.json",
+  "base_url": "https://be.quantvn.com",
+  "total": 3,
+  "success": 1,
+  "failed": 2,
+  "results": [
+    {
+      "index": 1,
+      "id": "67efe34f-9f2f-48cd-afc9-68fc95c765a9",
+      "title": "Machine learning trading: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "google/gemini-2.5-flash-image",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 2,
+      "id": "6f68ba04-3e22-4ec6-9582-d9e040b79c59",
+      "title": "Algorithmic trading là gì: Hướng dẫn cho người mới học quant",
+      "status": "failed",
+      "error": "402 Insufficient credits. Add more using https://openrouter.ai/settings/credits"
+    },
+    {
+      "index": 3,
+      "id": "da328208-f3f1-4ade-9b26-e9edbe9ee78b",
+      "title": "Bot trading python: Hướng dẫn cho người mới học quant",
+      "status": "failed",
+      "error": "402 Insufficient credits. Add more using https://openrouter.ai/settings/credits"
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "source": "api:/blog/admin/blogs",
+  "base_url": "https://be.quantvn.com",
+  "total": 3,
+  "success": 3,
+  "failed": 0,
+  "results": [
+    {
+      "index": 1,
+      "id": "d6d1f509-77a3-4c6a-a81a-25260c2c3b6a",
+      "title": "LLM finance: Hướng dẫn cơ bản và ứng dụng cho người mới",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 2,
+      "id": "315ce0e5-a24b-49dc-bfe0-ca591a942e86",
+      "title": "Mô hình slippage trong backtest",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    },
+    {
+      "index": 3,
+      "id": "49a6d3c8-854f-4b66-b0f5-f595ff6a0b1f",
+      "title": "Stochastic calculus finance: Hướng dẫn cho người mới học quant",
+      "status": "updated",
+      "model": "openai/gpt-5-image-mini",
+      "image_mime": "image/png"
+    }
+  ]
+}

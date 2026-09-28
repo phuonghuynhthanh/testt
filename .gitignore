@@ -1,0 +1,46 @@
+# Local environment files
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# Python virtual environments
+venv/
+.venv/
+env/
+
+# Dependency and build output directories
+node_modules/
+dist/
+dist-ssr/
+build/
+
+# Logs and temporary files
+logs/
+*.log
+tmp_*.html
+
+# TypeScript incremental build artifacts
+*.tsbuildinfo
+
+# OS and editor files
+.DS_Store
+.cursor/
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Tài liệu bàn giao ở gốc repo — tạm thời không commit
+# (dấu / đầu neo vào thư mục gốc, không ảnh hưởng affiliate/docs/)
+/docs/
+
+# Local MCP temporary files
+.playwright-mcp/
+
+# Local planning and scratchpad files
+PLAN_*.md

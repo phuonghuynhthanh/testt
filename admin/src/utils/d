@@ -1,0 +1,953 @@
+# Mục tiêu bài học
+
+Sau buổi học này, học viên có thể:
+
+* Hiểu cấu trúc và cơ chế hoạt động cơ bản của thị trường chứng khoán Việt Nam.
+* Phân biệt các sàn giao dịch, chỉ số thị trường và các loại phiên giao dịch quan trọng.
+* Nhận biết sự khác nhau giữa cổ phiếu cơ sở, hợp đồng tương lai chỉ số VN30 và chứng quyền có bảo đảm.
+* Hiểu cách giao dịch hai chiều, cơ chế ký quỹ và rủi ro đòn bẩy của hợp đồng tương lai VN30.
+* Hiểu đặc điểm của chứng quyền mua trên cổ phiếu và lý do sản phẩm này mang tính một chiều tăng giá.
+* Đọc và diễn giải dữ liệu OHLCV trên biểu đồ nến Nhật.
+* Hiểu ý nghĩa của các chỉ số tài chính phổ biến được sử dụng trong phân tích doanh nghiệp.
+* Nắm được các khái niệm thống kê cơ bản làm nền tảng cho phân tích định lượng và xây dựng chiến lược giao dịch.
+
+## 2.1 Thị trường Chứng khoán Việt Nam
+
+Thị trường chứng khoán là nơi diễn ra hoạt động mua bán các loại chứng khoán như cổ phiếu, chứng chỉ quỹ, trái phiếu và các sản phẩm phái sinh. Đối với nhà đầu tư định lượng, việc hiểu cấu trúc thị trường là điều cần thiết trước khi tiến hành thu thập và phân tích dữ liệu.
+
+![Thị trường Chứng khoán Việt Nam](https://premedia.vneconomy.vn/files/uploads/2026/02/01/037e8a8ec5694fbfab9f3cad8da3f52f-67305.png)
+
+### Các sàn giao dịch
+
+Tại Việt Nam hiện nay, cổ phiếu được giao dịch chủ yếu trên ba hệ thống:
+
+#### HOSE (Ho Chi Minh Stock Exchange)
+
+* Là sàn giao dịch chứng khoán lớn nhất Việt Nam.
+* Tập trung phần lớn các doanh nghiệp có vốn hóa lớn và thanh khoản cao.
+* Nhiều cổ phiếu thuộc VN30 được niêm yết trên HOSE.
+* Đây là nguồn dữ liệu phổ biến trong các nghiên cứu định lượng tại Việt Nam.
+
+Ví dụ: FPT, VCB, HPG, MWG, VNM.
+
+#### HNX (Hanoi Stock Exchange)
+
+* Là sàn giao dịch chứng khoán đặt tại Hà Nội.
+* Bao gồm nhiều doanh nghiệp có quy mô vừa và nhỏ hơn so với nhóm doanh nghiệp lớn trên HOSE.
+* Đồng thời tổ chức thị trường giao dịch trái phiếu chính phủ và chứng khoán phái sinh.
+
+Ví dụ: SHS, PVS, IDC.
+
+#### UPCoM (Unlisted Public Company Market)
+
+* Là thị trường dành cho các công ty đại chúng chưa niêm yết trên HOSE hoặc HNX.
+* Điều kiện đăng ký giao dịch khác với điều kiện niêm yết trên hai sàn chính thức.
+* Chất lượng doanh nghiệp, thanh khoản và mức độ minh bạch có sự khác biệt đáng kể giữa các công ty.
+
+Ví dụ: ACV, BSR, VEA.
+
+> Không phải mọi cổ phiếu trên UPCoM đều có thanh khoản cao. Khi xây dựng chiến lược giao dịch định lượng, thanh khoản thường là một tiêu chí lọc quan trọng trước khi lựa chọn cổ phiếu.
+
+### Chỉ số thị trường
+
+Chỉ số thị trường phản ánh diễn biến của một nhóm cổ phiếu đại diện cho toàn bộ hoặc một phần thị trường.
+
+#### VN-Index
+
+VN-Index là chỉ số phản ánh biến động giá của các cổ phiếu đang niêm yết trên HOSE và được tính theo phương pháp vốn hóa thị trường.
+
+VN-Index thường được sử dụng để:
+
+* Đánh giá xu hướng chung của thị trường.
+* So sánh hiệu suất danh mục đầu tư.
+* Làm benchmark cho các chiến lược giao dịch.
+
+#### VN30
+
+VN30 bao gồm 30 cổ phiếu được lựa chọn từ HOSE dựa trên các tiêu chí về vốn hóa, thanh khoản và tỷ lệ cổ phiếu tự do chuyển nhượng.
+
+VN30 có vai trò quan trọng vì:
+
+* Đại diện cho nhóm cổ phiếu vốn hóa lớn và có thanh khoản cao trên HOSE.
+* Là chỉ số cơ sở của hợp đồng tương lai VN30.
+* Thường được sử dụng làm tập cổ phiếu nghiên cứu trong các chiến lược định lượng.
+
+Các chiến lược định lượng thường ưu tiên nhóm VN30 do:
+
+* Thanh khoản tương đối tốt.
+* Chênh lệch giá mua và giá bán thường thấp hơn nhóm cổ phiếu kém thanh khoản.
+* Dữ liệu giao dịch thường ổn định hơn nhóm cổ phiếu vốn hóa nhỏ.
+
+#### HNX30
+
+HNX30 bao gồm 30 cổ phiếu có quy mô và thanh khoản hàng đầu trên HNX. Mặc dù ít được sử dụng hơn VN30 trong nghiên cứu định lượng, HNX30 vẫn là chỉ số tham chiếu quan trọng đối với các cổ phiếu niêm yết trên HNX.
+
+### Giờ giao dịch và các phiên đặc biệt
+
+Hiểu đúng cấu trúc phiên giao dịch giúp giải thích chính xác dữ liệu giá mở cửa và đóng cửa.
+
+#### Phiên ATO (At The Open)
+
+* Diễn ra đầu ngày giao dịch và được sử dụng để xác định giá mở cửa.
+* Nhà đầu tư đặt lệnh ATO mà không nhập mức giá cụ thể.
+* Lệnh được ưu tiên khớp tại mức giá mở cửa do hệ thống xác định theo nguyên tắc khớp lệnh định kỳ.
+
+$$
+\text{Open} = \text{Giá khớp lệnh mở cửa}
+$$
+
+#### Phiên liên tục
+
+Là giai đoạn diễn ra phần lớn giao dịch trong ngày. Lệnh được khớp liên tục theo nguyên tắc ưu tiên giá và thời gian, và giá cổ phiếu thay đổi theo cung cầu thị trường. Phần lớn dữ liệu intraday được tạo ra trong giai đoạn này.
+
+#### Phiên ATC (At The Close)
+
+* Diễn ra cuối ngày giao dịch và được sử dụng để xác định giá đóng cửa.
+* Nhà đầu tư đặt lệnh ATC mà không nhập mức giá cụ thể.
+* Giá đóng cửa thường được sử dụng trong phân tích kỹ thuật và backtest.
+
+$$
+\text{Close} = \text{Giá khớp lệnh đóng cửa}
+$$
+
+> Trong nhiều nghiên cứu định lượng, giá đóng cửa được sử dụng làm mức giá chuẩn để tính lợi nhuận, Moving Average và các chỉ báo kỹ thuật khác. Tuy nhiên, cần kiểm tra dữ liệu đã được điều chỉnh cho cổ tức, thưởng cổ phiếu và chia tách cổ phiếu hay chưa.
+
+## 2.2 Các Sản phẩm Giao dịch trên Thị trường Chứng khoán Việt Nam
+
+Bên cạnh cổ phiếu cơ sở, thị trường chứng khoán Việt Nam còn có các sản phẩm như hợp đồng tương lai chỉ số và chứng quyền có bảo đảm. Mỗi sản phẩm có cơ chế giao dịch, mức độ đòn bẩy và rủi ro khác nhau.
+
+Việc phân biệt đúng các sản phẩm này giúp tránh nhầm lẫn giữa:
+
+* Chỉ số VN30.
+* Hợp đồng tương lai dựa trên chỉ số VN30.
+* Chứng quyền có tài sản cơ sở là cổ phiếu.
+* Hợp đồng quyền chọn theo nghĩa chung trên thị trường tài chính.
+
+### Cổ phiếu cơ sở
+
+Khi mua cổ phiếu cơ sở, nhà đầu tư trở thành cổ đông của doanh nghiệp và có thể được hưởng các quyền liên quan như nhận cổ tức, tham dự đại hội cổ đông hoặc nhận quyền mua cổ phiếu phát hành thêm, tùy theo loại cổ phiếu và quy định của doanh nghiệp.
+
+Lợi nhuận của nhà đầu tư thường đến từ:
+
+* Chênh lệch giữa giá bán và giá mua.
+* Cổ tức bằng tiền hoặc cổ phiếu.
+* Các quyền lợi khác phát sinh từ việc sở hữu cổ phiếu.
+
+Trong giao dịch thông thường, nhà đầu tư mua cổ phiếu khi kỳ vọng giá tăng. Việc hưởng lợi trực tiếp khi giá cổ phiếu giảm bị hạn chế hơn so với thị trường phái sinh.
+
+### Hợp đồng tương lai chỉ số VN30
+
+Hợp đồng tương lai chỉ số VN30 là sản phẩm phái sinh có tài sản cơ sở là chỉ số VN30. Nhà đầu tư giao dịch dựa trên kỳ vọng về mức giá của chỉ số VN30 trong tương lai mà không trực tiếp sở hữu toàn bộ các cổ phiếu thành phần của chỉ số.
+
+Hợp đồng tương lai có thời hạn xác định. Tại một thời điểm, thị trường thường có nhiều hợp đồng với các tháng đáo hạn khác nhau.
+
+#### VN30F1M và cách đọc mã hợp đồng
+
+Trên nhiều bảng giá, `VN30F1M` được sử dụng để chỉ hợp đồng tương lai VN30 có tháng đáo hạn gần nhất. Đây là ký hiệu quy ước trên bảng giá, không phải một mã hợp đồng cố định tồn tại vĩnh viễn.
+
+Mã hợp đồng cụ thể thường có dạng:
+
+```text
+VN30FYYMM
+
+Trong đó:
+
+VN30: chỉ số cơ sở.
+F: Futures, tức hợp đồng tương lai.
+YY: hai chữ số cuối của năm đáo hạn.
+MM: tháng đáo hạn.
+
+Ví dụ:
+
+VN30F2606
+
+Mã trên thể hiện hợp đồng tương lai VN30 đáo hạn vào tháng 6 năm 2026.
+
+Khi hợp đồng gần nhất đáo hạn, ký hiệu VN30F1M trên bảng giá sẽ chuyển sang đại diện cho hợp đồng gần nhất tiếp theo. Vì vậy, khi lưu trữ dữ liệu, cần sử dụng mã hợp đồng cụ thể thay vì chỉ dùng nhãn VN30F1M.
+
+Quy mô và giá trị danh nghĩa của hợp đồng
+
+Hợp đồng tương lai VN30 có hệ số nhân:
+
+100,000 đ
+o
+ˆ
+ˋ
+ng/điểm chỉ s
+o
+ˆ
+ˊ
+
+Giá trị danh nghĩa của một hợp đồng được tính bằng:
+
+Gi
+a
+ˊ
+ trị danh ngh
+ı
+˜
+a=Gi
+a
+ˊ
+ hợp đ
+o
+ˆ
+ˋ
+ng×100,000
+
+Ví dụ, nếu hợp đồng tương lai VN30 đang ở mức 1.300 điểm:
+
+Gi
+a
+ˊ
+ trị danh ngh
+ı
+˜
+a=1,300×100,000=130,000,000 đ
+o
+ˆ
+ˋ
+ng
+
+Giá trị danh nghĩa không phải là toàn bộ số tiền nhà đầu tư phải nộp để mở vị thế. Nhà đầu tư chỉ cần duy trì tài sản ký quỹ theo yêu cầu.
+
+Giao dịch hai chiều Long và Short
+
+Hợp đồng tương lai cho phép nhà đầu tư giao dịch theo cả hai hướng:
+
+Long: mở vị thế mua khi kỳ vọng giá hợp đồng tăng.
+Short: mở vị thế bán khi kỳ vọng giá hợp đồng giảm.
+
+Nhà đầu tư không cần sở hữu trước các cổ phiếu trong VN30 để mở vị thế Short hợp đồng tương lai.
+
+Lãi hoặc lỗ khi đóng vị thế có thể mô tả đơn giản như sau:
+
+L
+a
+˜
+i/l
+o
+ˆ
+˜
+ vị th
+e
+ˆ
+ˊ
+ Long=(P
+đ
+o
+ˊ
+ng
+	​
+
+−P
+mở
+	​
+
+)×100,000×N
+L
+a
+˜
+i/l
+o
+ˆ
+˜
+ vị th
+e
+ˆ
+ˊ
+ Short=(P
+mở
+	​
+
+−P
+đ
+o
+ˊ
+ng
+	​
+
+)×100,000×N
+
+Trong đó:
+
+$P_{\text{mở}}$: giá mở vị thế.
+$P_{\text{đóng}}$: giá đóng vị thế.
+$N$: số lượng hợp đồng.
+
+Ví dụ, nhà đầu tư mở Long một hợp đồng tại 1.300 điểm và đóng vị thế tại 1.310 điểm:
+
+Lợi nhuận=(1,310−1,300)×100,000=1,000,000 đ
+o
+ˆ
+ˋ
+ng
+
+Kết quả trên chưa tính phí giao dịch, thuế và các chi phí liên quan.
+
+Ký quỹ và đòn bẩy
+
+Ký quỹ là tài sản nhà đầu tư phải nộp để bảo đảm khả năng thực hiện nghĩa vụ phát sinh từ vị thế hợp đồng tương lai.
+
+Số tiền ký quỹ ban đầu có thể được minh họa bằng:
+
+K
+y
+ˊ
+	​
+
+ qu
+y
+˜
+	​
+
+ ban đ
+a
+ˆ
+ˋ
+u=Gi
+a
+ˊ
+ hợp đ
+o
+ˆ
+ˋ
+ng×100,000×Tỷ lệ k
+y
+ˊ
+	​
+
+ qu
+y
+˜
+	​
+
+×N
+
+Giả sử:
+
+Giá hợp đồng là 1.300 điểm.
+Nhà đầu tư mở một hợp đồng.
+Tỷ lệ ký quỹ dùng trong ví dụ là 17%.
+
+Khi đó:
+
+K
+y
+ˊ
+	​
+
+ qu
+y
+˜
+	​
+
+ ban đ
+a
+ˆ
+ˋ
+u=1,300×100,000×17%=22,100,000 đ
+o
+ˆ
+ˋ
+ng
+
+Tỷ lệ 17% trong ví dụ chỉ dùng để minh họa cách tính. Tỷ lệ ký quỹ thực tế có thể được VSDC điều chỉnh theo từng thời kỳ. Công ty chứng khoán cũng có thể yêu cầu tỷ lệ cao hơn mức tối thiểu để quản trị rủi ro.
+
+Đòn bẩy danh nghĩa có thể ước tính bằng:
+
+Đ
+o
+ˋ
+n bẩy danh ngh
+ı
+˜
+a≈
+T
+a
+ˋ
+i sản k
+y
+ˊ
+	​
+
+ qu
+y
+˜
+	​
+
+Gi
+a
+ˊ
+ trị danh ngh
+ı
+˜
+a hợp đ
+o
+ˆ
+ˋ
+ng
+	​
+
+
+Với tỷ lệ ký quỹ 17%, mức đòn bẩy lý thuyết xấp xỉ:
+
+Đ
+o
+ˋ
+n bẩy danh ngh
+ı
+˜
+a≈
+0.17
+1
+	​
+
+≈5.88 l
+a
+ˆ
+ˋ
+n
+
+Đây chỉ là mức ước tính. Đòn bẩy thực tế còn phụ thuộc vào số dư tài khoản, phần tài sản dự phòng và yêu cầu của công ty chứng khoán.
+
+Thanh toán lãi lỗ và bổ sung ký quỹ
+
+Lãi hoặc lỗ của vị thế hợp đồng tương lai được xác định và ghi nhận theo cơ chế thanh toán hằng ngày.
+
+Nếu thị trường đi ngược kỳ vọng:
+
+Giá trị tài sản ký quỹ giảm.
+Tỷ lệ sử dụng tài sản ký quỹ tăng.
+Nhà đầu tư có thể phải nộp thêm tài sản ký quỹ.
+Công ty chứng khoán có thể đóng bớt hoặc đóng toàn bộ vị thế nếu tài khoản không đáp ứng yêu cầu.
+
+Vì vậy, mức lỗ không bị giới hạn ở số tiền ký quỹ ban đầu. Biến động nhỏ của chỉ số cũng có thể tạo ra mức lãi hoặc lỗ đáng kể do hệ số nhân và đòn bẩy.
+
+Hợp đồng tương lai phù hợp với mục đích giao dịch, phòng ngừa rủi ro và quản trị danh mục, nhưng cần kiểm soát quy mô vị thế chặt chẽ. Ký quỹ thấp không đồng nghĩa với rủi ro thấp.
+
+Chứng quyền có bảo đảm
+
+Chứng quyền có bảo đảm, thường được viết tắt là CW, là chứng khoán do công ty chứng khoán phát hành. Người sở hữu chứng quyền có quyền nhận khoản thanh toán dựa trên chênh lệch giữa giá chứng khoán cơ sở và giá thực hiện theo các điều khoản đã công bố.
+
+Chứng quyền đang được áp dụng tại Việt Nam là chứng quyền mua:
+
+Có tài sản cơ sở là cổ phiếu niêm yết đáp ứng điều kiện.
+Thực hiện quyền theo kiểu châu Âu.
+Thanh toán bằng tiền.
+Chỉ được thực hiện quyền tại ngày đáo hạn.
+
+Không phải mọi cổ phiếu trên thị trường đều đủ điều kiện làm tài sản cơ sở của chứng quyền.
+
+Các thông số cơ bản của chứng quyền
+
+Khi phân tích một chứng quyền, cần đọc các thông số sau:
+
+Thông số	Ý nghĩa
+Chứng khoán cơ sở	Cổ phiếu được dùng làm tài sản cơ sở
+Giá chứng quyền	Số tiền nhà đầu tư trả để mua một chứng quyền
+Giá thực hiện	Mức giá dùng để xác định giá trị thực hiện quyền
+Tỷ lệ chuyển đổi	Số chứng quyền cần để quy đổi tương ứng với một cổ phiếu cơ sở
+Ngày đáo hạn	Ngày cuối cùng của vòng đời chứng quyền
+Tổ chức phát hành	Công ty chứng khoán phát hành chứng quyền
+Kiểu thực hiện	Kiểu châu Âu, chỉ thực hiện tại ngày đáo hạn
+Phương thức thanh toán	Thanh toán bằng tiền
+
+Giá trị thanh toán trên một chứng quyền mua tại ngày đáo hạn có thể mô tả bằng:
+
+Gi
+a
+ˊ
+ trị thanh to
+a
+ˊ
+n=max(
+k
+S
+T
+	​
+
+−K
+	​
+
+,0)
+
+Trong đó:
+
+$S_T$: giá thanh toán của cổ phiếu cơ sở tại ngày đáo hạn.
+$K$: giá thực hiện.
+$k$: tỷ lệ chuyển đổi.
+
+Ví dụ:
+
+Giá thực hiện là 25.000 đồng.
+Giá thanh toán của cổ phiếu cơ sở là 30.000 đồng.
+Tỷ lệ chuyển đổi là 2:1.
+
+Khi đó:
+
+Gi
+a
+ˊ
+ trị thanh to
+a
+ˊ
+n=
+2
+30,000−25,000
+	​
+
+=2,500 đ
+o
+ˆ
+ˋ
+ng/chứng quy
+e
+ˆ
+ˋ
+n
+
+Lợi nhuận ròng của người mua còn phụ thuộc vào giá đã mua chứng quyền và các chi phí liên quan:
+
+Lợi nhuận r
+o
+ˋ
+ng=Gi
+a
+ˊ
+ trị thanh to
+a
+ˊ
+n−Gi
+a
+ˊ
+ mua chứng quy
+e
+ˆ
+ˋ
+n−Chi ph
+ı
+ˊ
+Giá hòa vốn
+
+Giá hòa vốn tại ngày đáo hạn là mức giá của cổ phiếu cơ sở giúp nhà đầu tư bù lại số tiền đã bỏ ra để mua chứng quyền, chưa xét đầy đủ phí và thuế.
+
+Với cách biểu diễn tỷ lệ chuyển đổi là số chứng quyền cần cho một cổ phiếu cơ sở:
+
+Gi
+a
+ˊ
+ h
+o
+ˋ
+a v
+o
+ˆ
+ˊ
+n=K+Gi
+a
+ˊ
+ mua chứng quy
+e
+ˆ
+ˋ
+n×k
+
+Ví dụ:
+
+Giá thực hiện là 25.000 đồng.
+Giá mua chứng quyền là 1.000 đồng.
+Tỷ lệ chuyển đổi là 2:1.
+
+Khi đó:
+
+Gi
+a
+ˊ
+ h
+o
+ˋ
+a v
+o
+ˆ
+ˊ
+n=25,000+1,000×2=27,000 đ
+o
+ˆ
+ˋ
+ng
+
+Cổ phiếu cơ sở tăng cao hơn giá thực hiện chưa chắc đã làm nhà đầu tư có lợi nhuận. Giá phải tăng đủ để vượt giá hòa vốn sau khi tính giá mua chứng quyền và chi phí.
+
+Vì sao chứng quyền mang tính một chiều?
+
+Chứng quyền có bảo đảm trên thị trường Việt Nam là chứng quyền mua. Người mua hưởng lợi khi giá cổ phiếu cơ sở tăng đủ mạnh so với giá thực hiện, tỷ lệ chuyển đổi và chi phí mua chứng quyền.
+
+Do đó, sản phẩm này mang tính một chiều tăng giá:
+
+Nhà đầu tư mua chứng quyền khi kỳ vọng cổ phiếu cơ sở tăng.
+Khi cổ phiếu cơ sở giảm hoặc không tăng đủ mạnh, giá chứng quyền có thể giảm.
+Nhà đầu tư không thể mở vị thế Short chứng quyền theo cơ chế giống hợp đồng tương lai.
+Không nên gọi chứng quyền là hợp đồng quyền chọn cổ phiếu, dù hai sản phẩm có một số đặc điểm kinh tế tương tự.
+
+Cách diễn đạt chính xác là: thị trường Việt Nam có chứng quyền mua trên một số cổ phiếu đủ điều kiện. Không nên diễn đạt rằng mọi cổ phiếu đều có “quyền chọn một chiều”.
+
+Rủi ro của chứng quyền
+
+Người mua chứng quyền không phải duy trì ký quỹ như người giao dịch hợp đồng tương lai. Khoản lỗ tối đa của người mua thường giới hạn ở toàn bộ số tiền đã bỏ ra để mua chứng quyền cùng các chi phí liên quan.
+
+Tuy nhiên, chứng quyền có các rủi ro đáng chú ý:
+
+Rủi ro mất toàn bộ giá trị: chứng quyền có thể đáo hạn mà không phát sinh khoản thanh toán.
+Rủi ro thời gian: giá trị thời gian giảm dần khi ngày đáo hạn đến gần.
+Rủi ro đòn bẩy: giá chứng quyền có thể biến động theo tỷ lệ lớn hơn cổ phiếu cơ sở.
+Rủi ro thanh khoản: nhà đầu tư có thể khó mua hoặc bán ở mức giá mong muốn.
+Rủi ro tổ chức phát hành: nghĩa vụ thanh toán phụ thuộc vào tổ chức phát hành chứng quyền.
+Rủi ro chênh lệch giá: giá thị trường của chứng quyền có thể lệch đáng kể so với giá trị lý thuyết.
+Không có quyền cổ đông: người sở hữu chứng quyền không nhận cổ tức và không có quyền biểu quyết như người sở hữu cổ phiếu cơ sở.
+Phân biệt cổ phiếu, hợp đồng tương lai VN30 và chứng quyền
+Tiêu chí	Cổ phiếu cơ sở	Hợp đồng tương lai VN30	Chứng quyền mua
+Tài sản liên quan	Cổ phiếu doanh nghiệp	Chỉ số VN30	Một cổ phiếu cơ sở đủ điều kiện
+Bản chất	Quyền sở hữu một phần doanh nghiệp	Hợp đồng phái sinh chuẩn hóa	Chứng khoán do công ty chứng khoán phát hành
+Hướng giao dịch phổ biến	Chủ yếu mua khi kỳ vọng tăng	Có thể Long hoặc Short	Mua khi kỳ vọng cổ phiếu cơ sở tăng
+Ký quỹ	Không, trừ khi sử dụng giao dịch ký quỹ cổ phiếu	Có	Người mua không phải ký quỹ
+Đòn bẩy	Có thể có nếu vay margin	Có do cơ chế ký quỹ	Có do giá chứng quyền nhỏ hơn giá cổ phiếu cơ sở
+Ngày đáo hạn	Không có	Có	Có
+Thanh toán lãi lỗ hằng ngày	Không	Có	Không
+Mức lỗ của người mua	Phụ thuộc mức giảm của cổ phiếu và khoản vay	Có thể vượt số tiền ký quỹ ban đầu	Tối đa thường là toàn bộ tiền mua và chi phí
+Quyền cổ đông	Có	Không	Không
+Tài sản nhận khi đáo hạn	Không áp dụng	Thanh toán theo cơ chế của hợp đồng	Thanh toán bằng tiền nếu đáp ứng điều kiện
+2.3 Biểu đồ Nến Nhật (Candlestick)
+
+Biểu đồ nến Nhật là phương pháp biểu diễn biến động giá phổ biến trên thị trường tài chính. Mỗi cây nến mô tả diễn biến giá trong một khoảng thời gian xác định như 1 phút, 5 phút, 1 giờ, 1 ngày hoặc 1 tuần.
+
+Cấu trúc dữ liệu OHLCV
+
+Mỗi cây nến được xây dựng từ 5 thành phần cơ bản:
+
+Ký hiệu	Ý nghĩa
+O (Open)	Giá mở cửa
+H (High)	Giá cao nhất
+L (Low)	Giá thấp nhất
+C (Close)	Giá đóng cửa
+V (Volume)	Khối lượng giao dịch
+
+Ví dụ:
+
+Open	High	Low	Close	Volume
+50	52	49	51	2,000,000
+Nến tăng và nến giảm
+
+Nến tăng — Khi giá đóng cửa cao hơn giá mở cửa:
+
+Close>Open
+
+Nến giảm — Khi giá đóng cửa thấp hơn giá mở cửa:
+
+Close<Open
+
+Nếu giá đóng cửa bằng hoặc rất gần giá mở cửa, cây nến có thể thể hiện trạng thái cân bằng tương đối giữa bên mua và bên bán.
+
+Tại sao OHLCV quan trọng?
+
+OHLCV là đầu vào tiêu chuẩn của nhiều hệ thống giao dịch định lượng. Nhiều chỉ báo kỹ thuật được tính trực tiếp từ dữ liệu này, bao gồm Moving Average, RSI, MACD, Bollinger Bands và ATR.
+
+Trong thực tế, dữ liệu lịch sử thường được cung cấp dưới dạng bảng OHLCV theo từng khoảng thời gian. Khi sử dụng dữ liệu, cần kiểm tra:
+
+Múi giờ và thời điểm đóng nến.
+Dữ liệu đã điều chỉnh hay chưa điều chỉnh.
+Phiên không có giao dịch.
+Khối lượng khớp lệnh và khối lượng thỏa thuận.
+Sự khác nhau giữa dữ liệu cổ phiếu, hợp đồng tương lai và chứng quyền.
+2.4 Các Chỉ số Tài chính Căn bản
+
+Ngoài dữ liệu giá, nhiều chiến lược định lượng còn sử dụng dữ liệu cơ bản của doanh nghiệp để đánh giá chất lượng và định giá cổ phiếu.
+
+P/E (Price to Earnings Ratio)
+
+P/E phản ánh mức giá nhà đầu tư đang trả cho mỗi đồng lợi nhuận trên một cổ phiếu:
+
+P/E=
+EPS
+Price per Share
+	​
+
+
+P/E cao có thể phản ánh kỳ vọng tăng trưởng cao, nhưng cũng có thể cho thấy cổ phiếu đang được định giá cao. P/E thấp có thể phản ánh cổ phiếu đang được định giá thấp hoặc doanh nghiệp đang gặp khó khăn.
+
+P/E nên được so sánh:
+
+Giữa các doanh nghiệp cùng ngành.
+Với P/E lịch sử của chính doanh nghiệp.
+Trong mối quan hệ với tốc độ tăng trưởng lợi nhuận và chất lượng lợi nhuận.
+
+P/E không có nhiều ý nghĩa khi EPS âm.
+
+P/B (Price to Book Ratio)
+
+P/B phản ánh mối quan hệ giữa giá thị trường và giá trị sổ sách trên mỗi cổ phiếu:
+
+P/B=
+Book Value per Share
+Market Price
+	​
+
+
+Ý nghĩa:
+
+$P/B = 1$: giá thị trường bằng giá trị sổ sách trên mỗi cổ phiếu.
+$P/B < 1$: giá thị trường thấp hơn giá trị sổ sách.
+$P/B > 1$: thị trường đang định giá doanh nghiệp cao hơn giá trị sổ sách.
+
+P/B thấp không tự động đồng nghĩa với cổ phiếu rẻ. Cần xem xét chất lượng tài sản, khả năng sinh lời và đặc điểm ngành.
+
+EPS (Earnings Per Share)
+
+EPS thể hiện phần lợi nhuận thuộc về mỗi cổ phiếu phổ thông đang lưu hành:
+
+EPS=
+S
+o
+ˆ
+ˊ
+ cổ phi
+e
+ˆ
+ˊ
+u phổ th
+o
+ˆ
+ng b
+ı
+ˋ
+nh qu
+a
+ˆ
+n gia quy
+e
+ˆ
+ˋ
+n
+Lợi nhuận sau thu
+e
+ˆ
+ˊ
+ thuộc cổ đ
+o
+ˆ
+ng c
+o
+ˆ
+ng ty mẹ−Cổ tức cổ phi
+e
+ˆ
+ˊ
+u ưu đ
+a
+˜
+i
+	​
+
+
+EPS cao hoặc tăng trưởng tích cực có thể là tín hiệu tốt, nhưng cần đánh giá thêm:
+
+EPS đến từ hoạt động kinh doanh cốt lõi hay lợi nhuận bất thường.
+Số lượng cổ phiếu có bị pha loãng hay không.
+EPS có tăng ổn định qua nhiều kỳ hay không.
+Dòng tiền kinh doanh có tương ứng với lợi nhuận kế toán hay không.
+ROE (Return on Equity)
+
+ROE đo lường khả năng tạo lợi nhuận trên vốn chủ sở hữu:
+
+ROE=
+Average Shareholders’ Equity
+Net Income
+	​
+
+
+ROE cao có thể cho thấy doanh nghiệp sử dụng vốn chủ sở hữu hiệu quả. Tuy nhiên, ROE cũng có thể tăng do doanh nghiệp sử dụng nhiều nợ hoặc vốn chủ sở hữu giảm.
+
+Khi so sánh ROE, nên ưu tiên các doanh nghiệp cùng ngành và xem xét đồng thời cơ cấu nợ.
+
+ROA (Return on Assets)
+
+ROA đo lường khả năng tạo lợi nhuận từ tổng tài sản:
+
+ROA=
+Average Total Assets
+Net Income
+	​
+
+
+ROA hữu ích khi đánh giá hiệu quả sử dụng tài sản, nhưng mức ROA hợp lý khác nhau giữa các ngành. Các ngành thâm dụng tài sản thường có ROA thấp hơn các ngành ít cần tài sản vật chất.
+
+2.5 Thống kê Sơ lược cho Phân tích Định lượng
+
+Phân tích định lượng dựa trên dữ liệu và các công cụ thống kê để đánh giá rủi ro, hiệu suất và mối quan hệ giữa các biến tài chính.
+
+Trung bình (Mean)
+
+Trung bình là giá trị đại diện cho toàn bộ tập dữ liệu:
+
+x
+ˉ
+=
+n
+1
+	​
+
+i=1
+∑
+n
+	​
+
+x
+i
+	​
+
+
+Ứng dụng trong tài chính bao gồm:
+
+Tính lợi nhuận trung bình.
+Tính Moving Average.
+So sánh hiệu suất các danh mục đầu tư.
+Ước lượng giá trị kỳ vọng từ dữ liệu lịch sử.
+
+Trung bình có thể bị ảnh hưởng mạnh bởi các giá trị ngoại lệ.
+
+Độ lệch chuẩn (Standard Deviation)
+
+Độ lệch chuẩn đo lường mức độ phân tán của dữ liệu quanh giá trị trung bình.
+
+Độ lệch chuẩn tổng thể:
+
+σ=
+n
+1
+	​
+
+i=1
+∑
+n
+	​
+
+(x
+i
+	​
+
+−μ)
+2
+	​
+
+
+Độ lệch chuẩn mẫu:
+
+s=
+n−1
+1
+	​
+
+i=1
+∑
+n
+	​
+
+(x
+i
+	​
+
+−
+x
+ˉ
+)
+2
+	​
+
+
+Trong đó:
+
+$\mu$: trung bình tổng thể.
+$\bar{x}$: trung bình mẫu.
+$n$: số quan sát.
+
+Độ lệch chuẩn càng lớn thì mức độ biến động càng cao. Trong tài chính, độ lệch chuẩn của chuỗi lợi nhuận thường được sử dụng như một thước đo biến động, nhưng không phản ánh đầy đủ mọi dạng rủi ro.
+
+Tương quan (Correlation)
+
+Tương quan đo mức độ quan hệ tuyến tính giữa hai biến:
+
+ρ
+X,Y
+	​
+
+∈[−1,1]
+
+Ý nghĩa:
+
+$\rho = 1$: tương quan thuận tuyến tính hoàn hảo.
+$\rho = 0$: không có tương quan tuyến tính rõ ràng.
+$\rho = -1$: tương quan nghịch tuyến tính hoàn hảo.
+
+Tương quan được ứng dụng trong:
+
+Xây dựng danh mục đầu tư.
+Phân tích mối quan hệ giữa các cổ phiếu.
+Phát hiện mức độ đồng biến giữa tài sản và chỉ số thị trường.
+Kiểm tra mức độ trùng lặp rủi ro giữa các vị thế.
+
+Tương quan bằng 0 không đồng nghĩa với hai biến hoàn toàn độc lập. Tương quan cũng có thể thay đổi theo từng giai đoạn thị trường.
+
+Lợi nhuận tích lũy (Cumulative Return)
+
+Lợi nhuận tích lũy phản ánh hiệu quả đầu tư trong toàn bộ giai đoạn:
+
+CR=
+t=1
+∏
+n
+	​
+
+(1+r
+t
+	​
+
+)−1
+
+Ví dụ, nếu một cổ phiếu tăng 10% trong tháng đầu và tăng 5% trong tháng tiếp theo:
+
+CR=(1.10×1.05)−1=15.5%
+
+Lợi nhuận tích lũy không được tính bằng cách cộng trực tiếp các tỷ suất lợi nhuận đơn kỳ khi có hiệu ứng lãi kép.
+
+Sharpe Ratio
+
+Sharpe Ratio đo lường lợi nhuận vượt trội so với lãi suất phi rủi ro trên mỗi đơn vị biến động:
+
+Sharpe Ratio=
+σ
+r
+	​
+
+r
+ˉ
+−r
+f
+	​
+
+	​
+
+
+Trong đó:
+
+$\bar{r}$: lợi nhuận trung bình của danh mục hoặc chiến lược.
+$r_f$: lãi suất phi rủi ro trong cùng kỳ đo lường.
+$\sigma_r$: độ lệch chuẩn của lợi nhuận.
+
+Sharpe Ratio cao hơn thường thể hiện hiệu suất điều chỉnh theo biến động tốt hơn. Tuy nhiên, khi so sánh cần bảo đảm:
+
+Các chiến lược sử dụng cùng tần suất dữ liệu.
+Lợi nhuận và lãi suất phi rủi ro được quy đổi về cùng kỳ hạn.
+Cách annualize lợi nhuận và độ lệch chuẩn được thực hiện nhất quán.
+Chuỗi lợi nhuận không bị sai lệch bởi look-ahead bias hoặc survivorship bias.
+
+Tổng thể, chương này cung cấp nền tảng kiến thức để bắt đầu phân tích định lượng trên thị trường chứng khoán Việt Nam: từ cấu trúc sàn giao dịch, các sản phẩm như cổ phiếu, hợp đồng tương lai VN30 và chứng quyền có bảo đảm, đến dữ liệu OHLCV, chỉ số tài chính doanh nghiệp và các công cụ thống kê cốt lõi phục vụ xây dựng và đánh giá chiến lược giao dịch.

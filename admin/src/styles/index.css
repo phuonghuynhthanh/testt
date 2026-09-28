@@ -1,0 +1,171 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.scrollbar-hidden::-webkit-scrollbar {
+  display: none;
+  /* Chrome, Safari, Edge mới */
+}
+
+html,
+body {
+  background-color: #121212;
+}
+
+html {
+  scrollbar-width: thin;
+  /* Firefox */
+  scrollbar-color: #55585e #1f293700;
+  /* thumb | track (Firefox) */
+}
+
+.markdown-content p {
+  margin-bottom: 1rem;
+  /* Adjust as needed */
+}
+
+.markdown-content h1,
+.markdown-content h2,
+.markdown-content h3 {
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.markdown-content ul,
+.markdown-content ol {
+  margin-left: 1.5rem;
+}
+
+.markdown-content li {
+  margin-bottom: 0.5rem;
+}
+
+.markdown-content strong {
+  font-weight: bold;
+}
+
+.scrollbar-hidden {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hidden::-webkit-scrollbar {
+  display: none;
+  /* Chrome, Safari, Edge mới */
+}
+
+html {
+  scrollbar-width: thin;
+  /* Firefox */
+  scrollbar-color: #55585e #1f293700;
+}
+
+/* Chrome, Edge, Safari */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1f293700;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #6b728000;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+::-webkit-scrollbar-button {
+  display: none;
+  height: 0;
+  width: 0;
+}
+
+*::-webkit-scrollbar-button:single-button {
+  display: none;
+}
+
+.katex .text,
+.katex .text .mord {
+  font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    Helvetica,
+    Arial,
+    sans-serif !important;
+  font-weight: 400 !important;
+  font-style: normal !important;
+}
+
+.markdown-content .katex {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.markdown-content .katex-display {
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0.25rem 0;
+}
+
+.markdown-content .katex-error {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.pulsar {
+  --uib-size: 40px;
+  --uib-speed: 0.9s;
+  --uib-color: #04ea6c;
+  position: relative;
+  height: var(--uib-size);
+  width: var(--uib-size);
+}
+
+.pulsar::before,
+.pulsar::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  border-radius: 50%;
+  background-color: var(--uib-color);
+  animation: pulse9173412 var(--uib-speed) ease-in-out infinite;
+  transform: scale(0);
+}
+
+.pulsar::after {
+  animation-delay: calc(var(--uib-speed) / -2);
+}
+
+@keyframes pulse9173412 {
+  0%,
+  100% {
+    transform: scale(0);
+    opacity: 1;
+  }
+
+  50% {
+    transform: scale(1);
+    opacity: 0.25;
+  }
+}
+input[type="checkbox"] {
+  accent-color: #32d676;
+}

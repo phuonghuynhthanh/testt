@@ -1,0 +1,394 @@
+:root {
+  /* Base colors */
+  --border-color: #ffffff;
+  --bg-black: #222222;
+  --bg-code: #121212;
+
+  /* Typography highlight colors */
+  --heading-main: #ffffff;
+  --heading-green: #07e86c;
+  --heading-green-dark: #00be73;
+
+  /* Table colors */
+  --table-border: #485563;
+  --table-border-light: #7b8e99;
+
+  /* Misc */
+  --text-muted: #ffffffb5;
+  --text-primary: #ffffff;
+
+  --toolbar-bg: #121212; /* nền toolbar */
+  --toolbar-border: #374151;
+  --toolbar-btn-bg: transparent;
+  --toolbar-btn-hover: #111827;
+  --toolbar-btn-active: #1f2937;
+  --toolbar-icon: #e5e7eb; /* màu icon / chữ */
+  --toolbar-icon-active: #60a5fa;
+}
+
+/* Wrapper */
+.markdown-editor-wrapper {
+  border: 1px solid var(--border-color);
+  background: #121212;
+  color: var(--text-primary);
+  border-radius: 6px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.markdown-editor-wrapper .mdxeditor {
+  height: 100%;
+  max-height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.markdown-editor-wrapper .mdxeditor-diff-source-wrapper,
+.markdown-editor-wrapper .mdxeditor-rich-text-editor,
+.markdown-editor-wrapper .mdxeditor-source-editor,
+.markdown-editor-wrapper .mdxeditor-diff-editor {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.markdown-editor-wrapper .mdxeditor .mdxeditor-root-contenteditable {
+  flex: 1 1 auto;
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: block;
+}
+
+.markdown-editor-wrapper .mdxeditor .mdxeditor-root-contenteditable > div {
+  min-height: 0;
+}
+
+.markdown-editor-wrapper .mdxeditor-source-editor .cm-editor,
+.markdown-editor-wrapper .mdxeditor-diff-editor .cm-editor {
+  flex: 1 1 auto;
+  height: 100%;
+  min-height: 0;
+}
+
+.markdown-editor-wrapper .mdxeditor-source-editor .cm-scroller,
+.markdown-editor-wrapper .mdxeditor-diff-editor .cm-scroller {
+  overflow: auto;
+}
+
+/* Toolbar */
+.markdown-editor-wrapper .mdxeditor-toolbar {
+  background-color: var(--bg-black);
+  border-bottom: 1px solid var(--border-color);
+  padding: 8px;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  flex-shrink: 0;
+  color: var(--text-primary);
+}
+
+/* Editor content */
+.markdown-editor-content {
+  padding: 20px;
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 17px;
+  line-height: 1.9;
+  min-height: 0;
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+/* Heading styles */
+.mdxeditor-root-contenteditable h1 {
+  font-size: 30px;
+  line-height: 1.2;
+  font-weight: 700;
+  color: var(--heading-main);
+  margin: 40px 0 16px;
+  letter-spacing: 0;
+}
+
+.mdxeditor-root-contenteditable h2,
+.mdxeditor-root-contenteditable h3,
+.mdxeditor-root-contenteditable h4,
+.mdxeditor-root-contenteditable h5,
+.mdxeditor-root-contenteditable h6 {
+  font-weight: 600;
+  color: var(--heading-green-dark);
+  margin-top: 12px;
+  margin-bottom: 12px;
+  letter-spacing: 0;
+}
+
+.mdxeditor-root-contenteditable h2 {
+  font-size: 20px;
+  line-height: 1.35;
+  margin-top: 32px;
+  margin-bottom: 12px;
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.mdxeditor-root-contenteditable h3 {
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-transform: uppercase;
+}
+
+.mdxeditor-root-contenteditable h3::before {
+  content: "";
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--heading-green);
+  flex-shrink: 0;
+}
+
+.mdxeditor-root-contenteditable h4 {
+  font-size: 17px;
+}
+.mdxeditor-root-contenteditable h5 {
+  font-size: 16px;
+}
+.mdxeditor-root-contenteditable h6 {
+  font-size: 15px;
+}
+
+/* Paragraph */
+.mdxeditor-root-contenteditable p {
+  line-height: 1.9;
+  margin: 12px 0;
+  text-align: left;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+/* Lists */
+.mdxeditor-root-contenteditable ul,
+.mdxeditor-root-contenteditable ol {
+  margin-bottom: 16px;
+  margin-left: 24px;
+  padding-left: 8px;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.mdxeditor-root-contenteditable ul {
+  list-style: disc;
+}
+.mdxeditor-root-contenteditable ol {
+  list-style: decimal;
+}
+
+.mdxeditor-root-contenteditable li {
+  margin-bottom: 8px;
+  line-height: 1.8;
+}
+
+.mdxeditor-root-contenteditable li::marker {
+  color: var(--heading-green-dark);
+}
+
+/* Blockquote */
+.mdxeditor-root-contenteditable blockquote {
+  background-color: var(--bg-black);
+  border-radius: 6px;
+  padding: 12px 0 12px 16px;
+  border-left: 4px solid var(--heading-green);
+  font-style: italic;
+  color: var(--text-primary);
+  margin: 16px 0;
+}
+
+/* Code block */
+.mdxeditor-root-contenteditable code,
+.mdxeditor-root-contenteditable pre {
+  background-color: var(--bg-code);
+  color: rgba(255, 255, 255, 0.78);
+  font-family: "Fira Code", "Consolas", monospace;
+  font-size: 14px;
+}
+
+.mdxeditor-root-contenteditable code {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 2px 6px;
+  border-radius: 6px;
+  color: var(--heading-green-dark);
+}
+
+.mdxeditor-root-contenteditable pre {
+  padding: 20px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  overflow: auto;
+  margin: 24px 0;
+}
+
+.mdxeditor-root-contenteditable pre code {
+  background-color: transparent;
+  padding: 0;
+}
+
+/* Table */
+.mdxeditor-root-contenteditable table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid var(--table-border);
+  margin-bottom: 16px;
+}
+
+.mdxeditor-root-contenteditable th {
+  border: 1px solid var(--table-border-light);
+  padding: 8px 16px;
+  background-color: var(--bg-code);
+  color: var(--heading-green);
+  font-weight: bold;
+  text-align: left;
+  font-size: 16px;
+}
+
+.mdxeditor-root-contenteditable td {
+  border: 1px solid var(--table-border-light);
+  padding: 8px 16px;
+  font-size: 16px;
+}
+
+/* Links */
+.mdxeditor-root-contenteditable a {
+  color: var(--heading-green);
+  text-decoration: none;
+}
+
+.mdxeditor-root-contenteditable a:hover {
+  text-decoration: underline;
+}
+
+/* Match MDXEditor code-block editing with the course preview code surface. */
+.markdown-editor-wrapper [class*="_codeMirrorWrapper_"] {
+  margin: 24px 0;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  background: #121212;
+  padding: 44px 0 0;
+}
+
+.markdown-editor-wrapper [class*="_codeMirrorWrapper_"]::before {
+  content: "";
+  position: absolute;
+  left: 16px;
+  top: 18px;
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  background: #ff5f56;
+  box-shadow:
+    20px 0 0 #ffbd2e,
+    40px 0 0 #27c93f;
+  opacity: 0.85;
+}
+
+.markdown-editor-wrapper [class*="_codeMirrorToolbar_"] {
+  top: 8px;
+  right: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.markdown-editor-wrapper .cm-editor,
+.markdown-editor-wrapper .cm-scroller,
+.markdown-editor-wrapper .cm-content {
+  background: #121212;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.markdown-editor-wrapper .cm-line {
+  color: rgba(255, 255, 255, 0.78);
+  font-family: "Fira Code", "Consolas", monospace;
+  font-size: 14px;
+  line-height: 1.75;
+}
+
+.markdown-editor-wrapper .cm-gutters {
+  background: #121212;
+  border-right: 0;
+  color: rgba(255, 255, 255, 0.18);
+}
+
+.markdown-editor-wrapper .cm-activeLine,
+.markdown-editor-wrapper .cm-activeLineGutter {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.markdown-editor-wrapper .katex,
+.markdown-editor-wrapper .katex-display {
+  font-size: 1em;
+  font-weight: 400;
+  line-height: 1.6;
+}
+
+.markdown-editor-wrapper .katex-display {
+  margin: 16px 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.markdown-editor-wrapper .mdxeditor-toolbar {
+  background: var(--toolbar-bg);
+  border-bottom: 1px solid var(--toolbar-border);
+}
+
+/* nút (thử nhiều selector nếu thư viện đặt tên khác) */
+.markdown-editor-wrapper .mdxeditor-toolbar button,
+.markdown-editor-wrapper .mdxeditor-toolbar .mdxeditor-toolbar-button {
+  background: var(--toolbar-btn-bg);
+  color: var(--toolbar-icon);
+  border: none;
+  padding: 6px;
+  border-radius: 6px;
+}
+
+/* hover / focus */
+.markdown-editor-wrapper .mdxeditor-toolbar button:hover,
+.markdown-editor-wrapper .mdxeditor-toolbar .mdxeditor-toolbar-button:hover {
+  background: var(--toolbar-btn-hover);
+  color: var(--toolbar-icon);
+}
+
+/* active / selected */
+.markdown-editor-wrapper .mdxeditor-toolbar button[aria-pressed="true"],
+.markdown-editor-wrapper .mdxeditor-toolbar .mdxeditor-toolbar-button.active {
+  background: var(--toolbar-btn-active);
+  color: var(--toolbar-icon-active);
+}
+
+/* svg icon màu (nhiều thư viện dùng stroke hoặc fill) */
+.markdown-editor-wrapper .mdxeditor-toolbar button svg,
+.markdown-editor-wrapper .mdxeditor-toolbar svg {
+  stroke: var(--toolbar-icon);
+  fill: var(--toolbar-icon);
+}
+
+/* nếu SVG dùng currentColor thì chỉ cần: */
+.markdown-editor-wrapper .mdxeditor-toolbar button svg {
+  color: var(--toolbar-icon);
+}
+
+/* disabled */
+.markdown-editor-wrapper .mdxeditor-toolbar button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
