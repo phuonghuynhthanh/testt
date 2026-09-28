@@ -275,7 +275,7 @@
   text-decoration: underline;
 }
 
-/* Match MDXEditor code-block editing with the course preview code surface. */
+/* Match MDXEditor code-block editing with the shared preview code surface. */
 .markdown-editor-wrapper [class*="_codeMirrorWrapper_"] {
   margin: 24px 0;
   overflow: hidden;

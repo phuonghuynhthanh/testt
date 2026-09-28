@@ -57,7 +57,7 @@ const EDITOR_MATH_BLOCK_REGEX =
 // MDXEditor markdown import treat it as an opening tag/autolink and abort the
 // whole import — e.g. "(<30)". Escape those so they survive as literal text.
 const EDITOR_UNSAFE_LT_REGEX = /<(?![a-zA-Z/!])/g;
-// QuantVN course component markers are authored as HTML comments. MDXEditor
+// QuantVN component markers are authored as HTML comments. MDXEditor
 // silently DROPS HTML comments on export, which would strip the markers on save.
 // Round-trip them through a fenced code block instead so they survive editing.
 const MARKER_LANGUAGE = "qvn-marker";
