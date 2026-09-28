@@ -1,6 +1,7 @@
 import { API_SERVICES, IMAGE_URL } from "../../config/config";
 import getAxiosClient from "../../lib/axios/axiosClient";
 
+// Upload a blog image using the backend's folder query parameter.
 export const uploadFileImage = async (file: File, link_post: string) => {
   try {
     const formData = new FormData();
@@ -8,7 +9,7 @@ export const uploadFileImage = async (file: File, link_post: string) => {
     formData.append("image", file);
 
     const response = await axiosClient.post(
-      `${API_SERVICES}/media/image?link_post=${link_post}`,
+      `${API_SERVICES}/media/image?link_blog=${link_post}`,
       formData,
     );
     const img_url = `${IMAGE_URL}/${response.data}`;
