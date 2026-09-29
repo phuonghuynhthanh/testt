@@ -1,9 +1,11 @@
 import logging
 import uuid
+from datetime import timedelta
 from urllib.parse import urlparse
 
 from fastapi import HTTPException, UploadFile, status
 from minio import Minio
+from minio.error import S3Error
 
 from config import settings
 
@@ -116,6 +118,32 @@ class StorageService:
                 detail="Failed to upload image",
             )
         return object_key
+
+    # Create a short-lived download URL without exposing MinIO credentials to browsers.
+    @classmethod
+    def presigned_image_url(cls, object_key: str) -> str:
+        safe_key = cls._sanitize_relative_path(object_key)
+        if not safe_key or safe_key != object_key.strip().strip("/"):
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Image not found")
+        try:
+            cls.initialize()
+            cls._get_client().stat_object(settings.MINIO_BUCKET, safe_key)
+            return cls._get_client().presigned_get_object(
+                settings.MINIO_BUCKET,
+                safe_key,
+                expires=timedelta(minutes=15),
+            )
+        except S3Error as error:
+            if error.code in {"NoSuchKey", "NoSuchObject", "NoSuchBucket"}:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Image not found",
+                ) from error
+            logger.exception("MinIO image URL lookup failed for key %s", safe_key)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Unable to load image",
+            ) from error
 
     # Resolve relative and trusted legacy URLs while ignoring unrelated external hosts.
     @classmethod

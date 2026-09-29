@@ -1,4 +1,5 @@
 from contextlib import contextmanager
+from datetime import timedelta
 from io import BytesIO
 from types import SimpleNamespace
 
@@ -18,6 +19,15 @@ class FakeMinio:
         self.puts = []
         self.removed = []
         self.objects = []
+
+    # Return a predictable object descriptor for signed media URL tests.
+    def stat_object(self, _bucket, key):
+        return SimpleNamespace(object_name=key)
+
+    # Return a safe fake URL without requiring a live MinIO server.
+    def presigned_get_object(self, _bucket, key, expires):
+        assert expires == timedelta(minutes=15)
+        return f"https://media.test/{key}"
 
     # Simulate the SDK bucket existence check.
     def bucket_exists(self, _bucket):
@@ -115,6 +125,21 @@ def test_upload_uses_minio_stream_and_safe_key(storage):
         "image/png",
     )
     assert stream.read() == b"image"
+
+
+# Verify browser media URLs use a short-lived signed MinIO request.
+def test_presigned_image_url_uses_exact_relative_key(storage):
+    assert StorageService.presigned_image_url("quant/banner.png") == (
+        "https://media.test/quant/banner.png"
+    )
+
+
+# Verify traversal attempts cannot be normalized into a different bucket object.
+def test_presigned_image_url_rejects_path_traversal(storage):
+    with pytest.raises(HTTPException) as error:
+        StorageService.presigned_image_url("../quant/banner.png")
+
+    assert error.value.status_code == 404
 
 
 # Verify disallowed MIME types are rejected before any storage request.

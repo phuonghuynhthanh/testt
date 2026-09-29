@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 
 from apps.core.storage import StorageService
 from apps.publications.migrations import apply as apply_publication_migration
@@ -33,3 +34,9 @@ app.add_middleware(
 
 
 RouterManager(app).import_routers()
+
+
+# Serve stored media keys only after every explicit API route has been registered.
+@app.get("/{object_key:path}", include_in_schema=False)
+def redirect_to_image(object_key: str) -> RedirectResponse:
+    return RedirectResponse(StorageService.presigned_image_url(object_key))
