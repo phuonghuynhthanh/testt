@@ -3,6 +3,7 @@ class PromptService:
     def prompt_seo_keywords(cls, title: str, description: str) -> str:
         prompt = (
             "Generate exactly 10 SEO keywords as a JSON array of strings based on the title and content of my blog. "
+            "If the blog title or content is in Vietnamese, generate the keywords in Vietnamese. "
             "The keywords should be relevant, high-ranking, and naturally fit the topic. Ensure they "
             "are optimized for search engines and suitable for my target audience. Here is the title "
             "and content of my blog:\n\n"
@@ -16,6 +17,7 @@ class PromptService:
     def prompt_seo_description(cls, title: str, description: str) -> str:
         prompt = (
             "Generate an SEO-optimized meta description based on the title and content of my blog. "
+            "If the blog title or content is in Vietnamese, generate the meta description in natural, fluent Vietnamese. "
             "The description should be concise, compelling, and include relevant keywords to improve search engine ranking. "
             "It must not exceed 160 characters and should attract readers to click. Here is the title and content of my blog:\n\n"
             f"Title: {title}\n"
@@ -28,6 +30,7 @@ class PromptService:
     def prompt_seo_keywords_and_description(cls, title: str, description: str) -> dict:
         keywords_prompt = (
             "Generate exactly 10 SEO keywords as a JSON array of strings based on the title and content of my blog. "
+            "If the blog title or content is in Vietnamese, generate the keywords in Vietnamese. "
             "The keywords should be relevant, high-ranking, and naturally fit the topic. Ensure they "
             "are optimized for search engines and suitable for my target audience. Here is the title "
             "and content of my blog:\n\n"
@@ -38,6 +41,7 @@ class PromptService:
 
         description_prompt = (
             "Generate an SEO-optimized meta description based on the title and content of my blog. "
+            "If the blog title or content is in Vietnamese, generate the meta description in natural, fluent Vietnamese. "
             "The description should be concise, compelling, and include relevant keywords to improve search engine ranking. "
             "It must not exceed 160 characters and should attract readers to click. Here is the title and content of my blog:\n\n"
             f"Title: {title}\n"

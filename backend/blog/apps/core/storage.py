@@ -87,14 +87,14 @@ class StorageService:
         if extension is None:
             raise HTTPException(
                 status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
-                detail="Only JPEG, PNG, WebP, and GIF images are supported",
+                detail="Chỉ hỗ trợ định dạng ảnh JPEG, PNG, WebP và GIF",
             )
 
         size = cls._file_size(image_file)
         if size > settings.MEDIA_MAX_UPLOAD_MB * 1024 * 1024:
             raise HTTPException(
                 status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-                detail="Image exceeds the upload size limit",
+                detail="Kích thước hình ảnh vượt quá giới hạn cho phép",
             )
 
         safe_folder = cls._sanitize_relative_path(folder)
@@ -115,7 +115,7 @@ class StorageService:
             logger.exception("MinIO image upload failed for key %s", object_key)
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to upload image",
+                detail="Tải hình ảnh lên thất bại",
             )
         return object_key
 
@@ -124,7 +124,7 @@ class StorageService:
     def presigned_image_url(cls, object_key: str) -> str:
         safe_key = cls._sanitize_relative_path(object_key)
         if not safe_key or safe_key != object_key.strip().strip("/"):
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Image not found")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Không tìm thấy hình ảnh")
         try:
             cls.initialize()
             cls._get_client().stat_object(settings.MINIO_BUCKET, safe_key)
@@ -137,12 +137,12 @@ class StorageService:
             if error.code in {"NoSuchKey", "NoSuchObject", "NoSuchBucket"}:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
-                    detail="Image not found",
+                    detail="Không tìm thấy hình ảnh",
                 ) from error
             logger.exception("MinIO image URL lookup failed for key %s", safe_key)
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Unable to load image",
+                detail="Không thể tải hình ảnh",
             ) from error
 
     # Resolve relative and trusted legacy URLs while ignoring unrelated external hosts.

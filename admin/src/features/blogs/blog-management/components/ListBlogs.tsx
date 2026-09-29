@@ -105,17 +105,17 @@ const ListBlogs = () => {
 
   const handleDeleteBlog = async (blogId: string) => {
     const userConfirmation = window.prompt(
-      'Type "delete" to confirm deletion:',
+      'Nhập "xoa" để xác nhận xóa:',
     );
-    if (userConfirmation !== "delete") return;
+    if (userConfirmation !== "delete" && userConfirmation !== "xoa") return;
 
     // Show loading toast
-    const loadingToastId = toast.loading("Deleting...");
+    const loadingToastId = toast.loading("Đang xóa...");
 
     try {
       await deleteBlog(blogId);
       toast.update(loadingToastId, {
-        render: "Delete successful.",
+        render: "Xóa bài viết thành công.",
         type: "success",
         isLoading: false,
         autoClose: 3000,
@@ -140,16 +140,16 @@ const ListBlogs = () => {
   // Fetch, normalize, and save markdown content for all visible fixable blogs.
   const handleFixAllMarkdownSyntax = async () => {
     if (fixableBlogs.length === 0) {
-      toast.info("No PENDING or APPROVED blogs match the current filter.");
+      toast.info("Không có bài viết CHỜ DUYỆT hoặc ĐÃ DUYỆT nào khớp với bộ lọc hiện tại.");
       return;
     }
 
     const userConfirmation = window.prompt(
-      `Type "fix" to fix markdown syntax for ${fixableBlogs.length} visible PENDING/APPROVED blogs:`,
+      `Nhập "sua" để sửa cú pháp markdown cho ${fixableBlogs.length} bài viết CHỜ DUYỆT/ĐÃ DUYỆT đang hiển thị:`,
     );
-    if (userConfirmation !== "fix") return;
+    if (userConfirmation !== "fix" && userConfirmation !== "sua") return;
 
-    const loadingToastId = toast.loading("Fixing markdown syntax...");
+    const loadingToastId = toast.loading("Đang sửa cú pháp markdown...");
     let fixedCount = 0;
     let skippedCount = 0;
     let failedCount = 0;
@@ -158,7 +158,7 @@ const ListBlogs = () => {
     try {
       for (const [index, blog] of fixableBlogs.entries()) {
         toast.update(loadingToastId, {
-          render: `Fixing ${index + 1}/${fixableBlogs.length}: ${blog.title}`,
+          render: `Đang sửa ${index + 1}/${fixableBlogs.length}: ${blog.title}`,
           isLoading: true,
         });
 
@@ -187,7 +187,7 @@ const ListBlogs = () => {
       await refetch();
 
       toast.update(loadingToastId, {
-        render: `Fix all completed. Fixed: ${fixedCount}, skipped: ${skippedCount}, failed: ${failedCount}.`,
+        render: `Đã hoàn tất sửa tất cả. Đã sửa: ${fixedCount}, bỏ qua: ${skippedCount}, thất bại: ${failedCount}.`,
         type: failedCount > 0 ? "warning" : "success",
         isLoading: false,
         autoClose: 4500,
@@ -201,7 +201,7 @@ const ListBlogs = () => {
   const columns: ColumnDef<IBlogItemData>[] = [
     {
       accessorKey: "banner_url",
-      header: "Banner",
+      header: "Ảnh bìa",
       enableSorting: false,
       cell: ({ getValue, row }) => {
         const imageUrl = getBlogBannerImageUrl(getValue() as string);
@@ -209,7 +209,7 @@ const ListBlogs = () => {
         if (!imageUrl) {
           return (
             <div className="flex size-14 items-center justify-center rounded-md border border-white/10 bg-primary-black-medium text-xs text-primary-white/40">
-              No image
+              Không có ảnh
             </div>
           );
         }
@@ -226,7 +226,7 @@ const ListBlogs = () => {
     },
     {
       accessorKey: "modified_at",
-      header: "Last Updated",
+      header: "Cập nhật lần cuối",
       cell: ({ getValue }) => {
         const date = new Date(getValue() as string);
         return date.toLocaleString();
@@ -234,7 +234,7 @@ const ListBlogs = () => {
     },
     {
       accessorKey: "title",
-      header: "Title",
+      header: "Tiêu đề",
       cell: ({ getValue }) => (
         <div className="w-[150px] overflow-hidden whitespace-nowrap text-ellipsis">
           {getValue() as string}
@@ -244,12 +244,12 @@ const ListBlogs = () => {
     ...[
       {
         accessorKey: "tag",
-        header: "Tag",
+        header: "Thẻ",
       },
     ],
     {
       accessorKey: "category",
-      header: "Category",
+      header: "Danh mục",
       cell: ({ getValue }) => {
         return (
           <div className="w-[150px] overflow-hidden whitespace-nowrap text-ellipsis">
@@ -263,7 +263,7 @@ const ListBlogs = () => {
     },
     {
       accessorKey: "link_post",
-      header: "Link Post",
+      header: "Liên kết",
       cell: ({ getValue }) => (
         <a
           href={`${DOMAIN_WEBSITE}/blog/${getValue()}`}
@@ -271,13 +271,13 @@ const ListBlogs = () => {
           rel="noopener noreferrer"
           className="hover:cursor-pointer underline-offset-4 hover:underline text-blue-500"
         >
-          View
+          Xem
         </a>
       ),
     },
     {
       accessorKey: "state",
-      header: "Blog State",
+      header: "Trạng thái",
       cell: ({ getValue }) => {
         return (
           <div className="flex justify-center items-center">
@@ -317,13 +317,13 @@ const ListBlogs = () => {
       cell: ({ getValue }) => (
         <div className="text-2xl flex justify-between items-center gap-2">
           <BiSolidEditAlt
-            title="Edit Blog"
+            title="Chỉnh sửa bài viết"
             onClick={() => handleEditBlog(getValue() as string)}
             className="hover:cursor-pointer shrink-0 p-0.5  size-7 rounded-sm text-primary-green hover:text-primary-green-dark"
           />
           <div className="h-6 w-0.5 bg-gray-300"></div>
           <MdOutlineDelete
-            title="Delete Blog"
+            title="Xóa bài viết"
             onClick={() => handleDeleteBlog(getValue() as string)}
             className="hover:cursor-pointer shrink-0 p-0.5  size-7 rounded-sm text-red-500 hover:bg-red-500/15"
           />
@@ -350,7 +350,7 @@ const ListBlogs = () => {
             className="flex justify-center text-primary-white items-center gap-2 group hover:cursor-pointer underline-offset-4 hover:underline"
             onClick={() => refetch()}
           >
-            <span>Refresh List Blogs</span>
+            <span>Làm mới danh sách</span>
             <TbRefresh className="group-hover:rotate-180 transition-all duration-300" />
           </div>
           <div className="flex w-full flex-col gap-2 md:w-auto md:min-w-[620px]">
@@ -358,7 +358,7 @@ const ListBlogs = () => {
               htmlFor="blog-title-search"
               className="text-sm font-medium text-primary-white"
             >
-              Search blogs
+              Tìm kiếm bài viết
             </label>
             <div className="flex flex-col gap-2 md:flex-row">
               <div className="flex flex-1 items-center gap-2 rounded-lg border border-gray-500 bg-primary-black-medium px-3 py-2 text-primary-white focus-within:border-primary-green">
@@ -368,13 +368,13 @@ const ListBlogs = () => {
                   type="text"
                   value={searchValue}
                   onChange={(event) => setSearchValue(event.target.value)}
-                  placeholder="Enter blog title..."
+                  placeholder="Nhập tiêu đề bài viết..."
                   className="w-full bg-transparent text-sm outline-none placeholder:text-gray-400"
                 />
                 {searchValue && (
                   <button
                     type="button"
-                    aria-label="Clear blog title search"
+                    aria-label="Xóa tìm kiếm tiêu đề bài viết"
                     className="rounded p-1 text-gray-300 hover:bg-white/10 hover:text-primary-white"
                     onClick={() => setSearchValue("")}
                   >
@@ -389,9 +389,9 @@ const ListBlogs = () => {
                   setStateFilter(event.target.value as BlogStateFilter)
                 }
               >
-                <option value="ALL">All states</option>
-                <option value="PENDING">PENDING only</option>
-                <option value="APPROVED">APPROVED only</option>
+                <option value="ALL">Tất cả trạng thái</option>
+                <option value="PENDING">Chỉ chờ duyệt</option>
+                <option value="APPROVED">Chỉ đã duyệt</option>
               </select>
               <button
                 type="button"
@@ -399,13 +399,13 @@ const ListBlogs = () => {
                 onClick={handleFixAllMarkdownSyntax}
                 disabled={isFixingAll || fixableBlogs.length === 0}
               >
-                {isFixingAll ? "Fixing..." : "Fix all"}
+                {isFixingAll ? "Đang sửa..." : "Sửa tất cả"}
               </button>
             </div>
             <span className="text-xs text-gray-300">
-              Showing {filteredBlogs.length} of {listBlogs?.length || 0} blogs.
-              Fix all will update {fixableBlogs.length} visible PENDING/APPROVED
-              blogs.
+              Hiển thị {filteredBlogs.length} / {listBlogs?.length || 0} bài viết.
+              Sửa tất cả sẽ cập nhật {fixableBlogs.length} bài viết chờ duyệt/đã duyệt
+              đang hiển thị.
             </span>
           </div>
         </div>

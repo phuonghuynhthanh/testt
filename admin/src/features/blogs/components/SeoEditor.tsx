@@ -73,11 +73,11 @@ const SeoEditor = ({
   const handleGenerateSEO = async () => {
     const targetTitle = seoData.title || blogTitle;
     if (!targetTitle.trim()) {
-      toast.error("Please enter a title before generating SEO content.");
+      toast.error("Vui lòng nhập tiêu đề trước khi tạo nội dung SEO.");
       return;
     }
 
-    const toastId = toast.loading("Generating SEO content with AI...");
+    const toastId = toast.loading("Đang tạo nội dung SEO bằng AI...");
     setIsGeneratingSeo(true);
     try {
       const generated = await getSeoData(targetTitle, blogContent);
@@ -92,14 +92,14 @@ const SeoEditor = ({
       setSeoData(updatedData);
       onSeoDataChange(updatedData);
       toast.update(toastId, {
-        render: "SEO content generated successfully!",
+        render: "Đã tạo nội dung SEO thành công!",
         type: "success",
         isLoading: false,
         autoClose: 3000,
       });
     } catch {
       toast.update(toastId, {
-        render: "Failed to generate SEO content. Please try again.",
+        render: "Không thể tạo nội dung SEO. Vui lòng thử lại.",
         type: "error",
         isLoading: false,
         autoClose: 3000,
@@ -111,24 +111,24 @@ const SeoEditor = ({
 
   return (
     <div className="px-5 space-y-4">
-      <h2 className="text-2xl font-bold my-4 text-primary-white">SEO Editor</h2>
+      <h2 className="text-2xl font-bold my-4 text-primary-white">Trình chỉnh sửa SEO</h2>
 
       <InputField
-        label="Tag"
+        label="Thẻ tag"
         id="tag"
         name="tag"
         value={seoData.tag}
         handleChange={(e) => handleFieldChange("tag", e.target.value)}
-        placeholder="Enter blog tag"
+        placeholder="Nhập thẻ tag..."
       />
 
       <InputField
-        label="Title"
+        label="Tiêu đề"
         id="title"
         name="title"
         value={seoData.title}
         handleChange={(e) => handleFieldChange("title", e.target.value)}
-        placeholder="Enter your title"
+        placeholder="Nhập tiêu đề bài viết..."
       />
 
       <InputUploadBanner
@@ -144,8 +144,8 @@ const SeoEditor = ({
       >
         <span>
           {isGeneratingSeo
-            ? "Generating SEO..."
-            : "Generate SEO Content with AI"}
+            ? "Đang tạo SEO..."
+            : "Tạo nội dung SEO bằng AI"}
         </span>
         <BsStars className="inline" />
       </button>
@@ -159,23 +159,23 @@ const SeoEditor = ({
       />
 
       <InputField
-        label="SEO Title"
+        label="Tiêu đề SEO"
         id="seoTitle"
         name="seoTitle"
         value={seoData.seoTitle}
         handleChange={(e) => handleFieldChange("seoTitle", e.target.value)}
-        placeholder="Enter SEO title"
+        placeholder="Nhập tiêu đề SEO..."
       />
 
       <div>
         <label className="block font-medium text-primary-white mb-1">
-          SEO Description
+          Mô tả SEO
         </label>
         <textarea
           value={seoData.seoDescription}
           onChange={(e) => handleFieldChange("seoDescription", e.target.value)}
           className="border border-gray-300 bg-primary-black-medium text-primary-white rounded-md p-2 w-full h-24 resize-none"
-          placeholder="Enter SEO description"
+          placeholder="Nhập mô tả SEO..."
         />
       </div>
     </div>

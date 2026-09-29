@@ -23,7 +23,7 @@ const InputUploadBanner: React.FC<InputUploadBannerProps> = ({
     const file = e.dataTransfer.files?.[0];
     if (!file) return;
     if (file.size > MAX_FILE_SIZE) {
-      toast.info("File is too large. Max size is 2MB.");
+      toast.info("Tệp quá lớn. Kích thước tối đa là 2MB.");
       return;
     }
     setBannerImage(file);
@@ -33,7 +33,7 @@ const InputUploadBanner: React.FC<InputUploadBannerProps> = ({
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > MAX_FILE_SIZE) {
-      toast.info("File is too large. Max size is 2MB.");
+      toast.info("Tệp quá lớn. Kích thước tối đa là 2MB.");
       return;
     }
     setBannerImage(file);
@@ -42,7 +42,7 @@ const InputUploadBanner: React.FC<InputUploadBannerProps> = ({
   return (
     <div>
       <label className="block font-medium mb-1 text-primary-white">
-        Banner Image
+        Ảnh Banner
       </label>
       <div className="h-[150px] flex items-center mb-2 gap-2">
         <div
@@ -69,7 +69,7 @@ const InputUploadBanner: React.FC<InputUploadBannerProps> = ({
           >
             <FaUpload className="text-2xl text-blue-500" />
             <span className="text-sm text-gray-500">
-              Click or drag an image to upload
+              Nhấp hoặc kéo thả hình ảnh để tải lên
             </span>
           </label>
         </div>
@@ -77,13 +77,13 @@ const InputUploadBanner: React.FC<InputUploadBannerProps> = ({
         {fileImage ? (
           <img
             src={URL.createObjectURL(fileImage)}
-            alt="Banner Preview"
+            alt="Xem trước Banner"
             className="rounded-lg h-full w-[250px] object-fill border"
           />
         ) : bannerUrl ? (
           <img
             src={/^https?:\/\//i.test(bannerUrl) ? bannerUrl : `${IMAGE_URL}/${bannerUrl}`}
-            alt="Banner Preview"
+            alt="Xem trước Banner"
             className="rounded-lg h-full w-[250px] object-fill border"
           />
         ) : null}

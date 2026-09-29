@@ -17,7 +17,7 @@ export const getSeoKeywords = async (
     );
     return response.data;
   } catch {
-    throw new Error("Unable to generate SEO keywords");
+    throw new Error("Không thể tạo từ khóa SEO");
   }
 };
 
@@ -37,7 +37,7 @@ export const getSeoDescription = async (
     );
     return response.data;
   } catch {
-    throw new Error("Unable to generate SEO description");
+    throw new Error("Không thể tạo mô tả SEO");
   }
 };
 
@@ -57,6 +57,6 @@ export const getSeoData = async (
       descript: description,
     };
   } catch {
-    throw new Error("Unable to generate SEO data");
+    throw new Error("Không thể tạo dữ liệu SEO");
   }
 };

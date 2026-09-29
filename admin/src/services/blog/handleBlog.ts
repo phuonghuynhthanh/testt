@@ -16,7 +16,7 @@ export const createBlogPost = async (blogData: IBlogData, fileImage: File) => {
     const response = await axiosClient.post("/blog", formData);
     return response.data;
   } catch {
-    throw new Error("Error creating blog");
+    throw new Error("Lỗi khi tạo bài viết");
   }
 };
 
@@ -29,7 +29,7 @@ export const getListBlogs = async (): Promise<IBlogItemData[]> => {
     );
     return response.data;
   } catch {
-    throw new Error("Unable to get list blog");
+    throw new Error("Không thể lấy danh sách bài viết");
   }
 };
 
@@ -47,7 +47,7 @@ export const getListBlogsWithState = async (
     );
     return response.data;
   } catch {
-    throw new Error("Unable to get list blog");
+    throw new Error("Không thể lấy danh sách bài viết");
   }
 };
 
@@ -60,7 +60,7 @@ export const getBlogDetail = async (blogId: string): Promise<IBlogData> => {
     );
     return response.data;
   } catch {
-    throw new Error("Unable to get blog detail");
+    throw new Error("Không thể lấy thông tin chi tiết bài viết");
   }
 };
 
@@ -78,7 +78,7 @@ export const checkDuplicateBlogLink = async (
     );
     return response.data;
   } catch {
-    throw new Error("Unable to check duplicate blog link");
+    throw new Error("Không thể kiểm tra trùng lặp đường dẫn bài viết");
   }
 };
 
@@ -106,7 +106,7 @@ export const updateBlog = async (
     );
     return response.data;
   } catch {
-    throw new Error("Error updating blog");
+    throw new Error("Lỗi khi cập nhật bài viết");
   }
 };
 
@@ -118,18 +118,18 @@ export const deleteBlog = async (blogId: string) => {
     return response.data;
   } catch (error: any) {
     if (error.response && error.response.status === 400) {
-      throw new Error("This blog is currently in use for affiliates.");
+      throw new Error("Bài viết này hiện đang được sử dụng cho tiếp thị liên kết.");
     }
-    throw new Error("Something went wrong. Please try again later.");
+    throw new Error("Đã xảy ra lỗi. Vui lòng thử lại sau.");
   }
 };
 
 export const categories = [
-  { value: "ALL", label: "All Articles" },
-  { value: "NEWS", label: "News" },
-  { value: "INVESTMENT_INSIGHTS", label: "Investment Insights" },
-  { value: "FOREIGN_INVESTMENT", label: "Foreign Investment" },
-  { value: "KNOWLEDGE_BASE", label: "Knowledge Base" },
-  { value: "TUTORIALS", label: "Tutorials" },
-  { value: "CAREER", label: "Career" },
+  { value: "ALL", label: "Tất cả bài viết" },
+  { value: "NEWS", label: "Tin tức" },
+  { value: "INVESTMENT_INSIGHTS", label: "Góc nhìn đầu tư" },
+  { value: "FOREIGN_INVESTMENT", label: "Đầu tư nước ngoài" },
+  { value: "KNOWLEDGE_BASE", label: "Kiến thức cơ bản" },
+  { value: "TUTORIALS", label: "Hướng dẫn" },
+  { value: "CAREER", label: "Nghề nghiệp" },
 ];

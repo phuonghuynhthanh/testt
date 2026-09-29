@@ -50,14 +50,20 @@ const ListBlogsPending: React.FC = () => {
     blogId: string,
     state: "PENDING" | "APPROVED" | "REJECTED",
   ) => {
-    const loadingToastId = toast.loading("Processing...");
+    const loadingToastId = toast.loading("Đang xử lý...");
     try {
       await updateBlog({
         id: blogId,
         state: state,
       });
+      const stateLabel =
+        state === "APPROVED"
+          ? "phê duyệt"
+          : state === "REJECTED"
+            ? "từ chối"
+            : "chuyển sang chờ duyệt";
       toast.update(loadingToastId, {
-        render: `Blog post was ${state.toLowerCase()}`,
+        render: `Bài viết đã được ${stateLabel}`,
         type: "success",
         isLoading: false,
         autoClose: 3000,
@@ -67,7 +73,7 @@ const ListBlogsPending: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ["blogs", "approved"] });
     } catch {
       toast.update(loadingToastId, {
-        render: "Something went wrong. Please try again later.",
+        render: "Đã xảy ra lỗi. Vui lòng thử lại sau.",
         type: "error",
         isLoading: false,
         autoClose: 3000,
@@ -78,7 +84,7 @@ const ListBlogsPending: React.FC = () => {
   // Approve every pending blog while reporting partial failures.
   const handleApproveAll = async () => {
     if (!blogsPending || blogsPending.length === 0) {
-      toast.info("No pending blogs to approve");
+      toast.info("Không có bài viết nào đang chờ duyệt");
       return;
     }
 
@@ -87,11 +93,11 @@ const ListBlogsPending: React.FC = () => {
     );
 
     if (pendingBlogs.length === 0) {
-      toast.info("No pending blogs to approve");
+      toast.info("Không có bài viết nào đang chờ duyệt");
       return;
     }
 
-    const loadingToastId = toast.loading("Approving all pending blogs...");
+    const loadingToastId = toast.loading("Đang duyệt tất cả bài viết chờ duyệt...");
 
     let successCount = 0;
     let failedCount = 0;
@@ -111,7 +117,7 @@ const ListBlogsPending: React.FC = () => {
       }
 
       toast.update(loadingToastId, {
-        render: `Approved ${successCount} blog(s), ${failedCount} failed.`,
+        render: `Đã duyệt ${successCount} bài viết, ${failedCount} bài viết thất bại.`,
         type: failedCount > 0 ? "warning" : "success",
         isLoading: false,
         autoClose: 4000,
@@ -122,7 +128,7 @@ const ListBlogsPending: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ["blogs", "approved"] });
     } catch {
       toast.update(loadingToastId, {
-        render: "Something went wrong. Please try again later.",
+        render: "Đã xảy ra lỗi. Vui lòng thử lại sau.",
         type: "error",
         isLoading: false,
         autoClose: 4000,
@@ -134,7 +140,7 @@ const ListBlogsPending: React.FC = () => {
   const columns: ColumnDef<IBlogItemData>[] = [
     {
       accessorKey: "modified_at",
-      header: "Last Updated",
+      header: "Cập nhật lần cuối",
       cell: ({ getValue }) => {
         const date = new Date(getValue() as string);
         return date.toLocaleString();
@@ -142,7 +148,7 @@ const ListBlogsPending: React.FC = () => {
     },
     {
       accessorKey: "title",
-      header: "Title",
+      header: "Tiêu đề",
       cell: ({ getValue }) => (
         <div className="w-[150px] overflow-hidden whitespace-nowrap text-ellipsis">
           {getValue() as string}
@@ -151,11 +157,11 @@ const ListBlogsPending: React.FC = () => {
     },
     {
       accessorKey: "tag",
-      header: "Tag",
+      header: "Thẻ",
     },
     {
       accessorKey: "category",
-      header: "Category",
+      header: "Danh mục",
       cell: ({ getValue }) => {
         return (
           <div className="w-[150px] overflow-hidden whitespace-nowrap text-ellipsis">
@@ -169,7 +175,7 @@ const ListBlogsPending: React.FC = () => {
     },
     {
       accessorKey: "state",
-      header: "Blog State",
+      header: "Trạng thái",
       cell: ({ getValue, row }) => {
         const blogId = row.original.id;
 
@@ -184,7 +190,7 @@ const ListBlogsPending: React.FC = () => {
                 >
                   <TbCircleCheck className="size-6 shrink-0" />
                   <span className="group-hover:underline underline-offset-2">
-                    Approve
+                    Duyệt
                   </span>
                 </button>
                 <div className="h-6 w-0.5 bg-gray-300"></div>
@@ -195,7 +201,7 @@ const ListBlogsPending: React.FC = () => {
                 >
                   <FaBan className="size-5 shrink-0" />
                   <span className="group-hover:underline underline-offset-2">
-                    Reject
+                    Từ chối
                   </span>
                 </button>
               </div>
@@ -225,14 +231,14 @@ const ListBlogsPending: React.FC = () => {
             className="flex justify-center text-primary-white items-center gap-2 group hover:cursor-pointer underline-offset-4 hover:underline"
             onClick={() => refetch()}
           >
-            <span>Refresh List Blogs</span>
+            <span>Làm mới danh sách</span>
             <TbRefresh className="group-hover:rotate-180 transition-all duration-300" />
           </div>
           <div
             className="flex justify-center items-center gap-1 group hover:cursor-pointer underline-offset-4 hover:underline text-green-500"
             onClick={handleApproveAll}
           >
-            <span>Approve All</span>
+            <span>Duyệt tất cả</span>
             <IoIosCheckmarkCircle className="size-4 group-hover:scale-125 transition-all duration-300" />
           </div>
         </div>

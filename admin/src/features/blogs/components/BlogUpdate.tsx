@@ -83,11 +83,11 @@ const BlogUpdate = () => {
   const handleFixMarkdownSyntax = () => {
     const fixed = fixEscapedMarkdownSyntax(blogContent);
     if (fixed === blogContent) {
-      toast.info("No escaped markdown syntax found.");
+      toast.info("Không tìm thấy lỗi cú pháp markdown escape.");
       return;
     }
     handleContentChange(fixed);
-    toast.success("Markdown syntax fixed. Please review preview before saving.");
+    toast.success("Đã sửa cú pháp markdown. Vui lòng kiểm tra lại bản xem trước trước khi lưu.");
   };
 
   // Sync markdown content and extract first h1 as title if present.
@@ -142,7 +142,7 @@ const BlogUpdate = () => {
 
   // Submit blog update payload to the backend API.
   const handleUpdate = async () => {
-    const toastId = toast.loading("Updating blog...");
+    const toastId = toast.loading("Đang cập nhật bài viết...");
     try {
       setIsLoading(true);
       const linkBlogPost = createUrl(blogData.title);
@@ -170,7 +170,7 @@ const BlogUpdate = () => {
       if (linkBlogPost !== storedLinkBlog) {
         const isDuplicate = await checkDuplicateBlogLink(linkBlogPost);
         if (isDuplicate) {
-          alert("This title is already taken. Please choose a different one.");
+          alert("Tiêu đề này đã tồn tại. Vui lòng chọn tiêu đề khác.");
           setIsLoading(false);
           return;
         }
@@ -180,9 +180,9 @@ const BlogUpdate = () => {
       queryClient.invalidateQueries({ queryKey: ["blogs"] });
       queryClient.invalidateQueries({ queryKey: ["blogs", "pending"] });
       queryClient.invalidateQueries({ queryKey: ["blogs", "approved"] });
-      toast.success("Update successful.");
+      toast.success("Cập nhật bài viết thành công.");
     } catch {
-      toast.error("Something went wrong. Please try again later.");
+      toast.error("Đã xảy ra lỗi. Vui lòng thử lại sau.");
     } finally {
       toast.dismiss(toastId);
       setIsLoading(false);
@@ -231,8 +231,8 @@ const BlogUpdate = () => {
   useEffect(() => {
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
       event.preventDefault();
-      event.returnValue = "All unsaved changes will be lost.";
-      return "All unsaved changes will be lost.";
+      event.returnValue = "Tất cả các thay đổi chưa lưu sẽ bị mất.";
+      return "Tất cả các thay đổi chưa lưu sẽ bị mất.";
     };
     window.addEventListener("beforeunload", handleBeforeUnload);
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
@@ -253,7 +253,7 @@ const BlogUpdate = () => {
         />
       )}
 
-      <h1 className="text-2xl font-bold text-primary-white">Blog Detail</h1>
+      <h1 className="text-2xl font-bold text-primary-white">Chi tiết bài viết</h1>
 
       <BlogBasicInfoForm
         blogData={blogData}
@@ -277,19 +277,19 @@ const BlogUpdate = () => {
       />
 
       <div className="flex gap-6 items-end my-10">
-        <h4 className="text-xl text-primary-white">Blog Content</h4>
+        <h4 className="text-xl text-primary-white">Nội dung bài viết</h4>
         <span
           className="hover:cursor-pointer underline-offset-4 hover:underline text-blue-500"
           onClick={handleClickEditBlogContent}
         >
-          {!openEditBlogContent ? "Edit Blog Content" : "Hidden Blog Content"}
+          {!openEditBlogContent ? "Chỉnh sửa nội dung" : "Ẩn nội dung"}
         </span>
         <button
           type="button"
           className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
           onClick={handleFixMarkdownSyntax}
         >
-          Fix Markdown Syntax
+          Sửa lỗi cú pháp Markdown
         </button>
       </div>
 
@@ -300,7 +300,7 @@ const BlogUpdate = () => {
           onClick={handleUpdate}
           disabled={isLoading}
         >
-          <span>Save Changes</span> <IoIosSave className="inline text-xl" />
+          <span>Lưu thay đổi</span> <IoIosSave className="inline text-xl" />
         </button>
       </div>
     </div>

@@ -62,13 +62,13 @@ const readProviderText = (
 
 // Keep every backend publication status distinct in the administrator UI.
 const statusCopy: Record<Publication["linkedinStatus"], string> = {
-  NOT_SELECTED: "LinkedIn is not selected.",
-  DRAFT: "Draft needs content before publishing.",
-  READY: "Ready for your final review.",
-  PUBLISHING: "A publish operation is in progress.",
-  PUBLISHED: "Published.",
-  FAILED: "Publishing failed; retry may be available.",
-  REVIEW_REQUIRED: "Outcome may be ambiguous; inspect the Company Page.",
+  NOT_SELECTED: "Chưa chọn xuất bản LinkedIn.",
+  DRAFT: "Bản nháp cần có nội dung trước khi xuất bản.",
+  READY: "Đã sẵn sàng cho lượt xem xét cuối cùng.",
+  PUBLISHING: "Đang tiến hành xuất bản...",
+  PUBLISHED: "Đã xuất bản.",
+  FAILED: "Xuất bản thất bại; có thể thử lại.",
+  REVIEW_REQUIRED: "Kết quả có thể chưa rõ ràng; vui lòng kiểm tra Trang Doanh nghiệp.",
 };
 
 // Provide the review-first workflow in either the Blog editor or LinkedIn workspace.
@@ -172,7 +172,7 @@ const PublicationPanel = ({
         linkedinIncludeWebLink: effectiveIncludeWebLink,
       }),
     onSuccess: async () => {
-      toast.success("Publication settings saved.");
+      toast.success("Đã lưu cài đặt xuất bản.");
       await refreshPublication();
     },
     onError: (error) => toast.error(publicationErrorMessage(error)),
@@ -186,13 +186,13 @@ const PublicationPanel = ({
       }),
     onSuccess: async () => {
       setDraftStale(false);
-      toast.success("LinkedIn draft generated for review.");
+      toast.success("Đã tạo bản nháp LinkedIn để xem xét.");
       await refreshPublication();
     },
     onError: (error, regenerate) => {
       if (!regenerate && isManualDraftConflict(error)) {
         const approved = window.confirm(
-          "This draft contains manual edits. Regenerating will replace them.",
+          "Bản nháp này có các chỉnh sửa thủ công. Tạo lại sẽ ghi đè lên nội dung này. Tiếp tục?",
         );
         if (approved) draftMutation.mutate(true);
         return;
@@ -203,7 +203,7 @@ const PublicationPanel = ({
   const saveDraftMutation = useMutation({
     mutationFn: () => saveLinkedInPublication(blogId, { content }),
     onSuccess: async () => {
-      toast.success("LinkedIn draft saved.");
+      toast.success("Đã lưu bản nháp LinkedIn.");
       await refreshPublication();
     },
     onError: (error) => toast.error(publicationErrorMessage(error)),
@@ -217,7 +217,7 @@ const PublicationPanel = ({
   const mediaMutation = useMutation({
     mutationFn: () => saveLinkedInPublication(blogId, { media: selectedMedia }),
     onSuccess: async () => {
-      toast.success("Selected media saved.");
+      toast.success("Đã lưu hình ảnh đã chọn.");
       await refreshPublication();
     },
     onError: (error) => toast.error(publicationErrorMessage(error)),
@@ -226,7 +226,7 @@ const PublicationPanel = ({
     mutationFn: () => publishBlog(blogId),
     onSuccess: async () => {
       setShowConfirmation(false);
-      toast.success("Publication request completed.");
+      toast.success("Yêu cầu xuất bản hoàn tất.");
       await refreshPublication();
     },
     onError: async (error) => {
@@ -238,7 +238,7 @@ const PublicationPanel = ({
   const retryMutation = useMutation({
     mutationFn: () => retryLinkedIn(blogId),
     onSuccess: async () => {
-      toast.success("LinkedIn retry completed.");
+      toast.success("Thử lại xuất bản LinkedIn hoàn tất.");
       await refreshPublication();
     },
     onError: (error) => toast.error(publicationErrorMessage(error)),
@@ -249,8 +249,8 @@ const PublicationPanel = ({
       setVerification(result);
       toast[result.readyForOrganicPosting ? "success" : "warning"](
         result.readyForOrganicPosting
-          ? "LinkedIn organization is ready for posting."
-          : "LinkedIn organization is not ready for posting.",
+          ? "Tổ chức LinkedIn đã sẵn sàng để đăng bài."
+          : "Tổ chức LinkedIn chưa sẵn sàng để đăng bài.",
       );
     },
     onError: (error) => toast.error(publicationErrorMessage(error)),
@@ -268,7 +268,7 @@ const PublicationPanel = ({
     if (
       publishLinkedin &&
       (contentDirty || mediaDirty) &&
-      !window.confirm("Disable LinkedIn and discard its unsaved local edits?")
+      !window.confirm("Tắt LinkedIn và hủy bỏ các chỉnh sửa cục bộ chưa lưu?")
     ) {
       return;
     }
@@ -282,7 +282,7 @@ const PublicationPanel = ({
     if (
       (content || selectedMedia.length > 0) &&
       !window.confirm(
-        "Changing mode and saving settings will clear the current LinkedIn draft and media. Continue?",
+        "Thay đổi chế độ và lưu cài đặt sẽ xóa bản nháp và hình ảnh LinkedIn hiện tại. Tiếp tục?",
       )
     ) {
       return;
@@ -313,7 +313,7 @@ const PublicationPanel = ({
   // Request a safe initial generation and let the backend identify manual-edit conflicts.
   const generateDraft = () => {
     if (mode === "CUSTOM" || settingsDirty) return;
-    if (contentDirty && !window.confirm("Unsaved LinkedIn edits will be replaced. Continue?")) {
+    if (contentDirty && !window.confirm("Các chỉnh sửa LinkedIn chưa lưu sẽ bị thay thế. Tiếp tục?")) {
       return;
     }
     draftMutation.mutate(false);
@@ -329,10 +329,10 @@ const PublicationPanel = ({
   };
 
   if (publicationQuery.isLoading) {
-    return <div className="my-10 text-gray-300">Loading publication settings…</div>;
+    return <div className="my-10 text-gray-300">Đang tải cài đặt xuất bản…</div>;
   }
   if (publicationQuery.isError || !publication) {
-    return <div className="my-10 text-red-300">Unable to load publication settings.</div>;
+    return <div className="my-10 text-red-300">Không thể tải cài đặt xuất bản.</div>;
   }
 
   const mediaCountValid = hasValidMediaCount(
@@ -345,10 +345,10 @@ const PublicationPanel = ({
   );
   const altTextValid = selectedMedia.every((item) => item.altText.trim());
   const publishLabel = publishWeb && publishLinkedin
-    ? "Publish"
+    ? "Xuất bản"
     : publishWeb
-      ? "Publish Website"
-      : "Publish LinkedIn";
+      ? "Xuất bản Website"
+      : "Xuất bản LinkedIn";
   const isPublished = publication.linkedinStatus === "PUBLISHED";
   const websitePublished = publishWeb && blogState === "APPROVED";
   const canStartPublish =
@@ -368,20 +368,20 @@ const PublicationPanel = ({
     ),
   ];
   const modeDescription = {
-    SAME: "Keep the article's main content and adapt its formatting for LinkedIn.",
-    SUMMARY: "Generate a shorter LinkedIn-native version from the full article.",
-    CUSTOM: "Write and review the LinkedIn post manually.",
+    SAME: "Giữ nội dung chính của bài viết và định dạng lại phù hợp cho LinkedIn.",
+    SUMMARY: "Tạo phiên bản tóm tắt ngắn gọn dành riêng cho LinkedIn từ toàn bộ bài viết.",
+    CUSTOM: "Tự viết và chỉnh sửa nội dung bài đăng LinkedIn thủ công.",
   }[mode];
 
   return (
     <section className="my-10 border-t border-primary-blue-lighter pt-8">
       <h2 className="text-xl font-bold text-primary-white">
-        {linkedinWorkspace ? "LinkedIn Post" : "Publication &amp; Distribution"}
+        {linkedinWorkspace ? "Bài đăng LinkedIn" : "Xuất bản & Phân phối"}
       </h2>
       <div className="mt-5 space-y-5 rounded-lg bg-primary-black-light p-5">
         <div>
           <h3 className="font-semibold text-primary-white">
-            {linkedinWorkspace ? "LinkedIn publishing" : "Publish to"}
+            {linkedinWorkspace ? "Xuất bản LinkedIn" : "Xuất bản tới"}
           </h3>
           <div className="mt-3 flex gap-5">
             {!linkedinWorkspace && <label><input type="checkbox" checked={publishWeb} onChange={() => toggleChannel("web")} /> Website</label>}
@@ -395,41 +395,41 @@ const PublicationPanel = ({
           disabled={!settingsDirty || settingsMutation.isPending || isPublished}
           className="rounded bg-blue-600 px-4 py-2 text-white disabled:opacity-50"
         >
-          {settingsMutation.isPending ? "Saving…" : "Save Publication Settings"}
+          {settingsMutation.isPending ? "Đang lưu…" : "Lưu cài đặt xuất bản"}
         </button>
 
         {publishLinkedin && <>
           <div>
-            <h3 className="font-semibold text-primary-white">LinkedIn mode</h3>
+            <h3 className="font-semibold text-primary-white">Chế độ LinkedIn</h3>
             <div className="mt-3 flex flex-wrap gap-3">
               {(["SAME", "SUMMARY", "CUSTOM"] as LinkedInMode[]).map((item) => (
-                <label key={item}><input type="radio" name="linkedin-mode" checked={mode === item} onChange={() => changeMode(item)} /> {item}</label>
+                <label key={item}><input type="radio" name="linkedin-mode" checked={mode === item} onChange={() => changeMode(item)} /> {item === "SAME" ? "Giữ nguyên (SAME)" : item === "SUMMARY" ? "Tóm tắt (SUMMARY)" : "Tùy chỉnh (CUSTOM)"}</label>
               ))}
             </div>
             <p className="mt-2 text-sm text-gray-300">{modeDescription}</p>
-            <label className="mt-3 block"><input type="checkbox" checked={includeWebLink} disabled={!publishWeb} onChange={(event) => setIncludeWebLink(event.target.checked)} /> Include website article link</label>
-            {!publishWeb && <p className="mt-1 text-sm text-yellow-200">Website link is unavailable because this post will not be published on the website.</p>}
+            <label className="mt-3 block"><input type="checkbox" checked={includeWebLink} disabled={!publishWeb} onChange={(event) => setIncludeWebLink(event.target.checked)} /> Bao gồm liên kết bài viết trên website</label>
+            {!publishWeb && <p className="mt-1 text-sm text-yellow-200">Liên kết website không khả dụng vì bài viết này sẽ không được xuất bản lên website.</p>}
           </div>
 
-          {draftStale && ["SAME", "SUMMARY"].includes(publication.linkedinMode) && <p className="rounded border border-yellow-500 p-3 text-sm text-yellow-200">The website article changed after this LinkedIn draft was created. Consider regenerating it before publishing.</p>}
+          {draftStale && ["SAME", "SUMMARY"].includes(publication.linkedinMode) && <p className="rounded border border-yellow-500 p-3 text-sm text-yellow-200">Bài viết website đã thay đổi sau khi bản nháp LinkedIn này được tạo. Hãy cân nhắc tạo lại trước khi xuất bản.</p>}
 
           <div>
             <div className="flex items-center justify-between gap-3">
-              <h3 className="font-semibold text-primary-white">LinkedIn Draft</h3>
-              {mode !== "CUSTOM" && <button type="button" onClick={generateDraft} disabled={settingsDirty || draftMutation.isPending || isPublished} className="rounded bg-indigo-600 px-3 py-2 text-sm text-white disabled:opacity-50">{draftMutation.isPending ? "Generating…" : content ? "Regenerate" : "Generate"}</button>}
+              <h3 className="font-semibold text-primary-white">Bản nháp LinkedIn</h3>
+              {mode !== "CUSTOM" && <button type="button" onClick={generateDraft} disabled={settingsDirty || draftMutation.isPending || isPublished} className="rounded bg-indigo-600 px-3 py-2 text-sm text-white disabled:opacity-50">{draftMutation.isPending ? "Đang tạo…" : content ? "Tạo lại" : "Tạo bản nháp"}</button>}
             </div>
-            <textarea value={content} onChange={(event) => setContent(event.target.value)} disabled={isPublished} className="mt-3 min-h-40 w-full rounded border border-gray-600 bg-primary-black p-3 text-primary-white" placeholder={mode === "CUSTOM" ? "Write the LinkedIn post…" : "Generate a draft to review…"} />
-            <button type="button" onClick={() => saveDraftMutation.mutate()} disabled={!content.trim() || !contentDirty || settingsDirty || saveDraftMutation.isPending || isPublished} className="mt-3 rounded bg-blue-600 px-4 py-2 text-white disabled:opacity-50">{saveDraftMutation.isPending ? "Saving…" : "Save LinkedIn Draft"}</button>
+            <textarea value={content} onChange={(event) => setContent(event.target.value)} disabled={isPublished} className="mt-3 min-h-40 w-full rounded border border-gray-600 bg-primary-black p-3 text-primary-white" placeholder={mode === "CUSTOM" ? "Viết bài đăng LinkedIn…" : "Tạo bản nháp để xem xét…"} />
+            <button type="button" onClick={() => saveDraftMutation.mutate()} disabled={!content.trim() || !contentDirty || settingsDirty || saveDraftMutation.isPending || isPublished} className="mt-3 rounded bg-blue-600 px-4 py-2 text-white disabled:opacity-50">{saveDraftMutation.isPending ? "Đang lưu…" : "Lưu bản nháp LinkedIn"}</button>
           </div>
 
-          {publication.linkedinFactCheck?.requiresHumanFactCheck && <div className="rounded border border-yellow-500 p-3 text-yellow-100"><strong>Human fact-check recommended</strong><ul className="ml-5 list-disc">{publication.linkedinFactCheck.factCheckNotes.map((note) => <li key={note}>{note}</li>)}</ul></div>}
+          {publication.linkedinFactCheck?.requiresHumanFactCheck && <div className="rounded border border-yellow-500 p-3 text-yellow-100"><strong>Khuyến nghị người kiểm tra tính xác thực</strong><ul className="ml-5 list-disc">{publication.linkedinFactCheck.factCheckNotes.map((note) => <li key={note}>{note}</li>)}</ul></div>}
 
           <div>
             <div className="flex flex-wrap items-end justify-between gap-3">
-              <div><h3 className="font-semibold text-primary-white">Media</h3><p className="text-sm text-gray-300">Mode: {publication.linkedinMediaMode}</p></div>
+              <div><h3 className="font-semibold text-primary-white">Hình ảnh</h3><p className="text-sm text-gray-300">Chế độ: {publication.linkedinMediaMode === "single-image" ? "1 hình ảnh" : publication.linkedinMediaMode === "multi-image" ? "Nhiều hình ảnh" : "Không có hình ảnh"}</p></div>
               {publication.linkedinMediaMode !== "none" && <div className="flex flex-wrap gap-2">
-                <input value={keywordInput} onChange={(event) => setKeywordInput(event.target.value)} placeholder="Optional keywords" className="rounded border border-gray-600 bg-primary-black px-3 py-2 text-sm text-primary-white" />
-                <button type="button" onClick={searchMedia} disabled={suggestionsMutation.isPending || isPublished} className="rounded bg-indigo-600 px-3 py-2 text-sm text-white disabled:opacity-50">{suggestionsMutation.isPending ? "Searching…" : keywordInput.trim() ? "Search Again" : "Find Suggestions"}</button>
+                <input value={keywordInput} onChange={(event) => setKeywordInput(event.target.value)} placeholder="Từ khóa (tùy chọn)..." className="rounded border border-gray-600 bg-primary-black px-3 py-2 text-sm text-primary-white" />
+                <button type="button" onClick={searchMedia} disabled={suggestionsMutation.isPending || isPublished} className="rounded bg-indigo-600 px-3 py-2 text-sm text-white disabled:opacity-50">{suggestionsMutation.isPending ? "Đang tìm…" : keywordInput.trim() ? "Tìm lại" : "Tìm gợi ý"}</button>
               </div>}
             </div>
 
@@ -438,50 +438,50 @@ const PublicationPanel = ({
               return <article key={candidate.providerId} className={`overflow-hidden rounded border ${selected ? "border-blue-400" : "border-gray-600"}`}>
                 <img src={candidate.imageUrl} alt={candidate.altText} className="h-32 w-full object-cover" />
                 <div className="space-y-2 p-3 text-xs text-primary-white">
-                  <label className="block">Alt text<input value={candidate.altText} onChange={(event) => updateAltText(candidate.providerId, event.target.value)} className="mt-1 w-full rounded border border-gray-600 bg-primary-black p-2" /></label>
-                  <p>Photo by {candidate.photographer}</p>
+                  <label className="block">Văn bản thay thế (Alt text)<input value={candidate.altText} onChange={(event) => updateAltText(candidate.providerId, event.target.value)} className="mt-1 w-full rounded border border-gray-600 bg-primary-black p-2" /></label>
+                  <p>Ảnh bởi {candidate.photographer}</p>
                   <p>{candidate.attribution}</p>
-                  <a href={candidate.sourceUrl} target="_blank" rel="noreferrer" className="block text-blue-300 underline">View on Pexels</a>
-                  <button type="button" onClick={() => toggleMedia(candidate)} className="rounded bg-blue-600 px-3 py-2 text-white">{selected ? "Remove" : "Select"}</button>
+                  <a href={candidate.sourceUrl} target="_blank" rel="noreferrer" className="block text-blue-300 underline">Xem trên Pexels</a>
+                  <button type="button" onClick={() => toggleMedia(candidate)} className="rounded bg-blue-600 px-3 py-2 text-white">{selected ? "Bỏ chọn" : "Chọn"}</button>
                 </div>
               </article>;
             })}</div>}
 
-            {publication.linkedinMediaMode !== "none" && <p className={`mt-2 text-sm ${mediaCountValid && altTextValid ? "text-green-300" : "text-yellow-200"}`}>{publication.linkedinMediaMode === "single-image" ? "Select exactly 1 image with alt text." : "Select 2–20 images with alt text."}</p>}
-            {publication.linkedinMediaMode !== "none" && <button type="button" onClick={() => mediaMutation.mutate()} disabled={!mediaDirty || !mediaCountValid || !altTextValid || mediaMutation.isPending || isPublished} className="mt-3 rounded bg-blue-600 px-4 py-2 text-white disabled:opacity-50">{mediaMutation.isPending ? "Saving…" : "Save Selected Media"}</button>}
+            {publication.linkedinMediaMode !== "none" && <p className={`mt-2 text-sm ${mediaCountValid && altTextValid ? "text-green-300" : "text-yellow-200"}`}>{publication.linkedinMediaMode === "single-image" ? "Chọn chính xác 1 hình ảnh kèm văn bản thay thế (alt text)." : "Chọn từ 2–20 hình ảnh kèm văn bản thay thế (alt text)."}</p>}
+            {publication.linkedinMediaMode !== "none" && <button type="button" onClick={() => mediaMutation.mutate()} disabled={!mediaDirty || !mediaCountValid || !altTextValid || mediaMutation.isPending || isPublished} className="mt-3 rounded bg-blue-600 px-4 py-2 text-white disabled:opacity-50">{mediaMutation.isPending ? "Đang lưu…" : "Lưu hình ảnh đã chọn"}</button>}
           </div>
         </>}
 
         <div className="border-t border-gray-600 pt-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <div><h3 className="font-semibold text-primary-white">Publishing</h3><p className="text-sm text-gray-300">{linkedinWorkspace ? `LinkedIn: ${publishLinkedin ? publication.linkedinStatus : "Not selected"}` : `Website: ${publishWeb ? websitePublished ? "Published" : "Ready" : "Not selected"} · LinkedIn: ${publishLinkedin ? publication.linkedinStatus : "Not selected"}`}</p></div>
-            {publishLinkedin && <button type="button" onClick={() => verifyMutation.mutate()} disabled={verifyMutation.isPending} className="rounded border border-blue-400 px-3 py-2 text-sm text-blue-200">{verifyMutation.isPending ? "Verifying…" : "Verify LinkedIn organization"}</button>}
+            <div><h3 className="font-semibold text-primary-white">Trạng thái xuất bản</h3><p className="text-sm text-gray-300">{linkedinWorkspace ? `LinkedIn: ${publishLinkedin ? statusCopy[publication.linkedinStatus] : "Chưa chọn"}` : `Website: ${publishWeb ? websitePublished ? "Đã xuất bản" : "Sẵn sàng" : "Chưa chọn"} · LinkedIn: ${publishLinkedin ? statusCopy[publication.linkedinStatus] : "Chưa chọn"}`}</p></div>
+            {publishLinkedin && <button type="button" onClick={() => verifyMutation.mutate()} disabled={verifyMutation.isPending} className="rounded border border-blue-400 px-3 py-2 text-sm text-blue-200">{verifyMutation.isPending ? "Đang xác minh…" : "Xác minh tổ chức LinkedIn"}</button>}
           </div>
 
           {publishLinkedin && verification && <div className="mt-3 rounded border border-gray-600 p-3 text-sm text-gray-200">
-            <p>Organization: {organizationName || "Configured organization"}</p>
-            <p>Ready for organic posting: {verification.readyForOrganicPosting ? "Yes" : "No"}</p>
-            <p>Roles: {verification.roles.map((role) => readProviderText(role, ["role", "roleType", "name"])).filter(Boolean).join(", ") || "None reported"}</p>
-            {Object.entries(verification.permissions).map(([key, value]) => <p key={key}>{key}: {value ? "Yes" : "No"}</p>)}
+            <p>Tổ chức: {organizationName || "Tổ chức đã cấu hình"}</p>
+            <p>Sẵn sàng đăng bài tự nhiên: {verification.readyForOrganicPosting ? "Có" : "Không"}</p>
+            <p>Vai trò: {verification.roles.map((role) => readProviderText(role, ["role", "roleType", "name"])).filter(Boolean).join(", ") || "Không có dữ liệu"}</p>
+            {Object.entries(verification.permissions).map(([key, value]) => <p key={key}>{key}: {value ? "Có" : "Không"}</p>)}
           </div>}
 
           <p className="mt-2 text-sm text-gray-300">{statusCopy[publication.linkedinStatus]}</p>
           {publication.linkedinError && <p className="mt-2 text-sm text-red-300">{publication.linkedinError.message}</p>}
-          {publication.linkedinStatus === "REVIEW_REQUIRED" && <p className="mt-3 rounded border border-red-500 p-3 text-red-200">LinkedIn publication outcome may be ambiguous. Check the Company Page before taking any further action. Automatic retry is disabled to avoid duplicate posts.</p>}
-          {isPublished && <p className="mt-3 text-green-300">LinkedIn published {publication.linkedinPublishedAt ? `at ${new Date(publication.linkedinPublishedAt).toLocaleString()}` : ""}{publication.linkedinPostId ? ` · Post ID: ${publication.linkedinPostId}` : ""}</p>}
-          {publication.linkedinStatus === "FAILED" && publication.linkedinError?.retryable === true && <button type="button" onClick={() => retryMutation.mutate()} disabled={retryMutation.isPending} className="mt-3 rounded bg-amber-600 px-4 py-2 text-white">{retryMutation.isPending ? "Retrying…" : "Retry LinkedIn"}</button>}
-          {hasUnsavedChanges && <p className="mt-3 text-sm text-yellow-200">Save publication settings, draft, and media before publishing.</p>}
-          {publishLinkedin && !savedMediaValid && <p className="mt-2 text-sm text-yellow-200">Save a valid media selection before publishing.</p>}
+          {publication.linkedinStatus === "REVIEW_REQUIRED" && <p className="mt-3 rounded border border-red-500 p-3 text-red-200">Kết quả xuất bản LinkedIn có thể chưa rõ ràng. Hãy kiểm tra Trang Doanh nghiệp trước khi thao tác tiếp. Tự động thử lại đã tắt để tránh trùng lặp bài đăng.</p>}
+          {isPublished && <p className="mt-3 text-green-300">LinkedIn đã xuất bản {publication.linkedinPublishedAt ? `vào lúc ${new Date(publication.linkedinPublishedAt).toLocaleString("vi-VN")}` : ""}{publication.linkedinPostId ? ` · ID bài đăng: ${publication.linkedinPostId}` : ""}</p>}
+          {publication.linkedinStatus === "FAILED" && publication.linkedinError?.retryable === true && <button type="button" onClick={() => retryMutation.mutate()} disabled={retryMutation.isPending} className="mt-3 rounded bg-amber-600 px-4 py-2 text-white">{retryMutation.isPending ? "Đang thử lại…" : "Thử lại LinkedIn"}</button>}
+          {hasUnsavedChanges && <p className="mt-3 text-sm text-yellow-200">Vui lòng lưu cài đặt xuất bản, bản nháp và hình ảnh trước khi xuất bản.</p>}
+          {publishLinkedin && !savedMediaValid && <p className="mt-2 text-sm text-yellow-200">Vui lòng lưu lựa chọn hình ảnh hợp lệ trước khi xuất bản.</p>}
           {canStartPublish && !(publishWeb && !publishLinkedin && websitePublished) && <button type="button" onClick={() => setShowConfirmation(true)} disabled={publishMutation.isPending || publishBlocked} className="mt-3 rounded bg-emerald-600 px-4 py-2 text-white disabled:opacity-50">{publishLabel}</button>}
         </div>
       </div>
 
       {showConfirmation && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"><div className="w-full max-w-md rounded-lg bg-primary-black p-6 text-primary-white shadow-xl">
-        <h3 className="text-lg font-bold">Confirm publication</h3>
-        <p className="mt-3">Targets: {publishWeb ? "Website" : ""}{publishWeb && publishLinkedin ? " + " : ""}{publishLinkedin ? "LinkedIn" : ""}</p>
-        {publishLinkedin && <><p>LinkedIn mode: {publication.linkedinMode}</p><p>Website link: {publication.linkedinIncludeWebLink ? "Included" : "Not included"}</p><p>Media: {savedMedia.length} image{savedMedia.length === 1 ? "" : "s"}</p><p>LinkedIn status: {publication.linkedinStatus}</p></>}
-        {publishWeb && publishLinkedin && <p className="mt-3 text-sm text-gray-300">Website will be published first. LinkedIn will publish afterward.</p>}
-        <div className="mt-5 flex justify-end gap-3"><button type="button" onClick={() => setShowConfirmation(false)} className="rounded border border-gray-500 px-4 py-2">Cancel</button><button type="button" onClick={() => publishMutation.mutate()} disabled={publishMutation.isPending} className="rounded bg-emerald-600 px-4 py-2">{publishMutation.isPending ? "Publishing…" : "Publish Now"}</button></div>
+        <h3 className="text-lg font-bold">Xác nhận xuất bản</h3>
+        <p className="mt-3">Mục tiêu: {publishWeb ? "Website" : ""}{publishWeb && publishLinkedin ? " + " : ""}{publishLinkedin ? "LinkedIn" : ""}</p>
+        {publishLinkedin && <><p>Chế độ LinkedIn: {publication.linkedinMode}</p><p>Liên kết website: {publication.linkedinIncludeWebLink ? "Bao gồm" : "Không bao gồm"}</p><p>Hình ảnh: {savedMedia.length} hình ảnh</p><p>Trạng thái LinkedIn: {statusCopy[publication.linkedinStatus]}</p></>}
+        {publishWeb && publishLinkedin && <p className="mt-3 text-sm text-gray-300">Website sẽ được xuất bản trước. Sau đó LinkedIn sẽ được xuất bản tiếp theo.</p>}
+        <div className="mt-5 flex justify-end gap-3"><button type="button" onClick={() => setShowConfirmation(false)} className="rounded border border-gray-500 px-4 py-2">Hủy</button><button type="button" onClick={() => publishMutation.mutate()} disabled={publishMutation.isPending} className="rounded bg-emerald-600 px-4 py-2">{publishMutation.isPending ? "Đang xuất bản…" : "Xuất bản ngay"}</button></div>
       </div></div>}
     </section>
   );

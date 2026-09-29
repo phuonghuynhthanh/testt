@@ -22,18 +22,18 @@ const InputSeoKeyword: React.FC<InputSeoKeywordProps> = ({
     <div>
       <div className="flex items-end mb-2 space-x-2">
         <InputField
-          label="SEO Keywords"
+          label="Từ khóa SEO"
           id="seo-keyword"
           name="seo-key"
           value={keywordInput}
           handleChange={(e) => setKeywordInput(e.target.value)}
-          placeholder='Enter keywords separated by commas, e.g., "kw1, kw2, kw3"'
+          placeholder='Nhập các từ khóa phân tách bằng dấu phẩy, ví dụ: "từ khóa 1, từ khóa 2"'
         />
         <button
           onClick={handleAddKeyword}
           className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
         >
-          Add Keywords <IoMdAddCircle className="inline" />
+          Thêm từ khóa <IoMdAddCircle className="inline" />
         </button>
       </div>
       <div className="flex flex-wrap gap-2">
@@ -46,7 +46,7 @@ const InputSeoKeyword: React.FC<InputSeoKeywordProps> = ({
             <button
               onClick={() => handleDeleteKeyword(index)}
               className="text-red-500 hover:text-red-600"
-              aria-label="Delete keyword"
+              aria-label="Xóa từ khóa"
             >
               <FaRegWindowClose />
             </button>

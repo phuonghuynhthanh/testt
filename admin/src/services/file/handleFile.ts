@@ -15,6 +15,6 @@ export const uploadFileImage = async (file: File, link_post: string) => {
     return img_url;
   } catch (error) {
     console.log(error);
-    throw new Error("Error uploading file");
+    throw new Error("Lỗi khi tải lên tệp tin");
   }
 };

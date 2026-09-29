@@ -202,8 +202,8 @@ const UploadImageButton = ({ onUploadFiles }: MarkdownToolbarProps) => {
     <>
       <button
         type="button"
-        title="Upload image"
-        aria-label="Upload image"
+        title="Tải lên hình ảnh"
+        aria-label="Tải lên hình ảnh"
         onClick={() => inputRef.current?.click()}
       >
         <MdFileUpload />
@@ -257,7 +257,7 @@ const MarkdownEditor = forwardRef<MDXEditorMethods, MarkdownEditorProps>(
       value,
       onChange,
       title,
-      placeholder = "Write your blog post here...",
+      placeholder = "Viết nội dung bài viết tại đây...",
       height = "h-[600px]",
       readOnly = false,
       className = "",
@@ -330,7 +330,7 @@ const MarkdownEditor = forwardRef<MDXEditorMethods, MarkdownEditorProps>(
     // Upload images through the existing file service after validating size.
     const handleImageUpload = async (file: File): Promise<string> => {
       if (file.size > MAX_SIZE) {
-        toast.warning("File size exceeds 2MB");
+        toast.warning("Kích thước tệp vượt quá 2MB");
         return "";
       }
 
@@ -347,7 +347,7 @@ const MarkdownEditor = forwardRef<MDXEditorMethods, MarkdownEditorProps>(
           if (imageUrl)
             uploadedMarkdown.push(createImageMarkdown(file, imageUrl));
         } catch {
-          toast.error("Unable to upload image");
+          toast.error("Không thể tải lên hình ảnh");
         }
       }
 

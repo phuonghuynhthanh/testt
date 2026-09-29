@@ -16,17 +16,17 @@ const LinkedInPost = () => {
 
   if (isLoading) return <LoadingPage />;
   if (isError || !blogId || !blog) {
-    return <p className="text-red-300">Unable to load this Blog.</p>;
+    return <p className="text-red-300">Không thể tải bài viết này.</p>;
   }
 
   return (
     <section className="mx-auto max-w-5xl text-gray-th2">
       <Link to="/linkedin" className="text-sm text-blue-300 hover:underline">
-        ← LinkedIn Management
+        ← Quản lý LinkedIn
       </Link>
       <h1 className="mt-4 text-2xl font-bold text-primary-white">{blog.title}</h1>
       <p className="mt-1 text-sm text-gray-400">
-        Manage the LinkedIn post separately from Blog content editing.
+        Quản lý bài đăng LinkedIn độc lập với trình chỉnh sửa nội dung bài viết.
       </p>
       <PublicationPanel
         blogId={blogId}

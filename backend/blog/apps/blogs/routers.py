@@ -15,8 +15,8 @@ router = APIRouter(prefix="/blog", tags=["Blogs"])
 # Return approved Blog summaries for the public landing page.
 @router.get(
     "/client/blogs",
-    summary="Get list of blogs for client",
-    description="This endpoint retrieves a list of all available blogs.",
+    summary="Lấy danh sách bài viết cho client",
+    description="Endpoint này lấy danh sách tất cả các bài viết khả dụng.",
     status_code=status.HTTP_200_OK,
     response_model=schemas.BlogForClient,
 )
@@ -34,8 +34,8 @@ def get_blog_list_for_client(
 # Return the complete Blog list for the CMS administrator.
 @router.get(
     "/admin/blogs",
-    summary="Get list of blogs for admin",
-    description="This endpoint retrieves a list of all available blogs for administrative purposes.",
+    summary="Lấy danh sách bài viết cho admin",
+    description="Endpoint này lấy danh sách bài viết phục vụ mục đích quản trị.",
     status_code=status.HTTP_200_OK,
     response_model=List[schemas.ListBlogAdmin],
 )
@@ -49,8 +49,8 @@ def get_admin_blog_list(
 # Return one Blog record for CMS editing.
 @router.get(
     "/admin/{blog_id}",
-    summary="Retrieve a blog by its ID",
-    description="This endpoint fetches a specific blog based on its unique identifier.",
+    summary="Lấy thông tin bài viết theo ID",
+    description="Endpoint này lấy chi tiết bài viết dựa theo mã định danh duy nhất.",
     status_code=status.HTTP_200_OK,
 )
 def get_blog_by_id(
@@ -63,8 +63,8 @@ def get_blog_by_id(
 # Return an approved Blog article for public reading.
 @router.get(
     "/link/{link_post}",
-    summary="Get blog content by link post",
-    description="Retrieves the content of a specific blog by its link post.",
+    summary="Lấy nội dung bài viết theo đường dẫn",
+    description="Lấy nội dung bài viết theo đường dẫn link_post.",
     status_code=status.HTTP_200_OK,
 )
 def get_blog_content_by_link_post(link_post: str, limit: Optional[int] = 4):
@@ -74,8 +74,8 @@ def get_blog_content_by_link_post(link_post: str, limit: Optional[int] = 4):
 # Create a Blog and its optional banner under administrator authorization.
 @router.post(
     "",
-    summary="Create a new blog",
-    description="This endpoint allows you to create a new blog with the provided data.",
+    summary="Tạo bài viết mới",
+    description="Endpoint này cho phép tạo bài viết mới với dữ liệu cung cấp.",
     status_code=status.HTTP_201_CREATED,
 )
 def create_blog(
@@ -90,8 +90,8 @@ def create_blog(
 # Update an existing Blog under administrator authorization.
 @router.put(
     "/{id}",
-    summary="Update a blog",
-    description="This endpoint allows you to update a blog with the provided data.",
+    summary="Cập nhật bài viết",
+    description="Endpoint này cho phép cập nhật bài viết với dữ liệu cung cấp.",
     status_code=status.HTTP_200_OK,
 )
 def update_blog(
@@ -107,8 +107,8 @@ def update_blog(
 # Delete a Blog under administrator authorization.
 @router.delete(
     "/{blog_id}",
-    summary="Delete a blog",
-    description="This endpoint deletes a blog by its ID.",
+    summary="Xóa bài viết",
+    description="Endpoint này xóa một bài viết theo ID.",
     status_code=status.HTTP_200_OK,
 )
 def delete_blog(
@@ -121,8 +121,8 @@ def delete_blog(
 # Generate Blog markdown for the CMS administrator.
 @router.post(
     "/ai-generate-markdown",
-    summary="AI generate blog with title",
-    description="This endpoint generates a blog with a title using AI.",
+    summary="AI tạo nội dung bài viết theo tiêu đề",
+    description="Endpoint này tạo bài viết bằng AI dựa trên tiêu đề.",
     status_code=status.HTTP_200_OK,
 )
 async def ai_generate_blog_markdown(
@@ -137,8 +137,8 @@ async def ai_generate_blog_markdown(
 # Generate Blog title ideas for the CMS administrator.
 @router.get(
     "/openai/ai-generate-list-title",
-    summary="AI generate list title",
-    description="This endpoint generates a list title using AI.",
+    summary="AI tạo danh sách tiêu đề",
+    description="Endpoint này tạo danh sách gợi ý tiêu đề bằng AI.",
     status_code=status.HTTP_200_OK,
     response_model=List[str],
 )
@@ -154,8 +154,8 @@ async def ai_generate_blog_list_title(
 # Check whether a Blog slug is already used.
 @router.get(
     "/is-duplicate-link-post",
-    summary="Check if link post is duplicate",
-    description="This endpoint checks if a link post is already in use by another blog.",
+    summary="Kiểm tra trùng lặp đường dẫn bài viết",
+    description="Endpoint này kiểm tra xem đường dẫn bài viết đã được sử dụng hay chưa.",
     status_code=status.HTTP_200_OK,
 )
 def is_duplicate_link_post(

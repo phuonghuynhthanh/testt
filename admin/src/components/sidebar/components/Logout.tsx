@@ -11,17 +11,17 @@ const Logout = () => {
   const handleLogout = () => {
     try {
       clearAuthSession();
-      toast.success("Logout successful");
+      toast.success("Đăng xuất thành công");
       navigate("/login");
     } catch {
-      toast.error("Something went wrong. Please try again later.");
+      toast.error("Đã xảy ra lỗi. Vui lòng thử lại sau.");
     }
   };
   return (
     <div onClick={handleLogout}>
       <hr />
       <div className="grow transition-all duration-300 ease-in-out bg-transparent flex gap-2 hover:text-red-500 justify-start items-center h-10 hover:cursor-pointer hover:bg-gray-hover rounded-lg">
-        <span className="font-semibold">Logout</span>
+        <span className="font-semibold">Đăng xuất</span>
         <RiLogoutBoxRFill className="shrink-0 fill-current " size={18} />
       </div>
     </div>

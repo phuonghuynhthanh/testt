@@ -84,11 +84,11 @@ const BlogCreate = () => {
   const handleClickNextStep = () => {
     if (currentStep === 1) {
       if (!isValidLinkBlogPost) {
-        toast.info("Please check the valid title.");
+        toast.info("Vui lòng kiểm tra tính hợp lệ của tiêu đề.");
         return;
       }
       if (!markdownContent.trim()) {
-        toast.info("Blog content cannot be empty.");
+        toast.info("Nội dung bài viết không được để trống.");
         return;
       }
 
@@ -113,15 +113,15 @@ const BlogCreate = () => {
 
   const isValidBlogData = (): boolean => {
     if (!bannerImage) {
-      toast.info("Please provide a banner for the blog post.");
+      toast.info("Vui lòng tải lên ảnh banner cho bài viết.");
       return false;
     }
     if (!blogSeo.tag) {
-      toast.info("Please select a tag for the blog post.");
+      toast.info("Vui lòng chọn thẻ tag cho bài viết.");
       return false;
     }
     if (!blogSeo.title) {
-      toast.info("Please enter a title for the blog post.");
+      toast.info("Vui lòng nhập tiêu đề cho bài viết.");
       return false;
     }
 
@@ -134,7 +134,7 @@ const BlogCreate = () => {
 
       return;
     }
-    const loadingToastId = toast.loading("Creating...");
+    const loadingToastId = toast.loading("Đang tạo bài viết...");
     try {
       const id = crypto.randomUUID();
       const linkBlogPost = createUrl(blogSeo.title);
@@ -161,7 +161,7 @@ const BlogCreate = () => {
 
       await createBlogPost(newBlog, bannerImage as File);
       toast.update(loadingToastId, {
-        render: "Create successful.",
+        render: "Tạo bài viết thành công.",
         type: "success",
         isLoading: false,
         autoClose: 3000,
@@ -191,17 +191,17 @@ const BlogCreate = () => {
 
   const handleCheckDuplicateBlogLink = async () => {
     if (!blogTitle.trim()) {
-      toast.info("Blog title cannot be empty.");
+      toast.info("Tiêu đề bài viết không được để trống.");
       return;
     }
     const isDuplicate = await checkDuplicateBlogLink(linkBlogPost);
     if (isDuplicate) {
       toast.error(
-        "This title is already taken. Please choose a different one.",
+        "Tiêu đề này đã tồn tại. Vui lòng chọn tiêu đề khác.",
       );
       setIsValidLinkBlogPost(false);
     } else {
-      toast.success("Title is available. You can create a new blog post.");
+      toast.success("Tiêu đề khả dụng. Bạn có thể sử dụng tiêu đề này.");
       setIsValidLinkBlogPost(true);
     }
   };
@@ -213,8 +213,8 @@ const BlogCreate = () => {
     }) => {
       event.preventDefault();
       event.returnValue =
-        "All unsaved changes will be lost. Are you sure you want to leave?";
-      return "All unsaved changes will be lost. Are you sure you want to leave?";
+        "Tất cả thay đổi chưa lưu sẽ bị mất. Bạn có chắc chắn muốn rời đi?";
+      return "Tất cả thay đổi chưa lưu sẽ bị mất. Bạn có chắc chắn muốn rời đi?";
     };
 
     window.addEventListener("beforeunload", handleBeforeUnload);
@@ -240,17 +240,17 @@ const BlogCreate = () => {
               onClick={handleClickBlogPostPreview}
               className="text-xl h-max w-max px-6 py-2 bg-orange-500 hover:bg-orange-500/90 rounded-lg font-semibold text-white mt-8"
             >
-              Preview <FaPlay className="inline ml-2" />
+              Xem trước <FaPlay className="inline ml-2" />
             </button>
             <div className="h-[1px] w-full bg-gray-300 my-4"></div>
           </div>
           <div className="h-max">
             <div className="flex gap-2 items-end">
               <InputField
-                label="Blog Title"
+                label="Tiêu đề bài viết"
                 id="title"
                 name="title"
-                placeholder="Enter blog title"
+                placeholder="Nhập tiêu đề bài viết..."
                 value={blogTitle}
                 handleChange={handleChangeTitle}
               />
@@ -258,11 +258,11 @@ const BlogCreate = () => {
                 onClick={handleCheckDuplicateBlogLink}
                 className="px-3 py-2 h-max bg-primary-green text-primary-black rounded-md hover:bg-blue-600 shrink-0"
               >
-                <span>Check valid title</span>
+                <span>Kiểm tra tiêu đề</span>
               </button>
             </div>
             <SelectField
-              label="Category"
+              label="Danh mục"
               id="category"
               name="category"
               value={category}
@@ -274,7 +274,7 @@ const BlogCreate = () => {
               <div className="flex flex-col gap-2">
                 <div className="flex items-center justify-between">
                   <label className="text-primary-white font-semibold text-lg">
-                    Blog Content
+                    Nội dung bài viết
                   </label>
                   {/* Segmented mode toggle */}
                   <div className="flex items-center bg-gray-100 rounded-lg p-1 border border-gray-200 shadow-inner">
@@ -288,7 +288,7 @@ const BlogCreate = () => {
                       }`}
                     >
                       <MdEdit className="w-4 h-4" />
-                      <span>Edit</span>
+                      <span>Chỉnh sửa</span>
                     </button>
                     <button
                       type="button"
@@ -300,7 +300,7 @@ const BlogCreate = () => {
                       }`}
                     >
                       <MdCode className="w-4 h-4" />
-                      <span>Markdown</span>
+                      <span>Mã Markdown</span>
                     </button>
                     <button
                       type="button"
@@ -312,7 +312,7 @@ const BlogCreate = () => {
                       }`}
                     >
                       <MdPreview className="w-4 h-4" />
-                      <span>Preview</span>
+                      <span>Xem trước</span>
                     </button>
                   </div>
                 </div>
@@ -323,7 +323,7 @@ const BlogCreate = () => {
                     title={blogTitle}
                     onChange={setMarkdownContent}
                     height="h-96"
-                    placeholder="Start writing your blog post using Markdown..."
+                    placeholder="Bắt đầu viết bài viết bằng định dạng Markdown..."
                   />
                 )}
                 {editorMode === "markdown" && (
@@ -333,7 +333,7 @@ const BlogCreate = () => {
                     name="blog-markdown-content"
                     value={markdownContent}
                     handleChange={(e) => setMarkdownContent(e.target.value)}
-                    placeholder="Start writing your blog post using Markdown..."
+                    placeholder="Bắt đầu viết bài viết bằng định dạng Markdown..."
                     rows={24}
                   />
                 )}
@@ -343,7 +343,7 @@ const BlogCreate = () => {
                       <MarkdownContent content={markdownContent} />
                     ) : (
                       <p className="text-gray-400 italic">
-                        No content to preview yet...
+                        Chưa có nội dung để xem trước...
                       </p>
                     )}
                   </div>
@@ -371,14 +371,14 @@ const BlogCreate = () => {
           } text-xl h-max w-max px-6 py-2.5 bg-orange-500 hover:bg-orange-500/90 rounded-lg font-semibold text-white mt-8 self-end`}
           onClick={handleClickPreStep}
         >
-          Back
+          Quay lại
         </button>
         <button
           className="h-max w-max px-6 py-2.5 bg-primary-green hover:bg-primary-green-dark rounded-lg font-semibold text-primary-black mt-8 self-end flex items-center gap-2"
           onClick={handleClickNextStep}
         >
           <span className="text-xl">
-            {currentStep === 1 ? "Next Step" : "Create Blog"}
+            {currentStep === 1 ? "Tiếp theo" : "Tạo bài viết"}
           </span>
           {currentStep === 1 ? (
             <FaArrowAltCircleRight className="text-2xl" />

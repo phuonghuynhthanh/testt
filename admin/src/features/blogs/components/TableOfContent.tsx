@@ -36,7 +36,7 @@ const TableOfContent: React.FC<TableOfContentProps> = ({
 
     // If in edit mode, show notification and prevent scrolling
     if (editMode) {
-      toast.info("Switch to Preview Mode to continue navigation.", {
+      toast.info("Chuyển sang chế độ Xem trước để tiếp tục điều hướng mục lục.", {
         position: "top-right",
         autoClose: 3000,
       });
@@ -61,7 +61,7 @@ const TableOfContent: React.FC<TableOfContentProps> = ({
         <div className="flex items-center px-3 sm:px-4 py-2 sm:py-3 border-b border-primary-white/20 bg-primary-black-medium rounded-t-lg">
           <IoList className="text-primary-green-dark w-4 h-4 sm:w-5 sm:h-5 mr-2" />
           <h2 className="font-semibold text-base sm:text-lg text-primary-green-dark">
-            {isVietnamese ? "Mục lục" : "Table of Contents"}
+            {isVietnamese === false ? "Table of Contents" : "Mục lục"}
           </h2>
         </div>
 

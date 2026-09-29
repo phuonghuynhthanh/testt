@@ -144,7 +144,7 @@ def test_presigned_image_url_rejects_path_traversal(storage):
 
 # Verify disallowed MIME types are rejected before any storage request.
 def test_upload_rejects_unsupported_mime(storage):
-    with pytest.raises(HTTPException, match="Only JPEG") as error:
+    with pytest.raises(HTTPException, match="Chỉ hỗ trợ") as error:
         StorageService.upload_image(image("application/pdf"))
 
     assert error.value.status_code == 415
@@ -241,7 +241,7 @@ def test_upload_hides_minio_errors(storage, monkeypatch):
         "put_object",
         lambda *args, **kwargs: (_ for _ in ()).throw(RuntimeError("secret")),
     )
-    with pytest.raises(HTTPException, match="Failed to upload image") as error:
+    with pytest.raises(HTTPException, match="Tải hình ảnh lên thất bại") as error:
         StorageService.upload_image(image())
 
     assert error.value.status_code == 500
@@ -265,7 +265,7 @@ def test_blog_create_rolls_back_uploaded_banner(monkeypatch):
     )
     monkeypatch.setattr(StorageService, "delete_image", deleted.append)
 
-    with pytest.raises(HTTPException, match="Failed to create blog"):
+    with pytest.raises(HTTPException, match="Tạo bài viết thất bại"):
         BlogServices.create_blog(blog_data(), image=image())
 
     assert deleted == ["quant-trading/new.png"]
@@ -448,4 +448,4 @@ def test_blog_delete_succeeds_when_prefix_cleanup_fails(monkeypatch):
     result = BlogServices.delete_blog("blog-id")
 
     assert session.committed is True
-    assert result == {"message": "Blog deleted successfully"}
+    assert result == {"message": "Xóa bài viết thành công"}

@@ -10,8 +10,8 @@ router = APIRouter(prefix="/openai", tags=["OpenAI"])
 # Generate SEO keywords for an authenticated CMS request.
 @router.post(
     "/seo-keywords",
-    summary="Generate SEO keywords",
-    description="This endpoint generates SEO keywords based on the title and content of a blog.",
+    summary="Tạo từ khóa SEO",
+    description="Endpoint này tạo từ khóa SEO dựa trên tiêu đề và nội dung bài viết.",
     status_code=status.HTTP_200_OK,
 )
 async def generate_seo_keywords(
@@ -26,8 +26,8 @@ async def generate_seo_keywords(
 # Generate an SEO description for an authenticated CMS request.
 @router.post(
     "/seo-description",
-    summary="Generate SEO description",
-    description="This endpoint generates SEO description based on the title and content of a blog.",
+    summary="Tạo mô tả SEO",
+    description="Endpoint này tạo mô tả SEO dựa trên tiêu đề và nội dung bài viết.",
     status_code=status.HTTP_200_OK,
 )
 async def generate_seo_description(

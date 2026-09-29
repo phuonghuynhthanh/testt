@@ -46,7 +46,7 @@ const BlogPreview: React.FC<BlogPreviewProps> = ({
           onClick={onClose}
           className="mb-2 p-2 bg-red-500 text-white border-none cursor-pointer"
         >
-          Close Preview
+          Đóng xem trước
         </button>
       )}
       <div className="h-full w-full overflow-hidden flex flex-col overflow-y-scroll">
@@ -55,7 +55,7 @@ const BlogPreview: React.FC<BlogPreviewProps> = ({
           <div className="w-full px-4 sm:px-6 md:px-8 py-6 md:py-10">
             {/* Mobile TOC */}
             <div className="xl:hidden mb-6 max-w-6xl mx-auto">
-              <TableOfContent headings={headings} isVietnamese={false} />
+              <TableOfContent headings={headings} isVietnamese={true} />
             </div>
 
             {/* Main layout */}
@@ -87,7 +87,7 @@ const BlogPreview: React.FC<BlogPreviewProps> = ({
               {/* Desktop TOC */}
               <aside className="hidden xl:block w-80 flex-shrink-0">
                 <div className="sticky top-10">
-                  <TableOfContent headings={headings} isVietnamese={false} />
+                  <TableOfContent headings={headings} isVietnamese={true} />
                 </div>
               </aside>
             </div>

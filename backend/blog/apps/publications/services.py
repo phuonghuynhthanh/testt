@@ -55,7 +55,7 @@ class PublicationService:
     def _blog(cls, blog_id: str) -> Blog:
         blog = cls._session().get(Blog, blog_id)
         if not blog:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Blog not found")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Không tìm thấy bài viết")
         return blog
 
     # Create the legacy-safe default row on first access, effectively backfilling old Blogs.
@@ -131,7 +131,7 @@ class PublicationService:
     @classmethod
     def _source(cls, blog: Blog, publication: BlogPublication, mode: ProviderMode, include_link: bool) -> LinkedInArticleSource:
         if include_link and not publication.publish_web:
-            raise HTTPException(status_code=422, detail="A LinkedIn web link requires Web publication")
+            raise HTTPException(status_code=422, detail="Liên kết website cho LinkedIn yêu cầu phải xuất bản lên Website")
         return LinkedInArticleSource(title=blog.title, content=blog.content, category=str(blog.category), tags=[blog.tag] if blog.tag else [], canonicalUrl=canonical_blog_url(blog.link_post) if include_link else None, mode=mode, recentPosts=cls._recent_posts(publication.id))
 
     # Generate a reviewable draft and never overwrite manually edited text without regenerate=true.
@@ -139,16 +139,16 @@ class PublicationService:
     async def draft(cls, blog_id: str, data: DraftRequest) -> dict:
         blog, publication = cls._blog(blog_id), cls._publication(blog_id)
         if not publication.publish_linkedin:
-            raise HTTPException(status_code=422, detail="LinkedIn is not selected for this Blog")
+            raise HTTPException(status_code=422, detail="Chưa chọn kênh LinkedIn cho bài viết này")
         if publication.linkedin_status == PublicationStatus.PUBLISHED.value or publication.linkedin_post_id:
-            raise HTTPException(status_code=409, detail="Published LinkedIn content cannot be replaced without a future repost workflow")
+            raise HTTPException(status_code=409, detail="Nội dung LinkedIn đã xuất bản không thể bị thay thế nếu không có luồng đăng lại")
         if data.mode.value == "CUSTOM":
-            raise HTTPException(status_code=422, detail="CUSTOM content must be saved with PUT /linkedin")
+            raise HTTPException(status_code=422, detail="Nội dung TÙY CHỈNH phải được lưu bằng PUT /linkedin")
         if publication.linkedin_manually_edited and not data.regenerate:
-            raise HTTPException(status_code=409, detail="Draft was manually edited; set regenerate=true to replace it")
+            raise HTTPException(status_code=409, detail="Bản nháp đã được chỉnh sửa thủ công; đặt regenerate=true để thay thế")
         include_link = data.includeWebLink
         if include_link and not publication.publish_web:
-            raise HTTPException(status_code=422, detail="LinkedIn-only publication cannot include a Web link")
+            raise HTTPException(status_code=422, detail="Chỉ xuất bản lên LinkedIn thì không thể đính kèm liên kết Website")
         provider = GeminiLinkedInProvider(settings.GEMINI_API_KEY or "", settings.GEMINI_MODEL)
         try:
             result = await LinkedInDraftGenerator(provider).draft(cls._source(blog, publication, ProviderMode(data.mode.value), include_link))
@@ -170,11 +170,11 @@ class PublicationService:
         cls._blog(blog_id)
         publication = cls._publication(blog_id)
         if not publication.publish_linkedin:
-            raise HTTPException(status_code=422, detail="LinkedIn is not selected for this Blog")
+            raise HTTPException(status_code=422, detail="Chưa chọn kênh LinkedIn cho bài viết này")
         if publication.linkedin_status == PublicationStatus.PUBLISHED.value or publication.linkedin_post_id:
-            raise HTTPException(status_code=409, detail="Published LinkedIn content cannot be replaced without a future repost workflow")
+            raise HTTPException(status_code=409, detail="Nội dung LinkedIn đã xuất bản không thể bị thay thế nếu không có luồng đăng lại")
         if publication.linkedin_include_web_link and not publication.publish_web:
-            raise HTTPException(status_code=422, detail="LinkedIn-only publication cannot include a Web link")
+            raise HTTPException(status_code=422, detail="Chỉ xuất bản lên LinkedIn thì không thể đính kèm liên kết Website")
         previous_mode, previous_items = _media_state(publication)
         if data.content is not None:
             publication.linkedin_mode, publication.linkedin_content = "CUSTOM", data.content.strip()
@@ -183,7 +183,7 @@ class PublicationService:
             selected = [item.model_dump() for item in data.media]
             selected_mode = MediaMode.NONE.value if not selected else MediaMode.SINGLE.value if len(selected) == 1 else MediaMode.MULTI.value
             if data.content is None and previous_items and previous_mode != selected_mode:
-                raise HTTPException(status_code=422, detail=f"Selected media must match the planned {previous_mode} mode")
+                raise HTTPException(status_code=422, detail=f"Hình ảnh được chọn phải phù hợp với chế độ {previous_mode} đã định")
             _set_media(publication, selected_mode, selected)
             publication.linkedin_manually_edited = True
         publication.linkedin_status = PublicationStatus.READY.value if publication.linkedin_content else PublicationStatus.DRAFT.value
@@ -249,18 +249,18 @@ class PublicationService:
                 cls._save(blog)
             return _serialize(publication)
         if publication.linkedin_status == PublicationStatus.REVIEW_REQUIRED.value:
-            raise HTTPException(status_code=409, detail="LinkedIn outcome is ambiguous and requires human review")
+            raise HTTPException(status_code=409, detail="Kết quả xuất bản LinkedIn không rõ ràng và cần người kiểm tra")
         if publication.linkedin_status == PublicationStatus.PUBLISHING.value:
             publication.linkedin_status = PublicationStatus.REVIEW_REQUIRED.value
-            publication.linkedin_error = {"code": "ambiguous_publish", "message": "A previous publish was interrupted; verify the Company Page before retrying.", "duplicateRisk": True}
+            publication.linkedin_error = {"code": "ambiguous_publish", "message": "Lần xuất bản trước bị gián đoạn; vui lòng kiểm tra Trang Công ty trước khi thử lại.", "duplicateRisk": True}
             cls._save(publication)
-            raise HTTPException(status_code=409, detail="Interrupted LinkedIn publication requires human review")
+            raise HTTPException(status_code=409, detail="Quá trình xuất bản LinkedIn bị gián đoạn và cần người kiểm tra")
         if retry and publication.linkedin_status != PublicationStatus.FAILED.value:
-            raise HTTPException(status_code=409, detail="Only a failed LinkedIn publication can be retried")
+            raise HTTPException(status_code=409, detail="Chỉ có bài đăng LinkedIn thất bại mới có thể thử lại")
         publisher, images = None, []
         if publication.publish_linkedin:
             if not publication.linkedin_content:
-                raise HTTPException(status_code=422, detail="LinkedIn draft content is required before publishing")
+                raise HTTPException(status_code=422, detail="Cần có nội dung bản nháp LinkedIn trước khi xuất bản")
             try:
                 if publication.linkedin_include_web_link:
                     from apps.linkedin_posts.services.generator import append_canonical_link

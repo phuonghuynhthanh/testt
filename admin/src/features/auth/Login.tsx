@@ -31,10 +31,10 @@ const Login: React.FC = () => {
         accessToken: res.access_token,
         expiresAt: Date.now() + res.expires_in * 1000,
       });
-      toast.success("Login successful");
+      toast.success("Đăng nhập thành công");
       navigate(from, { replace: true });
     } catch {
-      toast.error("Invalid credentials. Please try again.");
+      toast.error("Thông tin đăng nhập không hợp lệ. Vui lòng thử lại.");
     }
   };
 
@@ -50,7 +50,7 @@ const Login: React.FC = () => {
         className="w-full max-w-sm bg-blue-50 p-8 rounded-xl shadow-lg border border-blue-100"
       >
         <h1 className="text-2xl font-semibold text-center text-gray-900 mb-6">
-          Welcome back
+          Đăng nhập hệ thống
         </h1>
 
         <div className="mb-5">
@@ -58,16 +58,16 @@ const Login: React.FC = () => {
             htmlFor="username"
             className="block text-sm font-medium text-gray-800"
           >
-            Username
+            Tên đăng nhập
           </label>
           <input
             type="text"
             id="username"
-            {...register("username", { required: "Username is required" })}
+            {...register("username", { required: "Tên đăng nhập là bắt buộc" })}
             className={`mt-1 block w-full rounded-lg border ${
               errors.username ? "border-red-500" : "border-gray-300"
             } bg-primary-white px-3 py-2 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition`}
-            placeholder="Enter your username"
+            placeholder="Nhập tên đăng nhập"
             autoComplete="username"
             aria-invalid={!!errors.username}
           />
@@ -83,16 +83,16 @@ const Login: React.FC = () => {
             htmlFor="password"
             className="block text-sm font-medium text-gray-800"
           >
-            Password
+            Mật khẩu
           </label>
           <input
             type="password"
             id="password"
-            {...register("password", { required: "Password is required" })}
+            {...register("password", { required: "Mật khẩu là bắt buộc" })}
             className={`mt-1 block w-full rounded-lg border ${
               errors.password ? "border-red-500" : "border-gray-300"
             } bg-primary-white px-3 py-2 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition`}
-            placeholder="Enter your password"
+            placeholder="Nhập mật khẩu"
             autoComplete="current-password"
             aria-invalid={!!errors.password}
           />
@@ -131,7 +131,7 @@ const Login: React.FC = () => {
               ></path>
             </svg>
           )}
-          {isSubmitting ? "Signing in..." : "Sign in"}
+          {isSubmitting ? "Đang đăng nhập..." : "Đăng nhập"}
         </button>
       </form>
     </div>

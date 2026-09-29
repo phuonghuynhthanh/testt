@@ -25,7 +25,7 @@ const HeaderActionButton = ({
           className="flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 rounded-lg transition-all duration-200 font-medium shadow-sm hover:shadow"
         >
           <IoClose className="w-5 h-5" />
-          <span>Close</span>
+          <span>Đóng</span>
         </button>
 
         {/* Segmented Control Toggle */}
@@ -42,7 +42,7 @@ const HeaderActionButton = ({
             `}
           >
             <MdEdit className="w-4 h-4" />
-            <span>Edit</span>
+            <span>Chỉnh sửa</span>
           </button>
           <button
             onClick={() => onModeChange("markdown")}
@@ -56,7 +56,7 @@ const HeaderActionButton = ({
             `}
           >
             <MdCode className="w-4 h-4" />
-            <span>Markdown</span>
+            <span>Mã Markdown</span>
           </button>
           <button
             onClick={() => onModeChange("preview")}
@@ -70,7 +70,7 @@ const HeaderActionButton = ({
             `}
           >
             <MdPreview className="w-4 h-4" />
-            <span>Preview</span>
+            <span>Xem trước</span>
           </button>
         </div>
       </div>
@@ -103,12 +103,12 @@ const HeaderActionButton = ({
                   d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                 ></path>
               </svg>
-              <span>Saving...</span>
+              <span>Đang lưu...</span>
             </>
           ) : (
             <>
               <IoIosSave className="w-5 h-5" />
-              <span>Save Changes</span>
+              <span>Lưu thay đổi</span>
             </>
           )}
         </button>

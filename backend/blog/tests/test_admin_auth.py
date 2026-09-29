@@ -63,7 +63,7 @@ def test_login_accepts_only_configured_credentials(monkeypatch):
         wrong_username.json()["detail"]
         == wrong_password.json()["detail"]
         == unicode_username.json()["detail"]
-        == "Invalid credentials"
+        == "Thông tin đăng nhập không hợp lệ"
     )
 
 

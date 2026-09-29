@@ -469,7 +469,7 @@ class ReferenceSearchService:
                 if not google_cse_id:
                     raise HTTPException(
                         status_code=status.HTTP_400_BAD_REQUEST,
-                        detail="GOOGLE_CUSTOM_SEARCH_ENGINE_ID is required for Google Custom Search",
+                        detail="Cần cấu hình GOOGLE_CUSTOM_SEARCH_ENGINE_ID cho Google Custom Search",
                     )
                 return await ReferenceSearchService._fetch_google_cse_results(
                     keyword, language, max_results, api_key, google_cse_id
@@ -477,14 +477,14 @@ class ReferenceSearchService:
             else:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"Unsupported SERP provider: {provider}. Supported: serpapi, google_custom_search",
+                    detail=f"Nhà cung cấp SERP không được hỗ trợ: {provider}. Hỗ trợ: serpapi, google_custom_search",
                 )
         except HTTPException:
             raise
         except Exception as e:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Failed to fetch SERP results: {str(e)}",
+                detail=f"Lấy kết quả SERP thất bại: {str(e)}",
             )
 
     @staticmethod
@@ -548,12 +548,12 @@ class ReferenceSearchService:
                     if e.response.status_code == 401:
                         raise HTTPException(
                             status_code=status.HTTP_401_UNAUTHORIZED,
-                            detail="Invalid SERP API key",
+                            detail="Khóa API SERP không hợp lệ",
                         )
                     elif e.response.status_code == 429:
                         raise HTTPException(
                             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                            detail="SERP API rate limit exceeded",
+                            detail="Đã vượt quá giới hạn lượt gọi API SERP",
                         )
                     raise
 
@@ -622,12 +622,12 @@ class ReferenceSearchService:
                     if e.response.status_code == 401:
                         raise HTTPException(
                             status_code=status.HTTP_401_UNAUTHORIZED,
-                            detail="Invalid Google Custom Search API key",
+                            detail="Khóa Google Custom Search API không hợp lệ",
                         )
                     elif e.response.status_code == 429:
                         raise HTTPException(
                             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                            detail="Google Custom Search API rate limit exceeded",
+                            detail="Đã vượt quá giới hạn lượt gọi Google Custom Search API",
                         )
                     raise
 

@@ -76,7 +76,7 @@ class BlogServices:
             if ex_link:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"Blog with link '{blog_data.link_post}' already exists",
+                    detail=f"Bài viết với liên kết '{blog_data.link_post}' đã tồn tại",
                 )
             if image:
                 banner_url = StorageService.upload_image(
@@ -99,7 +99,7 @@ class BlogServices:
             cls.delete_image_url(uploaded_banner_url)
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Blog already exists",
+                detail="Bài viết đã tồn tại",
             )
         except HTTPException:
             cls.delete_image_url(uploaded_banner_url)
@@ -108,7 +108,7 @@ class BlogServices:
             cls.delete_image_url(uploaded_banner_url)
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to create blog",
+                detail="Tạo bài viết thất bại",
             )
 
         return blog
@@ -136,13 +136,13 @@ class BlogServices:
                 if ex_link:
                     raise HTTPException(
                         status_code=status.HTTP_400_BAD_REQUEST,
-                        detail=f"Blog with link '{data.link_post}' already exists",
+                        detail=f"Bài viết với liên kết '{data.link_post}' đã tồn tại",
                     )
 
             if not blog:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
-                    detail="Blog not found",
+                    detail="Không tìm thấy bài viết",
                 )
 
             update_data = {"modified_at": DateTime.now()}
@@ -192,7 +192,7 @@ class BlogServices:
             cls.delete_image_url(uploaded_banner_url)
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Failed to update blog: {str(e)}",
+                detail=f"Cập nhật bài viết thất bại: {str(e)}",
             )
 
     @classmethod
@@ -208,7 +208,7 @@ class BlogServices:
                 if not blog:
                     raise HTTPException(
                         status_code=status.HTTP_404_NOT_FOUND,
-                        detail="Blog not found",
+                        detail="Không tìm thấy bài viết",
                     )
 
                 banner_url = blog.banner_url
@@ -221,14 +221,14 @@ class BlogServices:
                     StorageService.delete_key(link_post)
                 except Exception:
                     pass
-                return {"message": "Blog deleted successfully"}
+                return {"message": "Xóa bài viết thành công"}
         except HTTPException:
             raise
         except IntegrityError:
             session.rollback()
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="An error occurred while deleting the blog",
+                detail="Đã xảy ra lỗi khi xóa bài viết",
             )
 
     @classmethod
@@ -314,7 +314,7 @@ class BlogServices:
                 if not blog:
                     raise HTTPException(
                         status_code=status.HTTP_404_NOT_FOUND,
-                        detail="Not found",
+                        detail="Không tìm thấy bài viết",
                     )
                 return {
                     "id": blog.id,
@@ -335,7 +335,7 @@ class BlogServices:
         except Exception as e:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Failed to get blog: {str(e)}",
+                detail=f"Lấy thông tin bài viết thất bại: {str(e)}",
             )
 
     @classmethod
@@ -354,7 +354,7 @@ class BlogServices:
                 if not blog:
                     raise HTTPException(
                         status_code=status.HTTP_404_NOT_FOUND,
-                        detail="Not found",
+                        detail="Không tìm thấy bài viết",
                     )
                 related_blogs = cls.related_blog(current_blog=blog.id, limit=limit)
                 return {
@@ -376,7 +376,7 @@ class BlogServices:
         except Exception as e:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Failed to get blog: {str(e)}",
+                detail=f"Lấy thông tin bài viết thất bại: {str(e)}",
             )
 
     # Transliterate Vietnamese characters before normalizing the URL slug.
@@ -394,7 +394,7 @@ class BlogServices:
             if ex_link:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"Blog with link '{url}' already exists",
+                    detail=f"Bài viết với liên kết '{url}' đã tồn tại",
                 )
 
             # Generate content and SEO
@@ -421,18 +421,18 @@ class BlogServices:
             blog = cls.create_blog(blog_data=blog)
             return {
                 "id": blog.id,
-                "message": "Blog created successfully",
+                "message": "Tạo bài viết thành công",
                 "statusCode": status.HTTP_200_OK,
             }
         except HTTPException as e:
             raise HTTPException(
                 status_code=e.status_code,
-                detail=f"Failed to create blog: {str(e)}",
+                detail=f"Tạo bài viết thất bại: {str(e)}",
             )
         except Exception as e:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Failed to create blog: {str(e)}",
+                detail=f"Tạo bài viết thất bại: {str(e)}",
             )
 
     @classmethod
@@ -453,7 +453,7 @@ class BlogServices:
                 if not blog:
                     raise HTTPException(
                         status_code=status.HTTP_404_NOT_FOUND,
-                        detail="Not found",
+                        detail="Không tìm thấy bài viết",
                     )
                 start_time = blog.created_at - timedelta(minutes=10)
                 end_time = blog.created_at + timedelta(minutes=10)
@@ -488,5 +488,5 @@ class BlogServices:
         except Exception as e:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Failed to get related blogs: {str(e)}",
+                detail=f"Lấy bài viết liên quan thất bại: {str(e)}",
             )

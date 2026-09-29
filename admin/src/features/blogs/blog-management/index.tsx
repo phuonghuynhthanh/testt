@@ -26,7 +26,7 @@ const BlogManagement = () => {
           } flex-1 w-full py-1 hover:cursor-pointer transition-colors duration-200 ease-in-out`}
           onClick={() => setCurrentTab(1)}
         >
-          All Blogs
+          Tất cả bài viết
         </div>
         <div
           className={`${
@@ -34,7 +34,7 @@ const BlogManagement = () => {
           } flex-1 w-full py-1 hover:cursor-pointer transition-colors duration-200 ease-in-out`}
           onClick={() => setCurrentTab(2)}
         >
-          Pending Blogs
+          Bài viết chờ duyệt
         </div>
       </div>
       {renderTabContent()}

@@ -69,7 +69,7 @@ const BlogPreviewDemo: React.FC<BlogPreviewProps> = ({
           <div className="mx-auto mb-6 max-w-6xl xl:hidden">
             <TableOfContent
               headings={headings}
-              isVietnamese={false}
+              isVietnamese={true}
               editMode={!isPreviewMode}
             />
           </div>
@@ -106,12 +106,12 @@ const BlogPreviewDemo: React.FC<BlogPreviewProps> = ({
                 <MarkdownContent content={content} />
               ) : mode === "markdown" ? (
                 <TextareaField
-                  label="Markdown Content"
+                  label="Nội dung Markdown"
                   id="blog-markdown-content"
                   name="blog-markdown-content"
                   value={content}
                   handleChange={(e) => onChange(e.target.value)}
-                  placeholder="Write your markdown content here..."
+                  placeholder="Nhập nội dung markdown tại đây..."
                   rows={24}
                 />
               ) : (
@@ -127,7 +127,7 @@ const BlogPreviewDemo: React.FC<BlogPreviewProps> = ({
               <div className="sticky top-0">
                 <TableOfContent
                   headings={headings}
-                  isVietnamese={false}
+                  isVietnamese={true}
                   editMode={!isPreviewMode}
                 />
               </div>

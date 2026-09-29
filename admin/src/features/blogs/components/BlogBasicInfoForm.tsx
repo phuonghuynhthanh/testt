@@ -26,14 +26,14 @@ const BlogBasicInfoForm = ({
     <div className="py-6 space-y-4">
       <div className="flex justify-between items-center gap-5">
         <InputField
-          label="Blog Id"
+          label="Mã bài viết"
           id="id"
           name="id"
           value={blogData.id}
           readOnly
         />
         <InputField
-          label="Last Updated"
+          label="Cập nhật lần cuối"
           id="modified_at"
           name="modified_at"
           value={blogData.modified_at ?? ""}
@@ -47,15 +47,15 @@ const BlogBasicInfoForm = ({
       />
       <div className="flex justify-between items-center gap-5">
         <InputField
-          label="Tag"
+          label="Thẻ tag"
           id="tag"
           name="tag"
           value={blogData.tag}
           handleChange={onFieldChange}
-          placeholder="Enter blog tag"
+          placeholder="Nhập thẻ tag..."
         />
         <SelectField
-          label="Category"
+          label="Danh mục"
           id="category"
           name="category"
           value={blogData.category}
@@ -64,12 +64,12 @@ const BlogBasicInfoForm = ({
         />
       </div>
       <InputField
-        label="Title"
+        label="Tiêu đề"
         id="title"
         name="title"
         value={blogData.title}
         handleChange={onFieldChange}
-        placeholder="Enter blog title"
+        placeholder="Nhập tiêu đề bài viết..."
       />
     </div>
   );

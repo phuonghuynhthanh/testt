@@ -12,7 +12,7 @@ bearer_scheme = HTTPBearer(auto_error=False)
 password_hash = PasswordHash.recommended()
 invalid_credentials = HTTPException(
     status_code=status.HTTP_401_UNAUTHORIZED,
-    detail="Invalid credentials",
+    detail="Thông tin đăng nhập không hợp lệ",
     headers={"WWW-Authenticate": "Bearer"},
 )
 

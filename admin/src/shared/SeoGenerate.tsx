@@ -31,7 +31,7 @@ const SeoGenerate: React.FC<SeoGenerateProps> = ({
 
   const handleConfirm = async () => {
     try {
-      const toastId = toast.loading("Generating SEO content...");
+      const toastId = toast.loading("Đang tạo nội dung SEO...");
       const title = inputTitle;
       const content = stripHtml(inputContent);
       const keywords = await getSeoKeywords(title, content);
@@ -41,7 +41,7 @@ const SeoGenerate: React.FC<SeoGenerateProps> = ({
         descript: description,
       });
       toast.update(toastId, {
-        render: "SEO content generated successfully!",
+        render: "Tạo nội dung SEO thành công!",
         type: "success",
         isLoading: false,
         autoClose: 5000,
@@ -49,7 +49,7 @@ const SeoGenerate: React.FC<SeoGenerateProps> = ({
       onClose();
     } catch {
       toast.dismiss();
-      toast.error("Failed to generate SEO content. Please try again.");
+      toast.error("Không thể tạo nội dung SEO. Vui lòng thử lại.");
     }
   };
 
@@ -66,12 +66,10 @@ const SeoGenerate: React.FC<SeoGenerateProps> = ({
       <Modal isOpen={true} onClose={onClose}>
         <div className="p-4">
           <h2 className="text-xl text-gray-th2 font-semibold mb-2">
-            Generate SEO Content
+            Tạo nội dung SEO
           </h2>
           <p className="text-gray-600 mb-6">
-            Review the content below before generating SEO metadata. Our AI will
-            analyze this information to create optimized meta title and
-            description for better search engine visibility.
+            Kiểm tra nội dung bên dưới trước khi tạo metadata SEO. AI sẽ phân tích thông tin này để tạo tiêu đề và mô tả tối ưu cho công cụ tìm kiếm.
           </p>
 
           <div className="flex flex-col gap-4">
@@ -80,7 +78,7 @@ const SeoGenerate: React.FC<SeoGenerateProps> = ({
                 htmlFor="title"
                 className="block font-medium mb-1 text-gray-th2"
               >
-                Article Title (for AI analysis)
+                Tiêu đề bài viết (dùng cho AI phân tích)
               </label>
               <input
                 id="title"
@@ -96,7 +94,7 @@ const SeoGenerate: React.FC<SeoGenerateProps> = ({
                 htmlFor="content"
                 className="block font-medium mb-1 text-gray-th2"
               >
-                Article Content (for AI analysis)
+                Nội dung bài viết (dùng cho AI phân tích)
               </label>
               <textarea
                 id="content"
@@ -111,7 +109,7 @@ const SeoGenerate: React.FC<SeoGenerateProps> = ({
               onClick={handleConfirm}
               className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
             >
-              Generate SEO Content
+              Tạo nội dung SEO
             </button>
           </div>
         </div>
