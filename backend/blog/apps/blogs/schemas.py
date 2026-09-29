@@ -152,7 +152,7 @@ class LinkReference(BaseModel):
 
 
 class ClassifyLinksRequest(BaseModel):
-    links: List[LinkItem] = Field(..., min_items=1, max_items=100)
+    links: List[LinkItem] = Field(..., min_length=1, max_length=100)
 
 
 class ClassifiedLink(BaseModel):

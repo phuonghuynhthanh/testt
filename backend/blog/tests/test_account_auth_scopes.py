@@ -70,3 +70,21 @@ def test_current_blog_user_requires_blog_scope(monkeypatch):
         asyncio.run(AccountService.current_blog_user(credential))
     assert exc.value.status_code == 403
     assert exc.value.detail == "Forbidden: blog scope required"
+
+
+# Staff with the enabled Blog scope can access protected Blog routes.
+def test_current_blog_user_allows_enabled_blog_scope(monkeypatch):
+    monkeypatch.setattr(
+        "apps.accounts.services.authenticate.FirebaseService.verify_id_token",
+        lambda *_: {"uid": "staff_1", "email": "staff@test.com"},
+    )
+    monkeypatch.setattr(
+        "apps.accounts.services.authenticate.PlatformUserRepository.get_role_and_scopes",
+        lambda *_: ("staff", {"blog": {"enabled": True}}),
+    )
+
+    credential = SimpleNamespace(credentials="token")
+    user = asyncio.run(AccountService.current_blog_user(credential))
+
+    assert user.user_id == "staff_1"
+    assert user.role == "staff"

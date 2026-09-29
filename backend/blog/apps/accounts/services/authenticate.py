@@ -18,6 +18,7 @@ class AccountService:
         blog_scope = scopes.get("blog") if isinstance(scopes, dict) else None
         return isinstance(blog_scope, dict) and bool(blog_scope.get("enabled") is True)
 
+    # Verify Firebase credentials and enforce the retained staff/admin gate.
     @classmethod
     async def current_user(
         cls,
@@ -53,7 +54,7 @@ class AccountService:
 
         return schemas.UserSchema(user_id=user_id, email=email, role=role, scopes=scopes)
 
-    # Gate blog module APIs behind scopes.blog.enabled (admin bypass).
+    # Enforce the Blog module scope after base authentication succeeds.
     @classmethod
     async def current_blog_user(
         cls,

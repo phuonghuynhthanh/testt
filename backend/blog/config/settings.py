@@ -11,7 +11,7 @@ DATABASES = {
     "password": os.getenv("DATABASE_PASSWORD"),
     "host": os.getenv("DATABASE_HOST"),
     "database": os.getenv("DATABASE_NAME"),
-    "port": int(os.getenv("DATABASE_PORT")),
+    "port": int(os.getenv("DATABASE_PORT", "5432")),
 }
 
 # Firebase (server credentials) — same project as platform
@@ -32,23 +32,8 @@ FIREBASE_SERVER_CREDENTIALS = {
 # Roles allowed to call blog admin APIs (must match platform UserRole)
 BLOG_ALLOWED_ROLES = {"staff", "admin"}
 
-# BLog
-BLOG_STATE = {
-    "PENDING": "PENDING",
-    "APPROVED": "APPROVED",
-    "REJECTED": "REJECTED",
-}
-
-# Azure
-AZURE_STORAGE_CONNECTION_STRING = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
-AZURE_STORAGE_CONTAINER_NAME = os.getenv("AZURE_STORAGE_CONTAINER_NAME")
-AZURE_STORAGE_ACCOUNT_NAME = os.getenv("AZURE_STORAGE_ACCOUNT_NAME")
-AZURE_FRONT_DOOR = os.getenv("AZURE_FRONT_DOOR")
-
-# Storage
-STORAGE_BACKEND = os.getenv("STORAGE_BACKEND", "local")
+# Local media storage used by Blog and the media upload endpoint.
 MEDIA_ROOT = os.getenv("MEDIA_ROOT", "/opt/quantvn/backend/uploads")
-MEDIA_BASE_URL = os.getenv("MEDIA_BASE_URL", "")
 
 # genimi
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
@@ -56,9 +41,6 @@ GEMINI_MODEL = os.getenv("GEMINI_MODEL")
 
 # Base URL
 DOMAIN_URL = os.getenv("DOMAIN_URL")
-
-# Platform catalog endpoint used to validate course access grants.
-PLATFORM_API_BASE_URL = os.getenv("PLATFORM_API_BASE_URL", "").rstrip("/")
 
 AUTHOR = os.getenv("AUTHOR")
 
@@ -70,4 +52,8 @@ SERP_RATE_LIMIT_PER_DAY = int(os.getenv("SERP_RATE_LIMIT_PER_DAY", "1000"))
 GOOGLE_CUSTOM_SEARCH_ENGINE_ID = os.getenv("GOOGLE_CUSTOM_SEARCH_ENGINE_ID")
 
 # CORS
-ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS").split(",")
+ALLOWED_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv("ALLOWED_ORIGINS", "http://localhost").split(",")
+    if origin.strip()
+]

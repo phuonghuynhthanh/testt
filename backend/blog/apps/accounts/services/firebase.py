@@ -31,29 +31,3 @@ class FirebaseService:
             return "Invalid token: Token is invalid"
         except Exception:
             return "Invalid token: Authentication failed"
-
-    # Check whether a Firebase account already exists for the given email.
-    @classmethod
-    def email_exists(cls, email: str) -> Union[bool, str]:
-        cls.initialize_firebase()
-        try:
-            auth.get_user_by_email(email)
-            return True
-        except auth.UserNotFoundError:
-            return False
-        except Exception:
-            return "Firebase lookup failed"
-
-    # Create a Firebase email/password account and return the new UID.
-    @classmethod
-    def create_email_password_user(cls, email: str, password: str) -> Union[str, dict]:
-        cls.initialize_firebase()
-        try:
-            user_record = auth.create_user(email=email, password=password)
-            return user_record.uid
-        except auth.EmailAlreadyExistsError:
-            return {"error": "email_exists", "message": "Email already exists in Firebase"}
-        except auth.InvalidPasswordError:
-            return {"error": "invalid_password", "message": "Invalid password"}
-        except Exception:
-            return {"error": "create_failed", "message": "Failed to create Firebase user"}
