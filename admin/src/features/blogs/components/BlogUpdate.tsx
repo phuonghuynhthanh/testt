@@ -21,13 +21,6 @@ import {
 } from "../../../utils/markdown";
 import { createUrl } from "../../../utils/blogUtils";
 import BlogPreviewDemo from "./BlogPreviewDemo";
-import {
-  generateBannerWithOpenRouterOptions,
-  type ImageAspectRatio,
-  type ImageQuality,
-  type ImageSize,
-} from "../../../services/openrouter/handleImageGenerate";
-import { buildBlogBannerPrompt } from "../../../utils/blogImagePrompt";
 import BlogBasicInfoForm from "./BlogBasicInfoForm";
 import BlogSeoForm from "./BlogSeoForm";
 
@@ -54,27 +47,19 @@ const INIT_BLOG_DATA: IBlogData = {
   modified_at: "",
 };
 
-// Coordinate blog update data loading, local editing state, and save actions.
+// Coordinate blog update data loading, local editing state, and persistence.
 const BlogUpdate = () => {
   const queryClient = useQueryClient();
-  const { blog_id: blogId } = useParams<{
-    blog_id: string;
-  }>();
+  const { blog_id: blogId } = useParams<{ blog_id: string }>();
   const [isLoading, setIsLoading] = useState(false);
-  const [storedLinkBlog, setStoredLinkBlog] = useState<string>("");
+  const [storedLinkBlog, setStoredLinkBlog] = useState("");
   const [content, setContent] = useState<IEditorData>({ title: "", body: "" });
   const [isOpenGenerate, setIsOpenGenerate] = useState(false);
   const [blogData, setBlogData] = useState<IBlogData>(INIT_BLOG_DATA);
-  const [keywordInput, setKeywordInput] = useState<string>("");
-  const [openEditBlogContent, setopenEditBlogContent] = useState(false);
+  const [keywordInput, setKeywordInput] = useState("");
+  const [openEditBlogContent, setOpenEditBlogContent] = useState(false);
   const [bannerImage, setBannerImage] = useState<File | null>(null);
-  const [blogContent, setBlogContent] = useState<string>("");
-  const [isGeneratingBanner, setIsGeneratingBanner] = useState<boolean>(false);
-  const [imagePrompt, setImagePrompt] = useState<string>("");
-  const [imageAspectRatio, setImageAspectRatio] =
-    useState<ImageAspectRatio>("16:9");
-  const [imageSize, setImageSize] = useState<ImageSize>("1K");
-  const [imageQuality, setImageQuality] = useState<ImageQuality>("low");
+  const [blogContent, setBlogContent] = useState("");
   const [dataSeoGenerate, setDataSeoGenerate] = useState<IDataSeoGenerate>({
     listSeoKey: [],
     descript: "",
@@ -88,111 +73,83 @@ const BlogUpdate = () => {
     refetchOnWindowFocus: false,
   });
 
-  // Toggle the markdown preview/editor overlay.
-  const handleClickEditBlogContent = () => {
-    setopenEditBlogContent(!openEditBlogContent);
-  };
+  // Toggle markdown editor preview overlay.
+  const handleClickEditBlogContent = () => setOpenEditBlogContent((prev) => !prev);
 
-  // Close the markdown preview/editor overlay.
-  const closeEditBlogContent = () => {
-    setopenEditBlogContent(false);
-  };
+  // Close markdown preview overlay.
+  const closeEditBlogContent = () => setOpenEditBlogContent(false);
 
-  // Normalize escaped markdown syntax and keep the fixed content editable before saving.
+  // Normalize escaped markdown syntax and update editor content.
   const handleFixMarkdownSyntax = () => {
-    const fixedContent = fixEscapedMarkdownSyntax(blogContent);
-
-    if (fixedContent === blogContent) {
+    const fixed = fixEscapedMarkdownSyntax(blogContent);
+    if (fixed === blogContent) {
       toast.info("No escaped markdown syntax found.");
       return;
     }
-
-    handleContentChange(fixedContent);
-    toast.success(
-      "Markdown syntax fixed. Please review the preview before saving.",
-    );
+    handleContentChange(fixed);
+    toast.success("Markdown syntax fixed. Please review preview before saving.");
   };
 
-  // Sync markdown content and use the first h1 as the blog title when present.
+  // Sync markdown content and extract first h1 as title if present.
   const handleContentChange = (newContent: string) => {
     setBlogContent(newContent);
     const h1Title = extractH1FromMarkdown(newContent);
     if (h1Title) {
-      setBlogData((prevData) => ({
-        ...prevData,
-        title: h1Title,
-      }));
+      setBlogData((prev) => ({ ...prev, title: h1Title }));
     }
   };
 
-  // Update either top-level blog fields or nested SEO fields from form inputs.
+  // Handle input field changes including nested SEO properties.
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
     const { name, value } = e.target;
-    setBlogData((prevData) => {
+    setBlogData((prev) => {
       if (name.startsWith("seo.")) {
         const seoKey = name.split(".")[1];
-        return {
-          ...prevData,
-          seo: { ...prevData.seo, [seoKey]: value },
-        };
+        return { ...prev, seo: { ...prev.seo, [seoKey]: value } };
       }
-      return { ...prevData, [name]: value };
+      return { ...prev, [name]: value };
     });
   };
 
-  // Add comma-separated SEO keywords while preserving existing unique keywords.
+  // Add comma-separated SEO keywords to the existing list.
   const handleAddKeyword = () => {
     const newKeywords = keywordInput
       .split(",")
       .map((kw) => kw.trim())
-      .filter((kw) => kw !== "");
-    setBlogData((prevData) => {
-      const uniqueKeywords = [
-        ...new Set([...prevData.seo.keywords, ...newKeywords]),
-      ];
-      return {
-        ...prevData,
-        seo: {
-          ...prevData.seo,
-          keywords: uniqueKeywords,
-        },
-      };
-    });
+      .filter(Boolean);
+    setBlogData((prev) => ({
+      ...prev,
+      seo: {
+        ...prev.seo,
+        keywords: [...new Set([...prev.seo.keywords, ...newKeywords])],
+      },
+    }));
     setKeywordInput("");
   };
 
-  // Remove a keyword from the SEO keyword list by index.
+  // Remove a single keyword from the SEO keywords array by index.
   const handleDeleteKeyword = (index: number) => {
-    setBlogData((prevData) => {
-      const updatedKeywords = prevData.seo.keywords.filter(
-        (_, i) => i !== index,
-      );
-      return {
-        ...prevData,
-        seo: { ...prevData.seo, keywords: updatedKeywords },
-      };
-    });
+    setBlogData((prev) => ({
+      ...prev,
+      seo: {
+        ...prev.seo,
+        keywords: prev.seo.keywords.filter((_, i) => i !== index),
+      },
+    }));
   };
 
-  // Build an update payload, validate slug uniqueness, and persist the blog.
+  // Submit blog update payload to the backend API.
   const handleUpdate = async () => {
     const toastId = toast.loading("Updating blog...");
     try {
       setIsLoading(true);
-
-      const contentData = blogContent;
-      const splitData = {
-        title: blogData.title,
-        body: contentData,
-      };
-      const linkBlogPost = createUrl(splitData.title);
-
+      const linkBlogPost = createUrl(blogData.title);
       const blogUpdateData: Partial<IBlogUpdateData> = {
         id: blogData.id,
         tag: blogData.tag,
-        title: splitData.title,
+        title: blogData.title,
         banner_url: blogData.banner_url,
         link_post: linkBlogPost,
         category: blogData.category,
@@ -205,10 +162,11 @@ const BlogUpdate = () => {
           author: blogData.seo.author,
           banner_url: blogData.banner_url,
         },
-        content: splitData.body,
+        content: blogContent,
         created_at: blogData.created_at,
         modified_at: blogData.modified_at,
       };
+
       if (linkBlogPost !== storedLinkBlog) {
         const isDuplicate = await checkDuplicateBlogLink(linkBlogPost);
         if (isDuplicate) {
@@ -217,11 +175,11 @@ const BlogUpdate = () => {
           return;
         }
       }
+
       await updateBlog(blogUpdateData, bannerImage as File);
       queryClient.invalidateQueries({ queryKey: ["blogs"] });
       queryClient.invalidateQueries({ queryKey: ["blogs", "pending"] });
       queryClient.invalidateQueries({ queryKey: ["blogs", "approved"] });
-
       toast.success("Update successful.");
     } catch {
       toast.error("Something went wrong. Please try again later.");
@@ -231,132 +189,54 @@ const BlogUpdate = () => {
     }
   };
 
-  // Open SEO generation using the current title and markdown content.
+  // Open the SEO generation modal with current title and content.
   const handleGenerateSEO = () => {
-    const splitData = { title: blogData.title, body: blogContent };
-    setContent(splitData);
+    setContent({ title: blogData.title, body: blogContent });
     setIsOpenGenerate(true);
-  };
-
-  // Generate a blog banner image from the current blog metadata and image options.
-  const handleGenerateBanner = async () => {
-    const prompt = buildBlogBannerPrompt({
-      title: blogData.title,
-      category: blogData.category,
-      tag: blogData.tag,
-      seoKeywords: blogData.seo.keywords,
-      seoDescription: blogData.seo.description,
-      aspectRatio: imageAspectRatio,
-      customPrompt: imagePrompt,
-    });
-
-    const toastId = toast.loading("Generating banner with OpenRouter...");
-    setIsGeneratingBanner(true);
-    try {
-      const file = await generateBannerWithOpenRouterOptions(prompt, {
-        aspectRatio: imageAspectRatio,
-        imageSize,
-        quality: imageQuality,
-      });
-      setBannerImage(file);
-      toast.update(toastId, {
-        render: "Generated banner is ready.",
-        type: "success",
-        isLoading: false,
-        autoClose: 2500,
-      });
-    } catch (error) {
-      toast.update(toastId, {
-        render: `${error}`,
-        type: "error",
-        isLoading: false,
-        autoClose: 3500,
-      });
-    } finally {
-      setIsGeneratingBanner(false);
-    }
   };
 
   useEffect(() => {
     if (dataSeoGenerate.listSeoKey.length > 0) {
-      setBlogData((prevData) => {
-        const uniqueKeywords = [
-          ...new Set([...prevData.seo.keywords, ...dataSeoGenerate.listSeoKey]),
-        ];
-        return {
-          ...prevData,
-          seo: {
-            ...prevData.seo,
-            keywords: uniqueKeywords,
-            description: dataSeoGenerate.descript,
-          },
-        };
-      });
+      setBlogData((prev) => ({
+        ...prev,
+        seo: {
+          ...prev.seo,
+          keywords: [
+            ...new Set([...prev.seo.keywords, ...dataSeoGenerate.listSeoKey]),
+          ],
+          description: dataSeoGenerate.descript,
+        },
+      }));
     }
   }, [dataSeoGenerate]);
 
   useEffect(() => {
-    if (!blogDetail) return;
-
-    setBlogData((prevData) => {
-      const uniqueKeywords = [
-        ...new Set([...prevData.seo.keywords, ...blogDetail.seo.keywords]),
-      ];
-      return {
-        ...prevData,
-        seo: {
-          ...prevData.seo,
-          keywords: uniqueKeywords,
-        },
-      };
-    });
-  }, [blogDetail]);
-
-  useEffect(() => {
-    // Warn users before closing the tab with unsaved local edits.
-    const handleBeforeUnload = (event: {
-      preventDefault: () => void;
-      returnValue: string;
-    }) => {
-      event.preventDefault();
-      event.returnValue =
-        "All unsaved changes will be lost. Are you sure you want to leave?";
-      return "All unsaved changes will be lost. Are you sure you want to leave?";
-    };
-
-    window.addEventListener("beforeunload", handleBeforeUnload);
-    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
-  }, []);
-
-  useEffect(() => {
     if (blogDetail) {
       setStoredLinkBlog(blogDetail.link_post);
-      setBlogData((prev) => ({
-        ...prev,
-        id: blogDetail.id,
-        tag: blogDetail.tag,
-        title: blogDetail.title,
-        banner_url: blogDetail.banner_url,
-        link_post: blogDetail.link_post,
-        category: blogDetail.category,
-        state: blogDetail.state,
-        seo: blogDetail.seo,
-        content: blogDetail.content,
-        created_at: blogDetail.created_at,
-        modified_at: blogDetail.modified_at,
-      }));
+      setBlogData({
+        ...blogDetail,
+        seo: {
+          ...blogDetail.seo,
+          keywords: [...new Set(blogDetail.seo.keywords)],
+        },
+      });
       setBlogContent(blogDetail.content);
-
-      // Sync title from h1 in content if h1 exists.
       const h1Title = extractH1FromMarkdown(blogDetail.content);
       if (h1Title) {
-        setBlogData((prev) => ({
-          ...prev,
-          title: h1Title,
-        }));
+        setBlogData((prev) => ({ ...prev, title: h1Title }));
       }
     }
   }, [blogDetail]);
+
+  useEffect(() => {
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "All unsaved changes will be lost.";
+      return "All unsaved changes will be lost.";
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, []);
 
   return (
     <div className="p-6 text-gray-th2">
@@ -378,19 +258,10 @@ const BlogUpdate = () => {
       <BlogBasicInfoForm
         blogData={blogData}
         bannerImage={bannerImage}
-        imagePrompt={imagePrompt}
-        imageAspectRatio={imageAspectRatio}
-        imageSize={imageSize}
-        imageQuality={imageQuality}
-        isGeneratingBanner={isGeneratingBanner}
         setBannerImage={setBannerImage}
         onFieldChange={handleChange}
-        onPromptChange={setImagePrompt}
-        onAspectRatioChange={setImageAspectRatio}
-        onSizeChange={setImageSize}
-        onQualityChange={setImageQuality}
-        onGenerateBanner={handleGenerateBanner}
       />
+
       <BlogSeoForm
         blogData={blogData}
         content={content}
@@ -415,7 +286,7 @@ const BlogUpdate = () => {
         </span>
         <button
           type="button"
-          className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+          className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
           onClick={handleFixMarkdownSyntax}
         >
           Fix Markdown Syntax
@@ -425,7 +296,7 @@ const BlogUpdate = () => {
       <div className="flex justify-end mt-4">
         <button
           type="button"
-          className="flex items-center gap-1 px-6 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="flex items-center gap-1 px-6 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700"
           onClick={handleUpdate}
           disabled={isLoading}
         >

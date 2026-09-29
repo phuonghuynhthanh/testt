@@ -5,16 +5,13 @@ import App from "./app";
 import { BrowserRouter } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { BlogProvider } from "./context/BlogContext";
 
 const queryClient = new QueryClient();
 
 createRoot(document.getElementById("root")!).render(
   <QueryClientProvider client={queryClient}>
     <BrowserRouter>
-      <BlogProvider>
-        <App />
-      </BlogProvider>
+      <App />
       <ToastContainer autoClose={3000} />
     </BrowserRouter>
   </QueryClientProvider>,

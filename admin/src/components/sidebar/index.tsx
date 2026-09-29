@@ -1,7 +1,6 @@
 import { IoMdAddCircleOutline } from "react-icons/io";
 import { Link } from "react-router-dom";
 import { MdArticle } from "react-icons/md";
-import { RiRobot3Line } from "react-icons/ri";
 import { FaLinkedin } from "react-icons/fa";
 import Logout from "./components/Logout";
 
@@ -32,12 +31,6 @@ const Sidebar = ({ onClose }: SidebarProps) => {
           <div className="transition-all duration-300  text-primary-white/80 ease-in-out bg-transparent flex gap-2 hover:text-primary-white items-center h-10 hover:cursor-pointer hover:bg-gray-hover p-4 rounded-lg">
             <IoMdAddCircleOutline className="text-xl " />
             <span className="truncate">Create Blog</span>
-          </div>
-        </Link>
-        <Link to="/blog/agent-create-blog" onClick={handleLinkClick}>
-          <div className="transition-all duration-300 text-primary-white/80 ease-in-out bg-transparent flex gap-2 hover:text-primary-white items-center h-10 hover:cursor-pointer hover:bg-gray-hover p-4 rounded-lg">
-            <RiRobot3Line className="text-xl " />
-            <span className="truncate">Agent Create Blog</span>
           </div>
         </Link>
         <Link to="/linkedin" onClick={handleLinkClick}>

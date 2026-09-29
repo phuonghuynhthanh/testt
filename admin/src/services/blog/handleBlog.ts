@@ -1,16 +1,11 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import type {
-  IParamsBlogTitlesAIGenerate,
   IBlogData,
   IBlogItemData,
-  IBlogTags,
   IBlogUpdateData,
-  IBlogDetailData,
-  BlogCategory,
 } from "../../types/Blog";
 import getAxiosClient from "../../lib/axios/axiosClient";
 
-// Create a Blog through the current authenticated backend route.
+// Create a new blog post with multipart form data.
 export const createBlogPost = async (blogData: IBlogData, fileImage: File) => {
   try {
     const axiosClient = getAxiosClient();
@@ -21,24 +16,24 @@ export const createBlogPost = async (blogData: IBlogData, fileImage: File) => {
     const response = await axiosClient.post("/blog", formData);
     return response.data;
   } catch {
-    throw new Error("Error creating blog:");
+    throw new Error("Error creating blog");
   }
 };
 
-// Load all CMS Blogs from the current authenticated backend route.
+// Fetch all blog posts for administration.
 export const getListBlogs = async (): Promise<IBlogItemData[]> => {
   try {
     const axiosClient = getAxiosClient();
     const response = await axiosClient.get<IBlogItemData[]>(
       "/blog/admin/blogs",
     );
-
     return response.data;
   } catch {
     throw new Error("Unable to get list blog");
   }
 };
-// Filter CMS Blogs by their backend state.
+
+// Fetch blog posts filtered by publication state.
 export const getListBlogsWithState = async (
   blogState: "PENDING" | "APPROVED" | "REJECTED",
 ): Promise<IBlogItemData[]> => {
@@ -47,7 +42,7 @@ export const getListBlogsWithState = async (
     const response = await axiosClient.get<IBlogItemData[]>(
       "/blog/admin/blogs",
       {
-        params: { state: blogState }, // Pass query parameters directly using `params`
+        params: { state: blogState },
       },
     );
     return response.data;
@@ -56,14 +51,11 @@ export const getListBlogsWithState = async (
   }
 };
 
-// Load one CMS Blog using the backend's admin detail route.
-export const getBlogDetail = async (
-  blogId: string,
-): Promise<IBlogDetailData> => {
+// Fetch single blog post details by ID.
+export const getBlogDetail = async (blogId: string): Promise<IBlogData> => {
   try {
     const axiosClient = getAxiosClient();
-
-    const response = await axiosClient.get<IBlogDetailData>(
+    const response = await axiosClient.get<IBlogData>(
       `/blog/admin/${blogId}`,
     );
     return response.data;
@@ -72,7 +64,7 @@ export const getBlogDetail = async (
   }
 };
 
-// Ask the backend whether a Blog slug is already in use.
+// Check if a blog link slug is already taken.
 export const checkDuplicateBlogLink = async (
   blogLink: string,
 ): Promise<boolean> => {
@@ -90,7 +82,7 @@ export const checkDuplicateBlogLink = async (
   }
 };
 
-// Persist Blog fields and an optional multipart banner image.
+// Update an existing blog post and optionally replace the banner image.
 export const updateBlog = async (
   blogData: Partial<IBlogUpdateData>,
   fileImage?: File,
@@ -112,86 +104,23 @@ export const updateBlog = async (
         },
       },
     );
-
     return response.data;
   } catch {
-    throw new Error("Error updating blog:");
+    throw new Error("Error updating blog");
   }
 };
 
-export const getListTags = async (): Promise<IBlogTags[]> => {
-  return [
-    {
-      id: "001",
-      title: "Business",
-    },
-    {
-      id: "002",
-      title: "Investment",
-    },
-    {
-      id: "003",
-      title: "Legal",
-    },
-    {
-      id: "004",
-      title: "Tax",
-    },
-  ];
-};
-
-// Delete one Blog through the current backend route.
+// Delete a blog post by ID.
 export const deleteBlog = async (blogId: string) => {
   try {
     const axiosClient = getAxiosClient();
-
     const response = await axiosClient.delete(`/blog/${blogId}`);
     return response.data;
   } catch (error: any) {
     if (error.response && error.response.status === 400) {
       throw new Error("This blog is currently in use for affiliates.");
     }
-
     throw new Error("Something went wrong. Please try again later.");
-  }
-};
-
-// Generate title ideas through the current Blog AI route.
-export const generateBlogTitles = async ({
-  keyword,
-  quantity,
-  language,
-}: IParamsBlogTitlesAIGenerate): Promise<string[]> => {
-  try {
-    const axiosClient = getAxiosClient();
-    const response = await axiosClient.get<string[]>(
-      "/blog/openai/ai-generate-list-title",
-      {
-        params: { keyword, quantity, language },
-      },
-    );
-    return response.data;
-  } catch {
-    throw new Error("Error generating blog titles");
-  }
-};
-// Generate and create a Blog through the backend's markdown workflow.
-export const generateMarkdownBlogWithTitle = async (
-  title: string,
-  category: BlogCategory,
-): Promise<{ id: string; message: string; statusCode: number }> => {
-  try {
-    const axiosClient = getAxiosClient();
-    const response = await axiosClient.post<{ id: string; message: string; statusCode: number }>(
-      "/blog/ai-generate-markdown",
-      {
-        category,
-        title,
-      },
-    );
-    return response.data;
-  } catch {
-    throw new Error("Unable to generate blog with title");
   }
 };
 
@@ -201,4 +130,6 @@ export const categories = [
   { value: "INVESTMENT_INSIGHTS", label: "Investment Insights" },
   { value: "FOREIGN_INVESTMENT", label: "Foreign Investment" },
   { value: "KNOWLEDGE_BASE", label: "Knowledge Base" },
+  { value: "TUTORIALS", label: "Tutorials" },
+  { value: "CAREER", label: "Career" },
 ];

@@ -5,48 +5,22 @@ import InputUploadBanner from "../../../shared/input/InputUploadBanner";
 import SelectField from "../../../shared/select/SelectField";
 import { categories } from "../../../services/blog/handleBlog";
 import type { IBlogData } from "../../../types/Blog";
-import type {
-  ImageAspectRatio,
-  ImageQuality,
-  ImageSize,
-} from "../../../services/openrouter/handleImageGenerate";
-import BlogBannerGenerator from "./BlogBannerGenerator";
 
 interface BlogBasicInfoFormProps {
   blogData: IBlogData;
   bannerImage: File | null;
-  imagePrompt: string;
-  imageAspectRatio: ImageAspectRatio;
-  imageSize: ImageSize;
-  imageQuality: ImageQuality;
-  isGeneratingBanner: boolean;
   setBannerImage: Dispatch<SetStateAction<File | null>>;
   onFieldChange: (
     event: ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => void;
-  onPromptChange: (value: string) => void;
-  onAspectRatioChange: (value: ImageAspectRatio) => void;
-  onSizeChange: (value: ImageSize) => void;
-  onQualityChange: (value: ImageQuality) => void;
-  onGenerateBanner: () => void;
 }
 
-// Render editable blog metadata and banner controls for the update form.
+// Render basic blog metadata inputs and banner image upload.
 const BlogBasicInfoForm = ({
   blogData,
   bannerImage,
-  imagePrompt,
-  imageAspectRatio,
-  imageSize,
-  imageQuality,
-  isGeneratingBanner,
   setBannerImage,
   onFieldChange,
-  onPromptChange,
-  onAspectRatioChange,
-  onSizeChange,
-  onQualityChange,
-  onGenerateBanner,
 }: BlogBasicInfoFormProps) => {
   return (
     <div className="py-6 space-y-4">
@@ -70,18 +44,6 @@ const BlogBasicInfoForm = ({
         fileImage={bannerImage}
         bannerUrl={blogData.banner_url}
         setBannerImage={setBannerImage}
-      />
-      <BlogBannerGenerator
-        imagePrompt={imagePrompt}
-        imageAspectRatio={imageAspectRatio}
-        imageSize={imageSize}
-        imageQuality={imageQuality}
-        isGeneratingBanner={isGeneratingBanner}
-        onPromptChange={onPromptChange}
-        onAspectRatioChange={onAspectRatioChange}
-        onSizeChange={onSizeChange}
-        onQualityChange={onQualityChange}
-        onGenerateBanner={onGenerateBanner}
       />
       <div className="flex justify-between items-center gap-5">
         <InputField

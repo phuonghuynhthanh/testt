@@ -358,6 +358,7 @@ const BlogCreate = () => {
         <SeoEditor
           onSeoDataChange={handleSeoDataChange}
           blogTitle={content.title}
+          blogContent={content.body}
           bannerImage={bannerImage}
           setBannerImage={setBannerImage}
         />
