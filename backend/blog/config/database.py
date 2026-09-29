@@ -4,7 +4,7 @@ import importlib
 from pathlib import Path
 from fastapi import HTTPException
 from operator import and_
-from sqlalchemy import URL, MetaData, create_engine
+from sqlalchemy import URL, MetaData, create_engine, event
 from sqlalchemy.orm import DeclarativeBase, Query, Session, sessionmaker
 
 from . import settings
@@ -24,6 +24,8 @@ class DatabaseManager:
             db_config["database"] = "test_" + db_config["database"]
 
         if db_config["drivername"] == "sqlite":
+            # SQLite URLs cannot carry PostgreSQL host, credential, or port fields.
+            db_config.update(username=None, password=None, host=None, port=None)
             project_root = Path(
                 __file__
             ).parent.parent  # Assuming this is where your models are located
@@ -31,6 +33,11 @@ class DatabaseManager:
 
             url = URL.create(**db_config)
             cls.engine = create_engine(url, connect_args={"check_same_thread": False})
+
+            # Enforce declared cascade behavior in SQLite test and local databases.
+            @event.listens_for(cls.engine, "connect")
+            def enable_sqlite_foreign_keys(connection, _):
+                connection.execute("PRAGMA foreign_keys=ON")
         else:
             cls.engine = create_engine(URL.create(**db_config))
 
@@ -73,6 +80,11 @@ class DatabaseManager:
                             module.FastModel.metadata.create_all(bind=cls.engine)
                     except ImportError:
                         pass
+
+                migrations_file = app_dir / "migrations.py"
+                if migrations_file.exists():
+                    migration_module = importlib.import_module(f"apps.{app_dir.name}.migrations")
+                    migration_module.apply(cls.engine)
 
     @classmethod
     def get_testing_mode(cls):

@@ -1,4 +1,3 @@
-import re
 from contextlib import contextmanager
 from datetime import timedelta
 from typing import List, Optional
@@ -12,6 +11,8 @@ from apps.blogs import schemas
 from apps.blogs.models import Blog
 from apps.core.storage import StorageService
 from apps.core.date_time import DateTime
+from apps.core.publication_visibility import web_visible_clause
+from apps.core.urls import canonical_blog_url
 from apps.openai.services.gemini_ai import GeminiAiService
 from config import settings
 from config.database import DatabaseManager
@@ -279,7 +280,7 @@ class BlogServices:
                 Blog.modified_at,
                 Blog.seo,
                 Blog.category,
-            ).filter(Blog.state == schemas.BlogState.APPROVED)
+            ).filter(Blog.state == schemas.BlogState.APPROVED).filter(web_visible_clause(Blog.id))
             if category != "ALL":
                 query = query.filter(Blog.category == category.upper())
             total_query = select(func.count()).select_from(query.subquery())
@@ -348,6 +349,7 @@ class BlogServices:
                 blog = Blog.filter(
                     (Blog.link_post == link_post)
                     & (Blog.state == schemas.BlogState.APPROVED)
+                    & web_visible_clause(Blog.id)
                 ).first()
                 if not blog:
                     raise HTTPException(
@@ -377,11 +379,10 @@ class BlogServices:
                 detail=f"Failed to get blog: {str(e)}",
             )
 
+    # Transliterate Vietnamese characters before normalizing the URL slug.
     @staticmethod
     def _create_url(title: str) -> str:
-        title = re.sub(r"[^a-zA-Z0-9 ]", "", title)
-        slug = slugify(title, lowercase=True, separator="-")
-        return slug
+        return slugify(title, lowercase=True, separator="-")
 
     @classmethod
     async def ai_generate_blog_markdown_with_title(
@@ -404,7 +405,7 @@ class BlogServices:
             seo = schemas.SEODataSchema(
                 title=title,
                 description=seo_dict["description"],
-                url=f"{settings.DOMAIN_URL}/blog/{url}",
+                url=canonical_blog_url(url),
                 keywords=seo_dict["keywords"],
                 author=settings.AUTHOR,
             )
@@ -473,6 +474,7 @@ class BlogServices:
                     .filter(
                         (Blog.tag == blog.tag)
                         & (Blog.state == schemas.BlogState.APPROVED)
+                        & web_visible_clause(Blog.id)
                     )
                     .filter(
                         (Blog.created_at >= start_time) & (Blog.created_at <= end_time)

@@ -1,0 +1,208 @@
+"""Strict, Blog-independent LinkedIn input and output contracts."""
+
+from enum import Enum
+from typing import Literal
+
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+
+
+class StrictModel(BaseModel):
+    """Reject provider or AI fields that this domain did not explicitly model."""
+
+    model_config = ConfigDict(extra="forbid")
+
+
+class LinkedInMode(str, Enum):
+    """Describe how a LinkedIn draft is authored."""
+
+    SAME = "SAME"
+    SUMMARY = "SUMMARY"
+    CUSTOM = "CUSTOM"
+
+
+class MediaMode(str, Enum):
+    """Describe the supported LinkedIn media shapes."""
+
+    NONE = "none"
+    SINGLE = "single-image"
+    MULTI = "multi-image"
+
+
+class ImagePlan(StrictModel):
+    """Describe a reviewable image suggestion from the structured generator."""
+
+    slotId: str = Field(min_length=1)
+    order: int = Field(ge=1)
+    role: str = Field(min_length=1)
+    preferredSource: Literal["internal", "pexels", "generated"]
+    concept: str = Field(min_length=1)
+    searchKeywords: list[str] = Field(min_length=2, max_length=3)
+    altTextDraft: str = Field(min_length=1, max_length=4086)
+
+
+class MediaPlan(StrictModel):
+    """Keep media selection separate from the immutable Blog banner."""
+
+    mode: MediaMode
+    images: list[ImagePlan]
+
+    # Enforce LinkedIn's supported image cardinalities before a provider request.
+    @model_validator(mode="after")
+    def validate_images(self):
+        expected = {MediaMode.NONE: (0, 0), MediaMode.SINGLE: (1, 1), MediaMode.MULTI: (2, 20)}[self.mode]
+        if not expected[0] <= len(self.images) <= expected[1]:
+            raise ValueError(f"media.images does not match {self.mode.value}")
+        if [image.order for image in self.images] != list(range(1, len(self.images) + 1)):
+            raise ValueError("media image order must be sequential")
+        if len({image.slotId for image in self.images}) != len(self.images):
+            raise ValueError("media image slot IDs must be unique")
+        return self
+
+
+class Connection(StrictModel):
+    """Represent the one intended STEM-to-quant connection."""
+
+    from_: str = Field(alias="from", min_length=1)
+    to: str = Field(min_length=1)
+
+
+class GeneratedPost(StrictModel):
+    """Validate Gemini's structured LinkedIn draft before persisting it."""
+
+    style: Literal["relatable-memory", "one-liner", "technical-analogy", "question-first", "mini-problem", "contrarian", "short-story", "school-vs-market", "developer-pain", "observation"]
+    openingType: Literal["question", "memory", "statement", "contrast", "problem", "story", "one-liner"]
+    audience: Literal["math", "competitive-programming", "software-engineering", "machine-learning", "systems", "mixed"]
+    hookSource: str = Field(min_length=1)
+    connection: Connection
+    insight: str = Field(min_length=1)
+    content: str = Field(min_length=1)
+    hashtags: list[str] = Field(default_factory=list, max_length=4)
+    media: MediaPlan
+    requiresHumanFactCheck: bool
+    factCheckNotes: list[str]
+
+    # Infer the source project's legacy opening type before strict validation.
+    @model_validator(mode="before")
+    @classmethod
+    def infer_opening_type(cls, value):
+        if isinstance(value, dict) and "openingType" not in value:
+            inferred = {"relatable-memory": "memory", "one-liner": "one-liner", "question-first": "question", "mini-problem": "problem", "contrarian": "contrast", "short-story": "story", "school-vs-market": "contrast"}
+            value = {**value, "openingType": inferred.get(value.get("style"), "statement")}
+        return value
+
+    # Keep factual-review flags internally consistent and normalize canonical hashtags.
+    @model_validator(mode="after")
+    def validate_post(self):
+        import re
+
+        if self.requiresHumanFactCheck != bool(self.factCheckNotes):
+            raise ValueError("requiresHumanFactCheck must match factCheckNotes")
+        self.content = re.sub("\u0009ext\\{([^{}\\r\\n]*)\\}", lambda match: match.group(1).strip(), self.content)
+        if any((ord(char) < 32 and char not in "\n\r") or 127 <= ord(char) <= 159 for char in self.content):
+            raise ValueError("content must not contain control characters")
+        content_hashtags = re.findall(r"(?<!\w)#[^\W_][\w]*", self.content, flags=re.UNICODE)
+        self.content = re.sub(r"(?<!\w)#[^\W_][\w]*", "", self.content, flags=re.UNICODE)
+        self.content = re.sub(r" +(?=\r?$)", "", self.content, flags=re.MULTILINE)
+        self.content = re.sub(r" {2,}", " ", self.content).strip()
+        if not self.content:
+            raise ValueError("content must contain text besides hashtags")
+        normalized = []
+        for tag in ["#VietQuant", *content_hashtags, *self.hashtags]:
+            clean = "#" + "".join(char for char in tag.lstrip("#") if char.isalnum() or char == "_")
+            if clean != "#" and clean.casefold() not in {item.casefold() for item in normalized}:
+                normalized.append(clean)
+        if not 1 <= len(normalized) <= 4:
+            raise ValueError("hashtags must contain 1 to 4 unique values")
+        self.hashtags = normalized
+        return self
+
+
+class FactualReview(StrictModel):
+    """Capture independent factual review without rewriting content."""
+
+    requiresHumanFactCheck: bool
+    factCheckNotes: list[str]
+
+    # Require a review flag whenever the reviewer has left notes.
+    @model_validator(mode="after")
+    def validate_review(self):
+        if self.requiresHumanFactCheck != bool(self.factCheckNotes):
+            raise ValueError("requiresHumanFactCheck must match factCheckNotes")
+        return self
+
+
+class RecentPost(StrictModel):
+    """Carry only the structured history needed by diversity validation."""
+
+    topic: str = ""
+    style: str
+    openingType: str
+    hookSource: str
+    connection: str
+    opening: str = ""
+    cta: str = ""
+
+
+class LinkedInArticleSource(StrictModel):
+    """Neutral input passed from publications without importing the Blog domain."""
+
+    title: str = Field(min_length=1)
+    content: str = Field(min_length=1)
+    category: str = Field(min_length=1)
+    tags: list[str] = Field(default_factory=list)
+    canonicalUrl: str | None = None
+    mode: LinkedInMode
+    recentPosts: list[RecentPost] = Field(default_factory=list, max_length=5)
+
+
+class PexelsCandidate(StrictModel):
+    """Safe Pexels metadata saved as selected publication media."""
+
+    provider: Literal["pexels"] = "pexels"
+    providerId: str
+    sourceUrl: str
+    imageUrl: str
+    photographer: str
+    attribution: str
+    altText: str = Field(min_length=1, max_length=4086)
+    order: int = Field(default=1, ge=1)
+
+
+class ValidatedImage(StrictModel):
+    """Represent byte-validated image input for an upload request."""
+
+    media_type: Literal["image/png", "image/jpeg", "image/gif"]
+    width: int = Field(gt=0)
+    height: int = Field(gt=0)
+    bytes: bytes
+
+
+class OrganizationVerification(StrictModel):
+    """Return organization readiness without leaking access credentials."""
+
+    identity: dict
+    organization: dict
+    roles: list[dict]
+    scopes: list[str]
+    permissions: dict
+    readyForOrganicPosting: bool
+
+
+class DraftResult(StrictModel):
+    """Persistable draft details returned by the adaptation service."""
+
+    content: str
+    media: MediaPlan
+    factualReview: FactualReview
+    generated: GeneratedPost | None = None
+
+
+# Strip Markdown-only syntax while preserving paragraphs for SAME mode.
+def linkedin_plain_text(value: str) -> str:
+    """Adapt trusted article formatting without pretending it is a new summary."""
+    import re
+
+    value = re.sub(r"!?(?:\[[^\]]*\])\(([^)]+)\)", r"\1", value)
+    value = re.sub(r"^\s{0,3}#{1,6}\s+", "", value, flags=re.MULTILINE)
+    value = re.sub(r"[*_`]+", "", value)
+    return re.sub(r"\n{3,}", "\n\n", value).strip()
