@@ -30,7 +30,7 @@ import {
   updateBlog,
 } from "../../../../services/blog/handleBlog";
 import type { IBlogItemData } from "../../../../types/Blog";
-import { API_SERVICES, DOMAIN_WEBSITE } from "../../../../config/config";
+import { DOMAIN_WEBSITE, IMAGE_URL } from "../../../../config/config";
 import LoadingPage from "../../../../shared/loading/LoadingPage";
 import { fixEscapedMarkdownSyntax } from "../../../../utils/markdown";
 
@@ -66,11 +66,11 @@ const filterBlogs = (
 const isFixableBlogState = (state: IBlogItemData["state"]) =>
   state === "PENDING" || state === "APPROVED";
 
-// Build the static banner image URL returned by the admin API.
+// Build a configured public media URL from the object key returned by MinIO.
 const getBlogBannerImageUrl = (bannerUrl: string) => {
-  if (!bannerUrl || !API_SERVICES) return "";
+  if (!bannerUrl || !IMAGE_URL) return "";
   if (/^https?:\/\//.test(bannerUrl)) return bannerUrl;
-  return `${API_SERVICES}/static/${bannerUrl.replace(/^\/+/, "")}`;
+  return `${IMAGE_URL}/${bannerUrl.replace(/^\/+/, "")}`;
 };
 
 const ListBlogs = () => {

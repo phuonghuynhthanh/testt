@@ -1,4 +1,3 @@
-import { API_SERVICES } from "../../config/config";
 import getAxiosClient from "../../lib/axios/axiosClient";
 import type { ICrawledData } from "../../types/Blog";
 import {
@@ -44,6 +43,7 @@ export const generateOutline = async (
   return response;
 };
 
+// Search reference links through the backend's authenticated classifier route.
 export const searchLinkByKeywords = async (
   keyword: string,
   keywords: string[],
@@ -55,7 +55,7 @@ export const searchLinkByKeywords = async (
   const axiosClient = getAxiosClient();
   try {
     const response = await axiosClient.post(
-      `${API_SERVICES}/blog/search-references`,
+      "/blog/search-references",
       {
         keyword,
         keywords: keywords.length > 0 ? keywords : null,
@@ -71,11 +71,12 @@ export const searchLinkByKeywords = async (
   }
 };
 
+// Fetch article content through the backend rather than the browser.
 export const crawlDataContent = async (url: string) => {
   const axiosClient = getAxiosClient();
   try {
     const response = await axiosClient.post(
-      `${API_SERVICES}/blog/fetch-content`,
+      "/blog/fetch-content",
       {
         url,
         include_metadata: true,

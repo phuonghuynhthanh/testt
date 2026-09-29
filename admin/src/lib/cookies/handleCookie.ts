@@ -1,26 +1,33 @@
 import Cookies from "universal-cookie";
-import type { IUserCookie } from "../../types/User";
+import type { AuthSession } from "../../types/User";
 
 const cookies = new Cookies();
 
 /**
- * Stores Google login data in cookies.
+ * Stores the current CMS authentication session.
  */
-export const setGoogleLoginCookies = (userData: IUserCookie): void => {
-  cookies.set("userToken", userData, { path: "/", maxAge: 30 * 24 * 60 * 60 });
+export const setAuthSession = (session: AuthSession): void => {
+  const maxAge = session.expiresAt
+    ? Math.max(0, Math.ceil((session.expiresAt - Date.now()) / 1000))
+    : undefined;
+  cookies.set("authSession", session, { path: "/", maxAge });
 };
 
 /**
- * Retrieves Google login data from cookies.
+ * Returns the current CMS session when it has not expired.
  */
-export const getGoogleLoginCookies = (): IUserCookie | null => {
-  const cookiesResult = cookies.get("userToken");
-  return cookiesResult || null;
+export const getAuthSession = (): AuthSession | null => {
+  const session = cookies.get("authSession") as AuthSession | undefined;
+  if (!session || (session.expiresAt && session.expiresAt <= Date.now())) {
+    if (session) clearAuthSession();
+    return null;
+  }
+  return session;
 };
 
 /**
- * Deletes Google login cookies.
+ * Clears the current CMS authentication session.
  */
-export const deleteGoogleLoginCookies = (): void => {
-  cookies.remove("userToken", { path: "/" });
+export const clearAuthSession = (): void => {
+  cookies.remove("authSession", { path: "/" });
 };

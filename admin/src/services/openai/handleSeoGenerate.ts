@@ -1,7 +1,7 @@
-import { API_SERVICES } from "../../config/config";
 import getAxiosClient from "../../lib/axios/axiosClient";
 import type { IDataSeoGenerate } from "../../types/OpenAi";
 
+// Generate SEO keywords with the backend schema instead of browser-side providers.
 export const getSeoKeywords = async (
   title: string,
   content: string,
@@ -9,10 +9,10 @@ export const getSeoKeywords = async (
   try {
     const axiosClient = getAxiosClient();
     const response = await axiosClient.post<string[]>(
-      `${API_SERVICES}/openai/seo-keywords`,
+      "/openai/seo-keywords",
       {
-        title,
-        content,
+        blog_title: title,
+        blog_content: content,
       },
     );
     return response.data;
@@ -21,6 +21,7 @@ export const getSeoKeywords = async (
   }
 };
 
+// Generate an SEO description with the backend schema.
 export const getSeoDescription = async (
   title: string,
   content: string,
@@ -28,10 +29,10 @@ export const getSeoDescription = async (
   try {
     const axiosClient = getAxiosClient();
     const response = await axiosClient.post<string>(
-      `${API_SERVICES}/openai/seo-description`,
+      "/openai/seo-description",
       {
-        title,
-        content,
+        blog_title: title,
+        blog_content: content,
       },
     );
     return response.data;
@@ -40,6 +41,7 @@ export const getSeoDescription = async (
   }
 };
 
+// Request keywords and description together while keeping each backend call typed.
 export const getSeoData = async (
   title: string,
   content: string,

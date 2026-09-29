@@ -1,14 +1,16 @@
 import { RiLogoutBoxRFill } from "react-icons/ri";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import { deleteGoogleLoginCookies } from "../../../lib/cookies/handleCookie";
+import { clearAuthSession } from "../../../lib/cookies/handleCookie";
 
+// Render the sidebar action that closes the current CMS session.
 const Logout = () => {
   const navigate = useNavigate();
 
+  // End the local CMS session and return to the public login screen.
   const handleLogout = () => {
     try {
-      deleteGoogleLoginCookies();
+      clearAuthSession();
       toast.success("Logout successful");
       navigate("/login");
     } catch {

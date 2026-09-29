@@ -5,13 +5,14 @@ import { assets } from "../../assets/assets";
 import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { handleLogin } from "../../services/user/handleAuth.";
-import type { IUserCookie } from "../../types/User";
-import { setGoogleLoginCookies } from "../../lib/cookies/handleCookie";
+import { setAuthSession } from "../../lib/cookies/handleCookie";
 
 interface LoginFormInputs {
   username: string;
   password: string;
 }
+
+// Render the standalone CMS administrator login form.
 const Login: React.FC = () => {
   const {
     register,
@@ -22,14 +23,14 @@ const Login: React.FC = () => {
   const location = useLocation();
   const from = location.state?.from?.pathname || "/";
 
+  // Exchange administrator credentials for the backend-issued CMS session.
   const onSubmit = async (data: LoginFormInputs) => {
     try {
       const res = await handleLogin(data.username, data.password);
-      const userTokenCookies: IUserCookie = {
-        token: res.token,
-        roles: res.roles,
-      };
-      setGoogleLoginCookies(userTokenCookies);
+      setAuthSession({
+        accessToken: res.access_token,
+        expiresAt: Date.now() + res.expires_in * 1000,
+      });
       toast.success("Login successful");
       navigate(from, { replace: true });
     } catch {

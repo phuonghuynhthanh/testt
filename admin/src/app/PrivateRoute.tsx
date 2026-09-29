@@ -2,18 +2,18 @@ import React from "react";
 import type { ReactElement } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { PATH } from "./store";
-import { getGoogleLoginCookies } from "../lib/cookies/handleCookie";
-import type { IUserCookie } from "../types/User";
+import { getAuthSession } from "../lib/cookies/handleCookie";
 
 interface PrivateRouteProps {
   element: ReactElement;
 }
 
+// Allow access only while a non-expired CMS session exists.
 const PrivateRoute: React.FC<PrivateRouteProps> = ({ element: Component }) => {
-  const user: IUserCookie | null = getGoogleLoginCookies();
+  const session = getAuthSession();
   const location = useLocation();
 
-  if (!user) {
+  if (!session) {
     return <Navigate to={PATH.LOGIN} state={{ from: location }} />;
   }
 

@@ -6,7 +6,9 @@ import path from "path";
 export default defineConfig({
   plugins: [react()],
   server: {
+    // Match the currently running backend's allowed CORS origin for local CMS testing.
     port: 3000,
+    strictPort: true,
   },
   resolve: {
     alias: {

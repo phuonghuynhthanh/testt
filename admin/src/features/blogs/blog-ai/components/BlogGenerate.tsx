@@ -7,10 +7,7 @@ import {
   FaSpinner,
   FaClock,
 } from "react-icons/fa";
-import type {
-  BlogCategory,
-  IBlogAIGenerateResponse,
-} from "../../../../types/Blog";
+import type { BlogCategory } from "../../../../types/Blog";
 import { generateMarkdownBlogWithTitle } from "../../../../services/blog/handleBlog";
 import Modal from "../../../../shared/Popup/Modal";
 
@@ -65,8 +62,10 @@ const BlogGenerate: React.FC<BlogGenerateProps> = ({
         );
 
         try {
-          const res: IBlogAIGenerateResponse =
-            await generateMarkdownBlogWithTitle(currentTitle, category);
+          const res = await generateMarkdownBlogWithTitle(
+            currentTitle,
+            category,
+          );
           if (res.statusCode === 200 && res.id) {
             // Success
             setGenStates((prev) =>

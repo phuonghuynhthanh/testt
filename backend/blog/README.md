@@ -51,3 +51,34 @@ poetry run pytest
 ```powershell
 docker compose down
 ```
+workflow 
+                    CMS Post
+                       │
+            ┌──────────┴──────────┐
+            │                     │
+          WEB                 LINKEDIN
+            │                     │
+       selected?              selected?
+            │                     │
+           yes                   yes
+            │                     │
+   save/publish Blog       choose content mode
+            │                     │
+            │              ┌──────┼──────┐
+            │              │      │      │
+            │            SAME  SUMMARY CUSTOM
+            │                     │
+            │                  AI adapt
+            │                     │
+            ▼                     ▼
+ canonical web URL      admin preview/edit
+            │                     │
+            └──────────────┐      │
+                           ▼      ▼
+                    append web link
+                           │
+                           ▼
+                    LinkedIn Publish
+                           │
+                           ▼
+                   save LinkedIn postId

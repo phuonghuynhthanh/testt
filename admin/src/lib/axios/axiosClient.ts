@@ -1,18 +1,23 @@
 import axios, { type AxiosInstance } from "axios";
-import { getGoogleLoginCookies } from "../cookies/handleCookie";
+import { API_SERVICES } from "../../config/config";
+import { clearAuthSession, getAuthSession } from "../cookies/handleCookie";
 
+// Create a backend client that always uses the active CMS JWT.
 const getAxiosClient = (): AxiosInstance => {
-  const cookies = getGoogleLoginCookies();
-  if (!cookies) {
-    console.log("no token");
-  }
-
-  return axios.create({
+  const session = getAuthSession();
+  const client = axios.create({
+    baseURL: API_SERVICES,
     headers: {
-      Authorization: `Bearer ${cookies?.token}`,
-      //skip ngrok
-      "ngrok-skip-browser-warning": "true",
+      ...(session ? { Authorization: `Bearer ${session.accessToken}` } : {}),
     },
   });
+  client.interceptors.response.use(undefined, (error) => {
+    if (error.response?.status === 401 && window.location.pathname !== "/login") {
+      clearAuthSession();
+      window.location.assign("/login");
+    }
+    return Promise.reject(error);
+  });
+  return client;
 };
 export default getAxiosClient;

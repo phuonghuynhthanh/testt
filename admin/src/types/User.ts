@@ -1,4 +1,4 @@
-export interface IUserCookie {
-  token: string;
-  roles: string[];
+export interface AuthSession {
+  accessToken: string;
+  expiresAt?: number;
 }

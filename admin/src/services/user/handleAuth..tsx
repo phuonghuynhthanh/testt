@@ -2,23 +2,29 @@ import axios from "axios";
 import { API_SERVICES } from "../../config/config";
 
 interface ILoginResponse {
-  token: string;
-  roles: string[];
+  access_token: string;
+  token_type: "bearer";
+  expires_in: number;
 }
+
+// Exchange CMS credentials for the backend access-token contract.
 export const handleLogin = async (
   userName: string,
   userPassword: string,
 ): Promise<ILoginResponse> => {
   try {
     const response = await axios.post<ILoginResponse>(
-      `${API_SERVICES}/account/login`,
+      `${API_SERVICES}/auth/login`,
       {
         username: userName,
         password: userPassword,
       },
     );
     return response.data;
-  } catch {
-    throw new Error("Unable to get login");
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw new Error(error.response?.data?.detail || "Unable to sign in");
+    }
+    throw error;
   }
 };
