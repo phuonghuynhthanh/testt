@@ -28,6 +28,7 @@ class BlogServices:
         finally:
             session.close()
 
+    # Delete a banner without turning best-effort storage cleanup into API failure.
     @staticmethod
     def delete_image_url(url: str) -> None:
         if url:
@@ -66,6 +67,9 @@ class BlogServices:
         Creates a new blog with the provided data.
         If the blog already exists, it raises an HTTPException.
         """
+        # Track only objects created by this request so rollback cannot delete old data.
+        banner_url = blog_data.banner_url or ""
+        uploaded_banner_url = None
         try:
             ex_link = Blog.filter(Blog.link_post == blog_data.link_post).first()
             if ex_link:
@@ -73,11 +77,11 @@ class BlogServices:
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail=f"Blog with link '{blog_data.link_post}' already exists",
                 )
-            banner_url = (
-                StorageService.upload_image(image, folder=blog_data.link_post)
-                if image
-                else blog_data.banner_url if blog_data.banner_url else ""
-            )
+            if image:
+                banner_url = StorageService.upload_image(
+                    image, folder=blog_data.link_post
+                )
+                uploaded_banner_url = banner_url
 
             seo_data = cls._create_seo_data(blog_data.seo, banner_url)
             blog = Blog.create(
@@ -91,15 +95,16 @@ class BlogServices:
                 seo=seo_data,
             )
         except IntegrityError:
-            cls.delete_image_url(banner_url)
+            cls.delete_image_url(uploaded_banner_url)
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Blog already exists",
             )
         except HTTPException:
+            cls.delete_image_url(uploaded_banner_url)
             raise
         except Exception:
-            cls.delete_image_url(banner_url)
+            cls.delete_image_url(uploaded_banner_url)
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to create blog",
@@ -118,6 +123,7 @@ class BlogServices:
         Updates an existing blog with the provided data.
         If the blog is not found, it raises an HTTPException.
         """
+        uploaded_banner_url = None
         try:
             with cls.get_db_session() as session:
                 blog = session.query(Blog).filter(Blog.id == id).first()
@@ -153,14 +159,12 @@ class BlogServices:
                 if field_value is not None:
                     update_data[field_name] = field_value
             new_banner_url = blog.banner_url
-
             if image is not None:
-                if blog.banner_url:
-                    StorageService.delete_image(blog.banner_url)
                 folder_for_new_banner = data.link_post or blog.link_post
                 new_banner_url = StorageService.upload_image(
                     image, folder=folder_for_new_banner
                 )
+                uploaded_banner_url = new_banner_url
             elif (data.banner_url is not None) & (data.banner_url != ""):
                 new_banner_url = data.banner_url
             update_data["banner_url"] = new_banner_url
@@ -176,12 +180,15 @@ class BlogServices:
                 )
                 update_data["seo"] = seo_data
 
-            return Blog.update(id, **update_data)
+            updated_blog = Blog.update(id, **update_data)
+            if uploaded_banner_url and blog.banner_url:
+                cls.delete_image_url(blog.banner_url)
+            return updated_blog
         except HTTPException:
+            cls.delete_image_url(uploaded_banner_url)
             raise
         except Exception as e:
-            if image is not None:
-                cls.delete_image_url(new_banner_url)
+            cls.delete_image_url(uploaded_banner_url)
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Failed to update blog: {str(e)}",
@@ -208,7 +215,11 @@ class BlogServices:
                 session.delete(blog)
                 session.commit()
                 cls.delete_image_url(banner_url)
-                StorageService.delete_key(link_post)
+                # StorageService logs cleanup errors; the committed delete stays successful.
+                try:
+                    StorageService.delete_key(link_post)
+                except Exception:
+                    pass
                 return {"message": "Blog deleted successfully"}
         except HTTPException:
             raise

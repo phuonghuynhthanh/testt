@@ -1,88 +1,172 @@
-import os
-import shutil
+import logging
 import uuid
-from pathlib import Path
 from urllib.parse import urlparse
 
-from fastapi import UploadFile
+from fastapi import HTTPException, UploadFile, status
+from minio import Minio
 
 from config import settings
 
+logger = logging.getLogger(__name__)
+
 
 class StorageService:
+    _client: Minio | None = None
+    _initialized = False
+    _allowed_types = {
+        "image/jpeg": ".jpg",
+        "image/png": ".png",
+        "image/webp": ".webp",
+        "image/gif": ".gif",
+    }
+
+    # Keep object names relative and prevent paths escaping their logical prefix.
     @staticmethod
     def _sanitize_relative_path(path: str) -> str:
-        normalized = path.strip().strip("/")
-        parts = [part for part in normalized.split("/") if part not in ("", ".", "..")]
-        return "/".join(parts)
+        return "/".join(
+            part
+            for part in path.strip().strip("/").split("/")
+            if part not in {"", ".", ".."}
+        )
 
+    # Build one SDK client for the process instead of reconnecting per operation.
     @classmethod
-    def _ensure_media_root(cls) -> Path:
-        media_root = Path(settings.MEDIA_ROOT)
-        media_root.mkdir(parents=True, exist_ok=True)
-        return media_root
+    def _get_client(cls) -> Minio:
+        if cls._client is None:
+            if not all(
+                (
+                    settings.MINIO_ENDPOINT,
+                    settings.MINIO_ACCESS_KEY,
+                    settings.MINIO_SECRET_KEY,
+                )
+            ):
+                raise RuntimeError("MinIO endpoint and credentials must be configured")
+            cls._client = Minio(
+                settings.MINIO_ENDPOINT,
+                access_key=settings.MINIO_ACCESS_KEY,
+                secret_key=settings.MINIO_SECRET_KEY,
+                secure=settings.MINIO_SECURE,
+                region=settings.MINIO_REGION or None,
+            )
+        return cls._client
 
+    # Verify the configured bucket, creating it only when explicitly enabled.
     @classmethod
-    def upload_image(cls, image_file: UploadFile, folder: str = ""):
-        extension = Path(image_file.filename or "").suffix.lower() or ".bin"
-        image_name = f"{uuid.uuid4()}{extension}"
-        safe_folder = cls._sanitize_relative_path(folder)
-        relative_path = f"{safe_folder}/{image_name}".strip("/") if safe_folder else image_name
+    def initialize(cls) -> None:
+        if cls._initialized:
+            return
+        if not settings.MINIO_BUCKET:
+            raise RuntimeError("MinIO bucket must be configured")
+        client = cls._get_client()
+        if client.bucket_exists(settings.MINIO_BUCKET):
+            cls._initialized = True
+            return
+        if not settings.MINIO_AUTO_CREATE_BUCKET:
+            raise RuntimeError(f"MinIO bucket '{settings.MINIO_BUCKET}' does not exist")
+        client.make_bucket(
+            settings.MINIO_BUCKET, location=settings.MINIO_REGION or "us-east-1"
+        )
+        cls._initialized = True
+        logger.info("Created MinIO bucket %s", settings.MINIO_BUCKET)
 
-        media_root = cls._ensure_media_root()
-        output_path = media_root / relative_path
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-
+    # Determine the stream length without materializing an uploaded image in memory.
+    @staticmethod
+    def _file_size(image_file: UploadFile) -> int:
+        image_file.file.seek(0, 2)
+        size = image_file.file.tell()
         image_file.file.seek(0)
-        with output_path.open("wb") as out_file:
-            shutil.copyfileobj(image_file.file, out_file)
+        return size
 
-        # Store only file key/name in DB. FE will build full URL.
-        return relative_path
+    # Upload an allowed image stream and return only its database-safe object key.
+    @classmethod
+    def upload_image(cls, image_file: UploadFile, folder: str = "") -> str:
+        content_type = image_file.content_type or ""
+        extension = cls._allowed_types.get(content_type)
+        if extension is None:
+            raise HTTPException(
+                status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+                detail="Only JPEG, PNG, WebP, and GIF images are supported",
+            )
 
+        size = cls._file_size(image_file)
+        if size > settings.MEDIA_MAX_UPLOAD_MB * 1024 * 1024:
+            raise HTTPException(
+                status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                detail="Image exceeds the upload size limit",
+            )
+
+        safe_folder = cls._sanitize_relative_path(folder)
+        object_name = f"{uuid.uuid4()}{extension}"
+        object_key = f"{safe_folder}/{object_name}" if safe_folder else object_name
+        try:
+            cls.initialize()
+            cls._get_client().put_object(
+                settings.MINIO_BUCKET,
+                object_key,
+                image_file.file,
+                size,
+                content_type=content_type,
+            )
+        except HTTPException:
+            raise
+        except Exception:
+            logger.exception("MinIO image upload failed for key %s", object_key)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to upload image",
+            )
+        return object_key
+
+    # Resolve relative and trusted legacy URLs while ignoring unrelated external hosts.
     @classmethod
     def _resolve_relative_path_from_url(cls, url: str) -> str:
-        # Backward compatibility:
-        # - old values may be full URLs
-        # - new values are file key/name only
+        if not url:
+            return ""
         parsed = urlparse(url)
-        path = parsed.path if parsed.path else url
-        path = path.lstrip("/")
-        if path.startswith("uploads/"):
-            path = path[len("uploads/") :]
-        if path.startswith("static/"):
-            path = path[len("static/") :]
+        if parsed.scheme or parsed.netloc:
+            trusted_url = urlparse(settings.DOMAIN_URL or "")
+            if (
+                parsed.scheme not in {"http", "https"}
+                or not trusted_url.netloc
+                or parsed.netloc.lower() != trusted_url.netloc.lower()
+            ):
+                return ""
+        path = parsed.path.lstrip("/")
+        for prefix in ("uploads/", "static/"):
+            if path.startswith(prefix):
+                path = path[len(prefix) :]
+                break
         return cls._sanitize_relative_path(path)
 
+    # Delete one MinIO object addressed by a compatible stored media value.
     @classmethod
     def delete_image(cls, url: str):
-        relative_path = cls._resolve_relative_path_from_url(url)
-        if not relative_path:
-            return {"message": "Image path is empty."}
+        object_key = cls._resolve_relative_path_from_url(url)
+        if not object_key:
+            return {"message": "Image path is empty or external."}
+        try:
+            cls.initialize()
+            cls._get_client().remove_object(settings.MINIO_BUCKET, object_key)
+        except Exception:
+            logger.exception("MinIO image deletion failed for key %s", object_key)
+            raise
+        return {"message": "Image deleted successfully!"}
 
-        media_root = cls._ensure_media_root()
-        target = media_root / relative_path
-        if target.exists() and target.is_file():
-            target.unlink()
-            return {"message": "Image deleted successfully!"}
-        return {"message": "Image does not exist."}
-
+    # Delete exactly one blog prefix so similarly named blog folders are untouched.
     @classmethod
     def delete_key(cls, link_blog: str):
         safe_folder = cls._sanitize_relative_path(link_blog)
         if not safe_folder:
             return {"message": "Folder is already empty or does not exist."}
-
-        media_root = cls._ensure_media_root()
-        folder_path = media_root / safe_folder
-        if not folder_path.exists() or not folder_path.is_dir():
-            return {"message": "Folder is already empty or does not exist."}
-
-        for root, _, files in os.walk(folder_path, topdown=False):
-            for file_name in files:
-                Path(root, file_name).unlink(missing_ok=True)
-            if Path(root) != folder_path:
-                Path(root).rmdir()
-
-        folder_path.rmdir()
-        return {"message": f"Deleted all objects under {safe_folder}/!"}
+        prefix = f"{safe_folder}/"
+        try:
+            cls.initialize()
+            client = cls._get_client()
+            for object_info in client.list_objects(
+                settings.MINIO_BUCKET, prefix=prefix, recursive=True
+            ):
+                client.remove_object(settings.MINIO_BUCKET, object_info.object_name)
+        except Exception:
+            logger.exception("MinIO prefix deletion failed for prefix %s", prefix)
+            raise
+        return {"message": f"Deleted all objects under {prefix}!"}

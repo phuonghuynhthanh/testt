@@ -21,8 +21,17 @@ JWT_SECRET = os.getenv("JWT_SECRET", "")
 JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
 JWT_EXPIRE_MINUTES = int(os.getenv("JWT_EXPIRE_MINUTES", "480"))
 
-# Local media storage used by Blog and the media upload endpoint.
-MEDIA_ROOT = os.getenv("MEDIA_ROOT", "/opt/quantvn/backend/uploads")
+# MinIO storage used by Blog and the media upload endpoint.
+MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT", "").strip()
+MINIO_ACCESS_KEY = os.getenv("MINIO_ACCESS_KEY", "")
+MINIO_SECRET_KEY = os.getenv("MINIO_SECRET_KEY", "")
+MINIO_BUCKET = os.getenv("MINIO_BUCKET", "cms-media").strip()
+MINIO_SECURE = os.getenv("MINIO_SECURE", "true").strip().lower() in {"1", "true", "yes"}
+MINIO_REGION = os.getenv("MINIO_REGION", "").strip()
+MINIO_AUTO_CREATE_BUCKET = os.getenv(
+    "MINIO_AUTO_CREATE_BUCKET", "false"
+).strip().lower() in {"1", "true", "yes"}
+MEDIA_MAX_UPLOAD_MB = int(os.getenv("MEDIA_MAX_UPLOAD_MB", "10"))
 
 # genimi
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")

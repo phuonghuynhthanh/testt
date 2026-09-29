@@ -6,7 +6,7 @@ Prerequisites: Docker Desktop, Python 3.12, and Poetry.
 
 ```powershell
 cd D:\intern\Quant-VN\backend\blog
-docker compose up -d postgres
+docker compose up -d
 Copy-Item .env.example .env
 $env:POETRY_VIRTUALENVS_IN_PROJECT = "true"
 poetry install --no-interaction
@@ -14,6 +14,12 @@ poetry run uvicorn apps.main:app --host 0.0.0.0 --port 8001 --reload
 ```
 
 Open the API documentation at http://localhost:8001/docs.
+
+The local Compose stack also starts MinIO at `localhost:9000`; its console is
+available at http://localhost:9001. The development credentials in `.env.example`
+are only for this local stack. The backend creates `cms-media` at startup because
+`MINIO_AUTO_CREATE_BUCKET=true`; use private production credentials, TLS, and
+`MINIO_AUTO_CREATE_BUCKET=false` outside local development.
 
 The default `.env.example` values match the included local PostgreSQL container.
 Before using protected routes, configure `ADMIN_USERNAME`, `ADMIN_PASSWORD_HASH`,
@@ -40,7 +46,7 @@ Configure Gemini and SERP variables as needed for AI/reference features.
 poetry run pytest
 ```
 
-## Stop the local database
+## Stop the local stack
 
 ```powershell
 docker compose down
