@@ -14,23 +14,12 @@ DATABASES = {
     "port": int(os.getenv("DATABASE_PORT", "5432")),
 }
 
-# Firebase (server credentials) — same project as platform
-FIREBASE_SERVER_CREDENTIALS = {
-    "type": os.getenv("FIREBASE_TYPE"),
-    "project_id": os.getenv("FIREBASE_PROJECT_ID"),
-    "private_key_id": os.getenv("FIREBASE_PRIVATE_KEY_ID"),
-    "private_key": os.getenv("FIREBASE_PRIVATE_KEY", "").replace("\\n", "\n"),
-    "client_email": os.getenv("FIREBASE_CLIENT_EMAIL"),
-    "client_id": os.getenv("FIREBASE_CLIENT_ID"),
-    "auth_uri": os.getenv("FIREBASE_AUTH_URI"),
-    "token_uri": os.getenv("FIREBASE_TOKEN_URI"),
-    "auth_provider_x509_cert_url": os.getenv("FIREBASE_AUTH_PROVIDER_CERT_URL"),
-    "client_x509_cert_url": os.getenv("FIREBASE_CLIENT_CERT_URL"),
-    "universe_domain": os.getenv("FIREBASE_UNIVERSE_DOMAIN"),
-}
-
-# Roles allowed to call blog admin APIs (must match platform UserRole)
-BLOG_ALLOWED_ROLES = {"staff", "admin"}
+# Standalone CMS administrator and JWT settings; secrets must stay backend-only.
+ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "").strip()
+ADMIN_PASSWORD_HASH = os.getenv("ADMIN_PASSWORD_HASH", "")
+JWT_SECRET = os.getenv("JWT_SECRET", "")
+JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
+JWT_EXPIRE_MINUTES = int(os.getenv("JWT_EXPIRE_MINUTES", "480"))
 
 # Local media storage used by Blog and the media upload endpoint.
 MEDIA_ROOT = os.getenv("MEDIA_ROOT", "/opt/quantvn/backend/uploads")

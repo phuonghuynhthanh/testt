@@ -3,8 +3,7 @@ from typing import List, Optional
 
 from fastapi import APIRouter, Depends, File, Form, Query, UploadFile, status
 
-from apps.accounts.schemas import UserSchema
-from apps.accounts.services.authenticate import AccountService
+from apps.auth.services import require_admin
 from apps.blogs import schemas
 from apps.blogs.services.blog import BlogServices
 from apps.blogs.services.reference_search import ReferenceSearchService
@@ -13,6 +12,7 @@ from apps.openai.services.gemini_ai import GeminiAiService
 router = APIRouter(prefix="/blog", tags=["Blogs"])
 
 
+# Return approved Blog summaries for the public landing page.
 @router.get(
     "/client/blogs",
     summary="Get list of blogs for client",
@@ -31,6 +31,7 @@ def get_blog_list_for_client(
     )
 
 
+# Return the complete Blog list for the CMS administrator.
 @router.get(
     "/admin/blogs",
     summary="Get list of blogs for admin",
@@ -40,11 +41,12 @@ def get_blog_list_for_client(
 )
 def get_admin_blog_list(
     state: Optional[str] = None,
-    current_user: str = Depends(AccountService.current_blog_user),
+    _: str = Depends(require_admin),
 ):
     return BlogServices.get_blogs_for_admin(state)
 
 
+# Return one Blog record for CMS editing.
 @router.get(
     "/admin/{blog_id}",
     summary="Retrieve a blog by its ID",
@@ -53,11 +55,12 @@ def get_admin_blog_list(
 )
 def get_blog_by_id(
     blog_id: str,
-    current_user: str = Depends(AccountService.current_blog_user),
+    _: str = Depends(require_admin),
 ):
     return BlogServices.get_blog_by_id(blog_id)
 
 
+# Return an approved Blog article for public reading.
 @router.get(
     "/link/{link_post}",
     summary="Get blog content by link post",
@@ -68,6 +71,7 @@ def get_blog_content_by_link_post(link_post: str, limit: Optional[int] = 4):
     return BlogServices.get_blog_by_url(link_post=link_post, limit=limit)
 
 
+# Create a Blog and its optional banner under administrator authorization.
 @router.post(
     "",
     summary="Create a new blog",
@@ -76,13 +80,14 @@ def get_blog_content_by_link_post(link_post: str, limit: Optional[int] = 4):
 )
 def create_blog(
     blog_data: str = Form(...),
-    current_user: UserSchema = Depends(AccountService.current_blog_user),
+    _: str = Depends(require_admin),
     image: UploadFile = File(...),
 ):
     blog_data = schemas.BlogCreate(**json.loads(blog_data))
     return BlogServices.create_blog(blog_data=blog_data, image=image)
 
 
+# Update an existing Blog under administrator authorization.
 @router.put(
     "/{id}",
     summary="Update a blog",
@@ -92,13 +97,14 @@ def create_blog(
 def update_blog(
     id: str,
     blog_data: str = Form(...),
-    current_user: str = Depends(AccountService.current_blog_user),
+    _: str = Depends(require_admin),
     image: UploadFile = File(None),
 ):
     blog_data = schemas.BlogUpdate(**json.loads(blog_data))
     return BlogServices.update_blog(id=id, data=blog_data, image=image)
 
 
+# Delete a Blog under administrator authorization.
 @router.delete(
     "/{blog_id}",
     summary="Delete a blog",
@@ -107,11 +113,12 @@ def update_blog(
 )
 def delete_blog(
     blog_id: str,
-    current_user: str = Depends(AccountService.current_blog_user),
+    _: str = Depends(require_admin),
 ):
     return BlogServices.delete_blog(blog_id)
 
 
+# Generate Blog markdown for the CMS administrator.
 @router.post(
     "/ai-generate-markdown",
     summary="AI generate blog with title",
@@ -120,13 +127,14 @@ def delete_blog(
 )
 async def ai_generate_blog_markdown(
     data: schemas.GenerateBlogData,
-    current_user: UserSchema = Depends(AccountService.current_blog_user),
+    _: str = Depends(require_admin),
 ):
     return await BlogServices.ai_generate_blog_markdown_with_title(
         title=data.title, category=data.category
     )
 
 
+# Generate Blog title ideas for the CMS administrator.
 @router.get(
     "/openai/ai-generate-list-title",
     summary="AI generate list title",
@@ -138,11 +146,12 @@ async def ai_generate_blog_list_title(
     keyword: str,
     quantity: int = Query(1, ge=5, le=10),
     language: str = Query("vietnamese", enum=["vietnamese", "english"]),
-    current_user: UserSchema = Depends(AccountService.current_blog_user),
+    _: str = Depends(require_admin),
 ):
     return await GeminiAiService.generate_list_title(keyword, quantity, language)
 
 
+# Check whether a Blog slug is already used.
 @router.get(
     "/is-duplicate-link-post",
     summary="Check if link post is duplicate",
@@ -151,11 +160,12 @@ async def ai_generate_blog_list_title(
 )
 def is_duplicate_link_post(
     link_post: str,
-    current_user: str = Depends(AccountService.current_blog_user),
+    _: str = Depends(require_admin),
 ):
     return BlogServices.is_duplicate_link_post(link_post)
 
 
+# Search and classify reference links for the CMS administrator.
 @router.post(
     "/search-references",
     summary="Search reference links (SERP) and classify",
@@ -168,7 +178,7 @@ def is_duplicate_link_post(
 )
 async def search_references(
     payload: schemas.SearchReferencesRequest,
-    current_user: UserSchema = Depends(AccountService.current_blog_user),
+    _: str = Depends(require_admin),
 ):
     """
     Tìm kiếm link tham khảo từ keyword và phân loại.
@@ -176,6 +186,7 @@ async def search_references(
     return await ReferenceSearchService.search_references(payload)
 
 
+# Classify supplied reference links for the CMS administrator.
 @router.post(
     "/classify-links",
     summary="Classify existing links",
@@ -185,7 +196,7 @@ async def search_references(
 )
 async def classify_links(
     payload: schemas.ClassifyLinksRequest,
-    current_user: UserSchema = Depends(AccountService.current_blog_user),
+    _: str = Depends(require_admin),
 ):
     """
     Phân loại danh sách link đã có.
@@ -193,6 +204,7 @@ async def classify_links(
     return await ReferenceSearchService.classify_links(payload)
 
 
+# Fetch external article content for the CMS administrator.
 @router.post(
     "/fetch-content",
     summary="Fetch and extract content from URL",
@@ -206,7 +218,7 @@ async def classify_links(
 )
 async def fetch_content(
     payload: schemas.FetchContentRequest,
-    current_user: UserSchema = Depends(AccountService.current_blog_user),
+    _: str = Depends(require_admin),
 ):
     """
     Fetch và extract nội dung từ một URL.

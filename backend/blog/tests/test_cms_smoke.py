@@ -5,6 +5,7 @@ from tempfile import TemporaryDirectory
 from fastapi import UploadFile
 
 from apps.core.storage import StorageService
+from apps.auth.services import require_admin
 from apps.main import app
 
 
@@ -47,6 +48,23 @@ def test_app_preserves_cms_routes():
     assert not any(
         path.startswith(removed_prefixes) for _, path in actual_routes
     )
+
+
+# Verify public routes stay open while CMS routes require admin JWT.
+def test_route_authentication_boundaries():
+    routes = {route.path: route for route in app.routes}
+    assert not routes["/blog/client/blogs"].dependant.dependencies
+    assert not routes["/blog/link/{link_post}"].dependant.dependencies
+    for method, path in EXPECTED_CMS_ROUTES - {
+        ("GET", "/blog/client/blogs"),
+        ("GET", "/blog/link/{link_post}"),
+    }:
+        route = routes[path]
+        assert method in route.methods
+        assert any(
+            dependency.call is require_admin
+            for dependency in route.dependant.dependencies
+        )
 
 
 # Verify Blog media files can be uploaded and deleted using local storage.

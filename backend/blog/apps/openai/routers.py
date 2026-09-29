@@ -2,11 +2,12 @@ from fastapi import APIRouter, Depends, status
 
 from apps.openai import schemas
 from apps.openai.services.gemini_ai import GeminiAiService
-from apps.accounts.services.authenticate import AccountService
+from apps.auth.services import require_admin
 
 router = APIRouter(prefix="/openai", tags=["OpenAI"])
 
 
+# Generate SEO keywords for an authenticated CMS request.
 @router.post(
     "/seo-keywords",
     summary="Generate SEO keywords",
@@ -15,13 +16,14 @@ router = APIRouter(prefix="/openai", tags=["OpenAI"])
 )
 async def generate_seo_keywords(
     data: schemas.GenerateSEOKeywordsIn,
-    current_user: str = Depends(AccountService.current_blog_user),
+    _: str = Depends(require_admin),
 ):
     return await GeminiAiService.generate_seo_keywords(
         data.blog_title, data.blog_content
     )
 
 
+# Generate an SEO description for an authenticated CMS request.
 @router.post(
     "/seo-description",
     summary="Generate SEO description",
@@ -30,7 +32,7 @@ async def generate_seo_keywords(
 )
 async def generate_seo_description(
     data: schemas.GenerateSEOKeywordsIn,
-    current_user: str = Depends(AccountService.current_blog_user),
+    _: str = Depends(require_admin),
 ):
     return await GeminiAiService.generate_seo_description(
         data.blog_title, data.blog_content

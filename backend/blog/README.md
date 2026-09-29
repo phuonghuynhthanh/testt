@@ -16,8 +16,23 @@ poetry run uvicorn apps.main:app --host 0.0.0.0 --port 8001 --reload
 Open the API documentation at http://localhost:8001/docs.
 
 The default `.env.example` values match the included local PostgreSQL container.
-Before using protected Blog routes or AI/reference features, set the Firebase,
-Gemini, and SERP variables in `.env` with real credentials.
+Before using protected routes, configure `ADMIN_USERNAME`, `ADMIN_PASSWORD_HASH`,
+and `JWT_SECRET` in `.env`; these values must never be placed in the frontend.
+Generate a password hash locally with:
+
+```powershell
+poetry run python -c "from pwdlib import PasswordHash; print(PasswordHash.recommended().hash('replace-with-a-password'))"
+```
+
+Generate a 32+ character JWT secret locally with:
+
+```powershell
+poetry run python -c "import secrets; print(secrets.token_urlsafe(48))"
+```
+
+Log in through `POST /auth/login` with JSON `{ "username": "...", "password": "..." }`.
+Use the returned token as `Authorization: Bearer <access_token>` for CMS APIs.
+Configure Gemini and SERP variables as needed for AI/reference features.
 
 ## Verification
 
