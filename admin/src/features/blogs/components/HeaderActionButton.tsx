@@ -24,10 +24,11 @@ const HeaderActionButton = ({
         <button
           type="button"
           onClick={onClose}
-          className="flex w-fit items-center gap-2 px-3.5 py-2 bg-surface-elevated hover:bg-surface-hover text-content-primary border border-surface-border rounded-xl transition-all duration-200 font-medium text-sm shadow-sm"
+          title="Đóng"
+          aria-label="Đóng"
+          className="flex size-10 items-center justify-center bg-surface-elevated hover:bg-surface-hover text-content-primary border border-surface-border rounded-xl transition-all duration-200 shadow-sm"
         >
           <IoClose className="w-5 h-5" />
-          <span>Đóng</span>
         </button>
 
         {/* Segmented Control Toggle */}
@@ -35,8 +36,10 @@ const HeaderActionButton = ({
           <button
             type="button"
             onClick={() => onModeChange("edit")}
+            title="Chỉnh sửa"
+            aria-label="Chỉnh sửa"
             className={`
-              flex items-center gap-2 px-3.5 py-1.5 rounded-lg transition-all duration-200 font-medium text-xs
+              flex size-8 items-center justify-center rounded-lg transition-all duration-200
               ${
                 mode === "edit"
                   ? "bg-surface-card text-content-primary shadow-sm border border-surface-border"
@@ -45,13 +48,14 @@ const HeaderActionButton = ({
             `}
           >
             <MdEdit className="w-4 h-4" />
-            <span>Chỉnh sửa</span>
           </button>
           <button
             type="button"
             onClick={() => onModeChange("markdown")}
+            title="Mã Markdown"
+            aria-label="Mã Markdown"
             className={`
-              flex items-center gap-2 px-3.5 py-1.5 rounded-lg transition-all duration-200 font-medium text-xs
+              flex size-8 items-center justify-center rounded-lg transition-all duration-200
               ${
                 mode === "markdown"
                   ? "bg-surface-card text-content-primary shadow-sm border border-surface-border"
@@ -60,13 +64,14 @@ const HeaderActionButton = ({
             `}
           >
             <MdCode className="w-4 h-4" />
-            <span>Mã Markdown</span>
           </button>
           <button
             type="button"
             onClick={() => onModeChange("preview")}
+            title="Xem trước"
+            aria-label="Xem trước"
             className={`
-              flex items-center gap-2 px-3.5 py-1.5 rounded-lg transition-all duration-200 font-medium text-xs
+              flex size-8 items-center justify-center rounded-lg transition-all duration-200
               ${
                 mode === "preview"
                   ? "bg-surface-card text-content-primary shadow-sm border border-surface-border"
@@ -75,7 +80,6 @@ const HeaderActionButton = ({
             `}
           >
             <MdPreview className="w-4 h-4" />
-            <span>Xem trước</span>
           </button>
         </div>
       </div>
@@ -85,16 +89,17 @@ const HeaderActionButton = ({
           type="button"
           onClick={onSave}
           disabled={isLoading}
-          className="flex w-full items-center justify-center gap-2 px-5 py-2 bg-primary-green hover:bg-primary-green-dark disabled:opacity-50 disabled:cursor-not-allowed text-primary-black font-semibold rounded-xl transition-all duration-200 text-xs shadow-md sm:w-auto"
+          title={isLoading ? "Đang lưu thay đổi" : "Lưu thay đổi"}
+          aria-label={isLoading ? "Đang lưu thay đổi" : "Lưu thay đổi"}
+          className="flex size-10 items-center justify-center bg-primary-green hover:bg-primary-green-dark disabled:opacity-50 disabled:cursor-not-allowed text-primary-black rounded-xl transition-all duration-200 shadow-md"
         >
           {isLoading ? (
-            <>
-              <svg
-                className="animate-spin h-4 w-4 text-primary-black"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
+            <svg
+              className="animate-spin h-4 w-4 text-primary-black"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
                 <circle
                   className="opacity-25"
                   cx="12"
@@ -108,14 +113,9 @@ const HeaderActionButton = ({
                   fill="currentColor"
                   d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                 ></path>
-              </svg>
-              <span>Đang lưu...</span>
-            </>
+            </svg>
           ) : (
-            <>
-              <IoIosSave className="w-4 h-4" />
-              <span>Lưu thay đổi</span>
-            </>
+            <IoIosSave className="w-4 h-4" />
           )}
         </button>
       )}

@@ -1,6 +1,6 @@
 import getAxiosClient from "../../lib/axios/axiosClient";
 import type { PaginatedResponse } from "../../types/Api";
-import type { BlogState, IBlogData, IBlogItemData } from "../../types/Blog";
+import type { BlogState, ClassifyLinksResponse, FetchContentResponse, IBlogData, IBlogItemData, LinkReference } from "../../types/Blog";
 
 export interface BlogListParams { page: number; pageSize: number; state?: BlogState; category?: string; }
 
@@ -20,3 +20,15 @@ export const restoreBlog = async (id: string) => (await getAxiosClient().post(`/
 export const checkDuplicateBlogLink = async (link_post: string) => (await getAxiosClient().get<boolean>("/blog/is-duplicate-link-post", { params: { link_post } })).data;
 // Generate an editable, preview-only AI Blog draft.
 export const generateBlogDraft = async (title: string, category: string) => (await getAxiosClient().post<IBlogData>("/blog/ai/generate-draft", { title, category })).data;
+// Generate a bounded set of Blog title suggestions.
+export const suggestBlogTitles = async (keyword: string, language: "vietnamese" | "english") =>
+  (await getAxiosClient().get<string[]>("/blog/openai/ai-generate-list-title", { params: { keyword, quantity: 5, language } })).data;
+// Search and pre-classify reference links for Blog research.
+export const searchBlogReferences = async (keyword: string, language: "vietnamese" | "english") =>
+  (await getAxiosClient().post<LinkReference[]>("/blog/search-references", { keyword, language, max_results: 10, exclude_ads: false, exclude_spam: false })).data;
+// Classify administrator-supplied URLs for spam, ads, and duplicates.
+export const classifyBlogLinks = async (urls: string[]) =>
+  (await getAxiosClient().post<ClassifyLinksResponse>("/blog/classify-links", { links: urls.map((url) => ({ url })) })).data;
+// Extract readable article content and metadata from one source URL.
+export const fetchBlogReferenceContent = async (url: string) =>
+  (await getAxiosClient().post<FetchContentResponse>("/blog/fetch-content", { url, include_metadata: true })).data;

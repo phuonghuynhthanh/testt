@@ -104,10 +104,11 @@ const BlogManagement: React.FC = () => {
         actions={
           <Link
             to="/blog/create-blog"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary-green hover:bg-primary-green-dark text-primary-black font-semibold text-sm transition-colors shadow-sm"
+            title="Tạo bài viết"
+            aria-label="Tạo bài viết"
+            className="inline-flex size-10 items-center justify-center rounded-lg bg-primary-green text-primary-black shadow-sm transition-colors hover:bg-primary-green-dark"
           >
             <FiPlus className="w-4 h-4" />
-            <span>Tạo bài viết</span>
           </Link>
         }
       />
@@ -169,10 +170,11 @@ const BlogManagement: React.FC = () => {
             action={
               <Link
                 to="/blog/create-blog"
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-lg bg-primary-green text-primary-black hover:bg-primary-green-dark transition-colors"
+                title="Tạo bài viết đầu tiên"
+                aria-label="Tạo bài viết đầu tiên"
+                className="inline-flex size-9 items-center justify-center rounded-lg bg-primary-green text-primary-black transition-colors hover:bg-primary-green-dark"
               >
                 <FiPlus className="w-4 h-4" />
-                <span>Tạo bài viết đầu tiên</span>
               </Link>
             }
           />
@@ -213,18 +215,20 @@ const BlogManagement: React.FC = () => {
                         <div className="inline-flex items-center gap-2">
                           <Link
                             to={`/blog/default/${blog.id}`}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium text-cyan-400 hover:text-cyan-300 hover:bg-cyan-950/30 border border-transparent hover:border-cyan-800/40 transition-colors"
+                            title="Sửa bài viết"
+                            aria-label="Sửa bài viết"
+                            className="inline-flex size-8 items-center justify-center rounded border border-transparent text-cyan-400 transition-colors hover:border-cyan-800/40 hover:bg-cyan-950/30 hover:text-cyan-300"
                           >
                             <FiEdit2 className="w-3.5 h-3.5" />
-                            <span>Sửa</span>
                           </Link>
                           <button
                             type="button"
+                            title="Xóa bài viết"
+                            aria-label="Xóa bài viết"
                             onClick={() => setDeleteTargetId(blog.id)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium text-rose-400 hover:text-rose-300 hover:bg-rose-950/30 border border-transparent hover:border-rose-800/40 transition-colors"
+                            className="inline-flex size-8 items-center justify-center rounded border border-transparent text-rose-400 transition-colors hover:border-rose-800/40 hover:bg-rose-950/30 hover:text-rose-300"
                           >
                             <FiTrash2 className="w-3.5 h-3.5" />
-                            <span>Xóa</span>
                           </button>
                         </div>
                       </td>

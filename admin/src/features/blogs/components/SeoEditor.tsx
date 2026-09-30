@@ -139,15 +139,12 @@ const SeoEditor = ({
       <button
         type="button"
         disabled={isGeneratingSeo}
-        className="px-3 py-2 text-base text-white font-medium rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 disabled:opacity-50 flex items-center gap-2"
+        title={isGeneratingSeo ? "Đang tạo SEO" : "Tạo nội dung SEO bằng AI"}
+        aria-label={isGeneratingSeo ? "Đang tạo SEO" : "Tạo nội dung SEO bằng AI"}
+        className="flex size-10 items-center justify-center rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 disabled:opacity-50"
         onClick={handleGenerateSEO}
       >
-        <span>
-          {isGeneratingSeo
-            ? "Đang tạo SEO..."
-            : "Tạo nội dung SEO bằng AI"}
-        </span>
-        <BsStars className="inline" />
+        <BsStars className={isGeneratingSeo ? "animate-pulse" : ""} />
       </button>
 
       <InputSeoKeyword

@@ -203,9 +203,8 @@ const LinkedInPost: React.FC = () => {
   return (
     <section className="space-y-6 max-w-5xl mx-auto">
       <div>
-        <Link to="/linkedin" className="inline-flex items-center gap-1.5 text-xs text-content-muted hover:text-primary-green mb-3 transition-colors">
+        <Link to="/linkedin" title="Quay lại Quản lý LinkedIn" aria-label="Quay lại Quản lý LinkedIn" className="mb-3 inline-flex size-8 items-center justify-center rounded-lg text-content-muted transition-colors hover:bg-surface-elevated hover:text-primary-green">
           <FiArrowLeft className="w-3.5 h-3.5" />
-          <span>Quay lại Quản lý LinkedIn</span>
         </Link>
         <PageHeader title={id ? "Chi tiết bài LinkedIn" : "Tạo bài đăng LinkedIn"} description="Biên soạn, kiểm tra tính xác thực và đăng bài trực tiếp lên LinkedIn" />
       </div>
@@ -221,12 +220,12 @@ const LinkedInPost: React.FC = () => {
       )}
 
       {!immutable && (
-        <div className="grid w-full grid-cols-2 gap-1 rounded-xl border border-surface-border bg-surface-card p-1 sm:flex sm:w-fit">
-          <button type="button" onClick={() => changeAuthorMode("manual")} className={`flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold transition-colors ${authorMode === "manual" ? "border border-primary-green/30 bg-surface-elevated text-primary-green" : "text-content-secondary hover:text-content-primary"}`}>
-            <BsFileEarmarkText className="text-sm" /><span>Viết thủ công</span>
+        <div className="flex w-fit gap-1 rounded-xl border border-surface-border bg-surface-card p-1">
+          <button type="button" title="Viết thủ công" aria-label="Viết thủ công" onClick={() => changeAuthorMode("manual")} className={`flex size-10 items-center justify-center rounded-lg transition-colors ${authorMode === "manual" ? "border border-primary-green/30 bg-surface-elevated text-primary-green" : "text-content-secondary hover:text-content-primary"}`}>
+            <BsFileEarmarkText className="text-sm" />
           </button>
-          <button type="button" onClick={() => changeAuthorMode("ai")} className={`flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold transition-colors ${authorMode === "ai" ? "border border-purple-500/30 bg-surface-elevated text-purple-300" : "text-content-secondary hover:text-content-primary"}`}>
-            <BsStars className="text-sm" /><span>Tạo bằng AI</span>
+          <button type="button" title="Tạo bằng AI" aria-label="Tạo bằng AI" onClick={() => changeAuthorMode("ai")} className={`flex size-10 items-center justify-center rounded-lg transition-colors ${authorMode === "ai" ? "border border-purple-500/30 bg-surface-elevated text-purple-300" : "text-content-secondary hover:text-content-primary"}`}>
+            <BsStars className="text-sm" />
           </button>
         </div>
       )}
@@ -251,11 +250,11 @@ const LinkedInPost: React.FC = () => {
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <button type="button" disabled={!(topic || "").trim() || draft.isPending} onClick={generateAiDraft} className="inline-flex items-center gap-1.5 rounded-lg border border-purple-500/30 bg-purple-950/40 px-3 py-1.5 text-xs font-semibold text-purple-300 transition-colors hover:bg-purple-900/50 disabled:opacity-50">
-              <BsStars className="text-sm" /><span>{draft.isPending ? "Đang tạo bằng AI..." : content ? "Tạo lại bằng AI" : "Tạo bản nháp AI"}</span>
+            <button type="button" title={draft.isPending ? "Đang tạo bằng AI" : content ? "Tạo lại bằng AI" : "Tạo bản nháp AI"} aria-label={draft.isPending ? "Đang tạo bằng AI" : content ? "Tạo lại bằng AI" : "Tạo bản nháp AI"} disabled={!(topic || "").trim() || draft.isPending} onClick={generateAiDraft} className="inline-flex size-9 items-center justify-center rounded-lg border border-purple-500/30 bg-purple-950/40 text-purple-300 transition-colors hover:bg-purple-900/50 disabled:opacity-50">
+              <BsStars className={`text-sm ${draft.isPending ? "animate-pulse" : ""}`} />
             </button>
-            <button type="button" disabled={propose.isPending} onClick={() => propose.mutate()} className="inline-flex items-center gap-1.5 rounded-lg border border-surface-border bg-surface-elevated px-3 py-1.5 text-xs font-medium text-content-secondary transition-colors hover:bg-surface-hover hover:text-content-primary disabled:opacity-50">
-              <FiRefreshCw className={`text-xs ${propose.isPending ? "animate-spin" : ""}`} /><span>Gợi ý chủ đề AI</span>
+            <button type="button" title="Gợi ý chủ đề AI" aria-label="Gợi ý chủ đề AI" disabled={propose.isPending} onClick={() => propose.mutate()} className="inline-flex size-9 items-center justify-center rounded-lg border border-surface-border bg-surface-elevated text-content-secondary transition-colors hover:bg-surface-hover hover:text-content-primary disabled:opacity-50">
+              <FiRefreshCw className={`text-xs ${propose.isPending ? "animate-spin" : ""}`} />
             </button>
           </div>
         </div>}
@@ -286,11 +285,11 @@ const LinkedInPost: React.FC = () => {
           <div className="space-y-4">
             <div className="flex flex-col gap-2 sm:flex-row">
               <input disabled={immutable} value={keywords} onChange={(e) => setKeywords(e.target.value)} placeholder="Từ khóa tìm kiếm ảnh Pexels..." className="flex-1 rounded-lg border border-surface-border bg-surface-elevated px-3.5 py-2 text-xs text-content-primary placeholder-content-muted focus:outline-none focus:ring-1 focus:ring-primary-green" />
-              <button type="button" disabled={immutable || search.isPending} onClick={() => search.mutate()} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-surface-elevated hover:bg-surface-hover text-content-primary border border-surface-border text-xs font-semibold transition-colors disabled:opacity-50">
-                <FiSearch className="text-sm" /><span>{search.isPending ? "Đang tìm..." : "Tìm ảnh"}</span>
+              <button type="button" title={search.isPending ? "Đang tìm ảnh" : "Tìm ảnh"} aria-label={search.isPending ? "Đang tìm ảnh" : "Tìm ảnh"} disabled={immutable || search.isPending} onClick={() => search.mutate()} className="inline-flex size-9 items-center justify-center rounded-lg border border-surface-border bg-surface-elevated text-content-primary transition-colors hover:bg-surface-hover disabled:opacity-50">
+                <FiSearch className={`text-sm ${search.isPending ? "animate-pulse" : ""}`} />
               </button>
-              <label className={`inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-surface-border bg-surface-elevated px-4 py-2 text-xs font-semibold text-content-primary transition-colors hover:bg-surface-hover ${immutable || upload.isPending ? "pointer-events-none opacity-50" : ""}`}>
-                <FiUpload className="text-sm" /><span>{upload.isPending ? "Đang tải..." : "Tải ảnh lên"}</span>
+              <label title={upload.isPending ? "Đang tải ảnh" : "Tải ảnh lên"} aria-label={upload.isPending ? "Đang tải ảnh" : "Tải ảnh lên"} className={`inline-flex size-9 cursor-pointer items-center justify-center rounded-lg border border-surface-border bg-surface-elevated text-content-primary transition-colors hover:bg-surface-hover ${immutable || upload.isPending ? "pointer-events-none opacity-50" : ""}`}>
+                <FiUpload className={`text-sm ${upload.isPending ? "animate-pulse" : ""}`} />
                 <input type="file" multiple={mediaMode === "multi-image"} accept="image/jpeg,image/png,image/gif" className="hidden" onChange={(event) => { const files = Array.from(event.target.files ?? []); if (files.length) upload.mutate(files); event.currentTarget.value = ""; }} />
               </label>
             </div>
@@ -308,8 +307,8 @@ const LinkedInPost: React.FC = () => {
                         <input value={media.find((m) => linkedinMediaKey(m) === key)?.altText ?? ""} onChange={(e) => setMedia(media.map((m) => linkedinMediaKey(m) === key ? { ...m, altText: e.target.value } : m))} disabled={immutable} placeholder="Alt text (bắt buộc)..." className="w-full rounded border border-surface-border bg-surface-card px-2 py-1 text-xs text-content-primary focus:outline-none focus:ring-1 focus:ring-primary-green" />
                       )}
                       {selected && media.length > 1 && <div className="flex gap-2">
-                        <button type="button" aria-label="Đưa ảnh lên trước" disabled={immutable || media.findIndex((m) => linkedinMediaKey(m) === key) === 0} onClick={() => moveMedia(key, -1)} className="flex-1 rounded border border-surface-border bg-surface-card py-1 text-content-secondary disabled:opacity-30"><FiArrowUp className="mx-auto" /></button>
-                        <button type="button" aria-label="Đưa ảnh xuống sau" disabled={immutable || media.findIndex((m) => linkedinMediaKey(m) === key) === media.length - 1} onClick={() => moveMedia(key, 1)} className="flex-1 rounded border border-surface-border bg-surface-card py-1 text-content-secondary disabled:opacity-30"><FiArrowDown className="mx-auto" /></button>
+                        <button type="button" title="Đưa ảnh lên trước" aria-label="Đưa ảnh lên trước" disabled={immutable || media.findIndex((m) => linkedinMediaKey(m) === key) === 0} onClick={() => moveMedia(key, -1)} className="flex-1 rounded border border-surface-border bg-surface-card py-1 text-content-secondary disabled:opacity-30"><FiArrowUp className="mx-auto" /></button>
+                        <button type="button" title="Đưa ảnh xuống sau" aria-label="Đưa ảnh xuống sau" disabled={immutable || media.findIndex((m) => linkedinMediaKey(m) === key) === media.length - 1} onClick={() => moveMedia(key, 1)} className="flex-1 rounded border border-surface-border bg-surface-card py-1 text-content-secondary disabled:opacity-30"><FiArrowDown className="mx-auto" /></button>
                       </div>}
                       <button type="button" disabled={immutable} onClick={() => toggleCandidate(item)} className={`w-full py-1.5 rounded font-medium text-xs transition ${selected ? "bg-rose-950/40 text-rose-300 border border-rose-800/40 hover:bg-rose-900/40" : "bg-surface-card hover:bg-surface-border text-content-secondary hover:text-content-primary border border-surface-border"}`}>
                         {selected ? "Bỏ chọn" : "Chọn ảnh này"}
@@ -342,18 +341,18 @@ const LinkedInPost: React.FC = () => {
 
       <div className="flex flex-wrap items-center justify-end gap-3 pt-2">
         {!immutable && (
-          <button type="button" disabled={!formValid || save.isPending} onClick={() => save.mutate()} className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg border border-surface-border bg-surface-elevated hover:bg-surface-hover text-content-primary text-sm font-medium transition-colors disabled:opacity-40">
-            <FiSave className="text-base" /><span>Lưu bản nháp</span>
+          <button type="button" title={save.isPending ? "Đang lưu bản nháp" : "Lưu bản nháp"} aria-label={save.isPending ? "Đang lưu bản nháp" : "Lưu bản nháp"} disabled={!formValid || save.isPending} onClick={() => save.mutate()} className="inline-flex size-10 items-center justify-center rounded-lg border border-surface-border bg-surface-elevated text-content-primary transition-colors hover:bg-surface-hover disabled:opacity-40">
+            <FiSave className={`text-base ${save.isPending ? "animate-pulse" : ""}`} />
           </button>
         )}
         {!immutable && detail.data?.status !== "FAILED" && (
-          <button type="button" disabled={!formValid || publish.isPending} onClick={() => setConfirm(true)} className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-[#0a66c2] hover:bg-[#084e96] text-white text-sm font-semibold transition-colors disabled:opacity-40 shadow-md">
-            <FaLinkedin className="text-base" /><span>Đăng ngay lên LinkedIn</span>
+          <button type="button" title="Đăng ngay lên LinkedIn" aria-label="Đăng ngay lên LinkedIn" disabled={!formValid || publish.isPending} onClick={() => setConfirm(true)} className="inline-flex size-10 items-center justify-center rounded-lg bg-[#0a66c2] text-white shadow-md transition-colors hover:bg-[#084e96] disabled:opacity-40">
+            <FaLinkedin className="text-base" />
           </button>
         )}
         {id && detail.data?.status === "FAILED" && (
-          <button type="button" disabled={retry.isPending} onClick={() => retry.mutate()} className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-sm font-semibold transition-colors disabled:opacity-40">
-            <FiRefreshCw className="text-base" /><span>Thử lại xuất bản</span>
+          <button type="button" title="Thử lại xuất bản" aria-label="Thử lại xuất bản" disabled={retry.isPending} onClick={() => retry.mutate()} className="inline-flex size-10 items-center justify-center rounded-lg bg-rose-600 text-white transition-colors hover:bg-rose-700 disabled:opacity-40">
+            <FiRefreshCw className={`text-base ${retry.isPending ? "animate-spin" : ""}`} />
           </button>
         )}
       </div>

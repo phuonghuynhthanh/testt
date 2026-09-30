@@ -40,3 +40,34 @@ export interface IEditorData {
   title: string;
   body: string;
 }
+
+export interface LinkReference {
+  title: string;
+  url: string;
+  tag: "NORMAL" | "ADS" | "SPAM";
+}
+
+export interface ClassifiedLink {
+  url: string;
+  category: "organic" | "ad" | "spam" | "duplicate";
+  confidence: number;
+  reason: string;
+}
+
+export interface ClassifyLinksResponse {
+  classified_links: ClassifiedLink[];
+  summary: Record<string, number>;
+}
+
+export interface FetchContentResponse {
+  url: string;
+  title?: string | null;
+  content?: string | null;
+  text_content?: string | null;
+  author?: string | null;
+  published_date?: string | null;
+  language?: string | null;
+  metadata: Record<string, unknown>;
+  success: boolean;
+  error_message?: string | null;
+}

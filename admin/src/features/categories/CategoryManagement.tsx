@@ -119,11 +119,12 @@ const CategoryManagement: React.FC = () => {
         actions={
           <button
             type="button"
+            title="Tạo danh mục"
+            aria-label="Tạo danh mục"
             onClick={() => openForm()}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary-green hover:bg-primary-green-dark text-primary-black font-semibold text-sm transition-colors shadow-sm"
+            className="inline-flex size-10 items-center justify-center rounded-lg bg-primary-green text-primary-black shadow-sm transition-colors hover:bg-primary-green-dark"
           >
             <FiPlus className="w-4 h-4" />
-            <span>Tạo danh mục</span>
           </button>
         }
       />
@@ -145,11 +146,12 @@ const CategoryManagement: React.FC = () => {
             action={
               <button
                 type="button"
+                title="Tạo danh mục ngay"
+                aria-label="Tạo danh mục ngay"
                 onClick={() => openForm()}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-lg bg-primary-green text-primary-black hover:bg-primary-green-dark transition-colors"
+                className="inline-flex size-9 items-center justify-center rounded-lg bg-primary-green text-primary-black transition-colors hover:bg-primary-green-dark"
               >
                 <FiPlus className="w-4 h-4" />
-                <span>Tạo danh mục ngay</span>
               </button>
             }
           />
@@ -182,19 +184,21 @@ const CategoryManagement: React.FC = () => {
                         <div className="inline-flex items-center gap-2">
                           <button
                             type="button"
+                            title="Sửa danh mục"
+                            aria-label="Sửa danh mục"
                             onClick={() => openForm(item)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium text-cyan-400 hover:text-cyan-300 hover:bg-cyan-950/30 border border-transparent hover:border-cyan-800/40 transition-colors"
+                            className="inline-flex size-8 items-center justify-center rounded border border-transparent text-cyan-400 transition-colors hover:border-cyan-800/40 hover:bg-cyan-950/30 hover:text-cyan-300"
                           >
                             <FiEdit2 className="w-3.5 h-3.5" />
-                            <span>Sửa</span>
                           </button>
                           <button
                             type="button"
+                            title="Xóa danh mục"
+                            aria-label="Xóa danh mục"
                             onClick={() => setDeleteTarget(item)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium text-rose-400 hover:text-rose-300 hover:bg-rose-950/30 border border-transparent hover:border-rose-800/40 transition-colors"
+                            className="inline-flex size-8 items-center justify-center rounded border border-transparent text-rose-400 transition-colors hover:border-rose-800/40 hover:bg-rose-950/30 hover:text-rose-300"
                           >
                             <FiTrash2 className="w-3.5 h-3.5" />
-                            <span>Xóa</span>
                           </button>
                         </div>
                       </td>

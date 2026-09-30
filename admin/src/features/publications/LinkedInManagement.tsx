@@ -126,10 +126,11 @@ const LinkedInManagement: React.FC = () => {
         actions={
           <Link
             to="/linkedin/new"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#0a66c2] hover:bg-[#084e96] text-white font-semibold text-sm transition-colors shadow-sm"
+            title="Tạo bài LinkedIn"
+            aria-label="Tạo bài LinkedIn"
+            className="inline-flex size-10 items-center justify-center rounded-lg bg-[#0a66c2] text-white shadow-sm transition-colors hover:bg-[#084e96]"
           >
             <FiPlus className="w-4 h-4" />
-            <span>Tạo bài LinkedIn</span>
           </Link>
         }
       />
@@ -172,12 +173,13 @@ const LinkedInManagement: React.FC = () => {
         <div className="flex flex-wrap items-center gap-2.5">
           <button
             type="button"
+            title="Kiểm tra kết nối LinkedIn"
+            aria-label="Kiểm tra kết nối LinkedIn"
             onClick={() => verify.mutate()}
             disabled={verify.isPending}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-surface-border bg-surface-elevated hover:bg-surface-hover text-xs font-medium text-content-primary transition-colors disabled:opacity-50"
+            className="inline-flex size-9 items-center justify-center rounded-lg border border-surface-border bg-surface-elevated text-content-primary transition-colors hover:bg-surface-hover disabled:opacity-50"
           >
             <FiCheckCircle className="w-3.5 h-3.5 text-emerald-400" />
-            <span>{verify.isPending ? "Đang kiểm tra…" : "Kiểm tra kết nối"}</span>
           </button>
 
           {verified !== null && (
@@ -194,15 +196,16 @@ const LinkedInManagement: React.FC = () => {
 
           <button
             type="button"
+            title={showHistory ? "Ẩn lịch sử Live" : "Hiện lịch sử Live"}
+            aria-label={showHistory ? "Ẩn lịch sử Live" : "Hiện lịch sử Live"}
             onClick={() => setShowHistory(!showHistory)}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors ${
+            className={`inline-flex size-9 items-center justify-center rounded-lg border transition-colors ${
               showHistory
                 ? "bg-surface-elevated text-primary-green border-primary-green/40"
                 : "border-surface-border bg-surface-elevated hover:bg-surface-hover text-content-secondary"
             }`}
           >
             <FiClock className="w-3.5 h-3.5" />
-            <span>Lịch sử Live</span>
           </button>
         </div>
       </div>
@@ -216,12 +219,13 @@ const LinkedInManagement: React.FC = () => {
             </h3>
             <button
               type="button"
+              title="Đồng bộ lịch sử LinkedIn"
+              aria-label="Đồng bộ lịch sử LinkedIn"
               onClick={() => sync.mutate()}
               disabled={sync.isPending}
-              className="inline-flex items-center gap-1.5 px-3 py-1 text-xs rounded-md bg-surface-elevated hover:bg-surface-hover text-cyan-400 border border-surface-border transition-colors disabled:opacity-50"
+              className="inline-flex size-8 items-center justify-center rounded-md border border-surface-border bg-surface-elevated text-cyan-400 transition-colors hover:bg-surface-hover disabled:opacity-50"
             >
               <FiRefreshCw className={`w-3 h-3 ${sync.isPending ? "animate-spin" : ""}`} />
-              <span>{sync.isPending ? "Đang đồng bộ…" : "Đồng bộ ngay"}</span>
             </button>
           </div>
 
@@ -275,10 +279,11 @@ const LinkedInManagement: React.FC = () => {
             action={
               <Link
                 to="/linkedin/new"
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-lg bg-[#0a66c2] text-white hover:bg-[#084e96] transition-colors"
+                title="Tạo bài LinkedIn đầu tiên"
+                aria-label="Tạo bài LinkedIn đầu tiên"
+                className="inline-flex size-9 items-center justify-center rounded-lg bg-[#0a66c2] text-white transition-colors hover:bg-[#084e96]"
               >
                 <FiPlus className="w-4 h-4" />
-                <span>Tạo bài đầu tiên</span>
               </Link>
             }
           />
@@ -320,31 +325,32 @@ const LinkedInManagement: React.FC = () => {
                         <div className="inline-flex items-center gap-2">
                           <Link
                             to={`/linkedin/posts/${post.id}`}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium text-cyan-400 hover:text-cyan-300 hover:bg-cyan-950/30 border border-transparent hover:border-cyan-800/40 transition-colors"
-                            title="Xem chi tiết / chỉnh sửa"
+                            title="Xem chi tiết hoặc chỉnh sửa"
+                            aria-label="Xem chi tiết hoặc chỉnh sửa"
+                            className="inline-flex size-8 items-center justify-center rounded border border-transparent text-cyan-400 transition-colors hover:border-cyan-800/40 hover:bg-cyan-950/30 hover:text-cyan-300"
                           >
                             <FiEye className="w-3.5 h-3.5" />
-                            <span>Chi tiết</span>
                           </Link>
                           {post.providerPostId && (
                             <a
                               href={`https://www.linkedin.com/feed/update/${post.providerPostId}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium text-[#0a66c2] hover:text-[#398fe5] hover:bg-blue-950/30 border border-transparent hover:border-blue-800/40 transition-colors"
+                              aria-label="Xem bài trực tiếp trên LinkedIn"
+                              className="inline-flex size-8 items-center justify-center rounded border border-transparent text-[#0a66c2] transition-colors hover:border-blue-800/40 hover:bg-blue-950/30 hover:text-[#398fe5]"
                               title="Xem bài trực tiếp trên LinkedIn"
                             >
                               <FiExternalLink className="w-3.5 h-3.5" />
-                              <span>Live</span>
                             </a>
                           )}
                           <button
                             type="button"
+                            title="Xóa bài khỏi CMS"
+                            aria-label="Xóa bài khỏi CMS"
                             onClick={() => setDeleteTargetId(post.id)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium text-rose-400 hover:text-rose-300 hover:bg-rose-950/30 border border-transparent hover:border-rose-800/40 transition-colors"
+                            className="inline-flex size-8 items-center justify-center rounded border border-transparent text-rose-400 transition-colors hover:border-rose-800/40 hover:bg-rose-950/30 hover:text-rose-300"
                           >
                             <FiTrash2 className="w-3.5 h-3.5" />
-                            <span>Xóa CMS</span>
                           </button>
                         </div>
                       </td>

@@ -90,6 +90,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children, className = ""
           type="button"
           onClick={onClose}
           className="absolute top-4 right-4 text-content-muted hover:text-content-primary bg-surface-elevated/50 hover:bg-surface-elevated rounded-lg p-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-green"
+          title="Đóng cửa sổ"
           aria-label="Đóng cửa sổ"
         >
           <IoCloseOutline className="w-5 h-5" />

@@ -10,6 +10,7 @@ import type { IBlogData, SEO } from "../../../types/Blog";
 import { createBlogPost, generateBlogDraft } from "../../../services/blog/handleBlog";
 import { createCategory, listCategories } from "../../../services/category/handleCategory";
 import { PageHeader, SectionHeading, ConfirmDialog } from "../../../shared/ui";
+import BlogResearchTools from "../components/BlogResearchTools";
 
 const EMPTY_BLOG: IBlogData = {
   tag: "",
@@ -144,32 +145,40 @@ const BlogCreate: React.FC = () => {
         description="Soạn thảo bài viết mới hoặc tạo nhanh bản nháp thông minh bằng trợ lý AI"
       />
 
-      <div className="grid w-full grid-cols-2 gap-1 rounded-xl border border-surface-border bg-surface-card p-1 sm:flex sm:w-fit">
+      <div className="flex w-fit gap-1 rounded-xl border border-surface-border bg-surface-card p-1">
         <button
           type="button"
+          title="Viết thủ công"
+          aria-label="Viết thủ công"
           onClick={() => setSource("manual")}
-          className={`flex items-center justify-center gap-2 px-2 py-2 rounded-lg text-xs font-semibold transition-colors sm:px-4 ${
+          className={`flex size-10 items-center justify-center rounded-lg transition-colors ${
             source === "manual"
               ? "bg-surface-elevated text-primary-green border border-primary-green/30 shadow-sm"
               : "text-content-secondary hover:text-content-primary"
           }`}
         >
           <BsFileEarmarkText className="text-sm" />
-          <span>Viết thủ công</span>
         </button>
         <button
           type="button"
+          title="Tạo bản nháp bằng AI"
+          aria-label="Tạo bản nháp bằng AI"
           onClick={() => setSource("ai")}
-          className={`flex items-center justify-center gap-2 px-2 py-2 rounded-lg text-xs font-semibold transition-colors sm:px-4 ${
+          className={`flex size-10 items-center justify-center rounded-lg transition-colors ${
             source === "ai"
               ? "bg-surface-elevated text-purple-300 border border-purple-500/30 shadow-sm"
               : "text-content-secondary hover:text-content-primary"
           }`}
         >
           <BsStars className="text-sm text-purple-400" />
-          <span>Tạo bản nháp bằng AI</span>
         </button>
       </div>
+
+      <BlogResearchTools
+        title={blog.title}
+        onTitleSelect={updateTitle}
+        onContentInsert={(content) => updateBlog("content", [blog.content, content].filter(Boolean).join("\n\n"))}
+      />
 
       <div className="bg-surface-card p-6 rounded-xl border border-surface-border space-y-4">
         <SectionHeading title="Thông tin cơ bản" description="Tiêu đề, thể loại và định danh bài viết" />
@@ -243,12 +252,13 @@ const BlogCreate: React.FC = () => {
           <div className="pt-2">
             <button
               type="button"
+              title={draft.isPending ? "Đang tạo bản nháp bằng AI" : blog.content ? "Tạo lại bằng AI" : "Tạo bản nháp AI"}
+              aria-label={draft.isPending ? "Đang tạo bản nháp bằng AI" : blog.content ? "Tạo lại bằng AI" : "Tạo bản nháp AI"}
               disabled={!blog.title.trim() || !blog.category.trim() || draft.isPending}
               onClick={handleRegenerateClick}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-purple-950/40 text-purple-300 border border-purple-500/30 hover:bg-purple-900/50 text-xs font-semibold transition-colors disabled:opacity-50"
+              className="inline-flex size-9 items-center justify-center rounded-lg border border-purple-500/30 bg-purple-950/40 text-purple-300 transition-colors hover:bg-purple-900/50 disabled:opacity-50"
             >
-              <BsStars className="text-sm text-purple-400" />
-              <span>{draft.isPending ? "Đang tạo bản nháp bằng AI..." : blog.content ? "Tạo lại bằng AI" : "Tạo bản nháp AI ngay"}</span>
+              <BsStars className={`text-sm text-purple-400 ${draft.isPending ? "animate-pulse" : ""}`} />
             </button>
           </div>
         )}
@@ -324,9 +334,8 @@ const BlogCreate: React.FC = () => {
       <div className="bg-surface-card p-6 rounded-xl border border-surface-border space-y-3">
         <SectionHeading title="Ảnh bìa bài viết" description="Tải lên tệp ảnh (JPEG, PNG, WebP) - Tùy chọn" />
         <div className="flex items-center gap-3">
-          <label className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-surface-elevated hover:bg-surface-hover text-content-secondary hover:text-content-primary border border-surface-border text-xs font-medium cursor-pointer transition-colors">
+          <label title={image ? `Đổi ảnh bìa: ${image.name}` : "Chọn ảnh bìa"} aria-label="Chọn ảnh bìa" className="inline-flex size-9 cursor-pointer items-center justify-center rounded-lg border border-surface-border bg-surface-elevated text-content-secondary transition-colors hover:bg-surface-hover hover:text-content-primary">
             <FiUpload className="text-sm" />
-            <span>{image ? image.name : "Chọn tệp ảnh bìa"}</span>
             <input
               type="file"
               accept="image/jpeg,image/png,image/webp,image/gif"
@@ -349,22 +358,24 @@ const BlogCreate: React.FC = () => {
       <div className="flex flex-wrap items-center justify-end gap-3 pt-2">
         <button
           type="button"
+          title={save.isPending ? "Đang lưu" : "Lưu chờ duyệt"}
+          aria-label={save.isPending ? "Đang lưu" : "Lưu chờ duyệt"}
           disabled={!formValid || save.isPending}
           onClick={() => save.mutate("SAVE_PENDING")}
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg border border-surface-border bg-surface-elevated hover:bg-surface-hover text-content-primary text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          className="inline-flex size-10 items-center justify-center rounded-lg border border-surface-border bg-surface-elevated text-content-primary transition-colors hover:bg-surface-hover disabled:cursor-not-allowed disabled:opacity-40"
         >
-          <FiSave className="text-base" />
-          <span>{save.isPending ? "Đang lưu..." : "Lưu chờ duyệt"}</span>
+          <FiSave className={`text-base ${save.isPending ? "animate-pulse" : ""}`} />
         </button>
 
         <button
           type="button"
+          title="Xuất bản Website ngay"
+          aria-label="Xuất bản Website ngay"
           disabled={!formValid || save.isPending}
           onClick={() => setConfirmPublish(true)}
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary-green hover:bg-primary-green-dark text-primary-black text-sm font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed shadow-md"
+          className="inline-flex size-10 items-center justify-center rounded-lg bg-primary-green text-primary-black shadow-md transition-colors hover:bg-primary-green-dark disabled:cursor-not-allowed disabled:opacity-40"
         >
           <FiSend className="text-base" />
-          <span>Xuất bản Website ngay</span>
         </button>
       </div>
 

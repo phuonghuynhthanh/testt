@@ -15,6 +15,7 @@ const HeaderMbl = ({ onToggleSidebar, isSidebarOpen }: HeaderMblProps) => {
         type="button"
         onClick={onToggleSidebar}
         className="p-2 rounded-lg text-content-primary hover:text-white hover:bg-surface-elevated transition-colors duration-200 z-10 focus:outline-none focus:ring-2 focus:ring-primary-green"
+        title={isSidebarOpen ? "Đóng menu" : "Mở menu"}
         aria-label={isSidebarOpen ? "Đóng menu" : "Mở menu"}
       >
         {isSidebarOpen ? (

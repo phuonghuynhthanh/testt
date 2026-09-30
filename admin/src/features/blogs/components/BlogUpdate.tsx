@@ -24,6 +24,8 @@ import BlogPreviewDemo from "./BlogPreviewDemo";
 import BlogBasicInfoForm from "./BlogBasicInfoForm";
 import BlogSeoForm from "./BlogSeoForm";
 import { PageHeader } from "../../../shared/ui";
+import PublicationPanel from "../../publications/components/PublicationPanel";
+import BlogResearchTools from "./BlogResearchTools";
 
 const INIT_BLOG_DATA: IBlogData = {
   id: "",
@@ -53,6 +55,7 @@ const BlogUpdate = () => {
   const queryClient = useQueryClient();
   const { blog_id: blogId } = useParams<{ blog_id: string }>();
   const [isLoading, setIsLoading] = useState(false);
+  const [blogSaveVersion, setBlogSaveVersion] = useState(0);
   const [storedLinkBlog, setStoredLinkBlog] = useState("");
   const [content, setContent] = useState<IEditorData>({ title: "", body: "" });
   const [isOpenGenerate, setIsOpenGenerate] = useState(false);
@@ -181,6 +184,7 @@ const BlogUpdate = () => {
       queryClient.invalidateQueries({ queryKey: ["blogs"] });
       queryClient.invalidateQueries({ queryKey: ["blogs", "pending"] });
       queryClient.invalidateQueries({ queryKey: ["blogs", "approved"] });
+      setBlogSaveVersion((version) => version + 1);
       toast.success("Cập nhật bài viết thành công.");
     } catch {
       toast.error("Đã xảy ra lỗi. Vui lòng thử lại sau.");
@@ -260,12 +264,13 @@ const BlogUpdate = () => {
         actions={
           <button
             type="button"
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary-green hover:bg-primary-green-dark text-primary-black font-semibold text-sm transition-colors shadow-sm disabled:opacity-50"
+            title={isLoading ? "Đang lưu thay đổi" : "Lưu thay đổi"}
+            aria-label={isLoading ? "Đang lưu thay đổi" : "Lưu thay đổi"}
+            className="inline-flex size-10 items-center justify-center rounded-lg bg-primary-green text-primary-black shadow-sm transition-colors hover:bg-primary-green-dark disabled:opacity-50"
             onClick={handleUpdate}
             disabled={isLoading}
           >
-            <span>{isLoading ? "Đang lưu..." : "Lưu thay đổi"}</span>
-            <IoIosSave className="text-lg" />
+            <IoIosSave className={`text-lg ${isLoading ? "animate-pulse" : ""}`} />
           </button>
         }
       />
@@ -278,6 +283,12 @@ const BlogUpdate = () => {
           onFieldChange={handleChange}
         />
       </div>
+
+      <BlogResearchTools
+        title={blogData.title}
+        onTitleSelect={(title) => setBlogData((current) => ({ ...current, title }))}
+        onContentInsert={(value) => handleContentChange([blogContent, value].filter(Boolean).join("\n\n"))}
+      />
 
       <BlogSeoForm
         blogData={blogData}
@@ -314,6 +325,14 @@ const BlogUpdate = () => {
           </div>
         </div>
       </div>
+
+      {blogId && blogDetail && (
+        <PublicationPanel
+          blogId={blogId}
+          blogSaveVersion={blogSaveVersion}
+          blogState={blogData.state}
+        />
+      )}
     </div>
   );
 };
