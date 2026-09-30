@@ -24,7 +24,8 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children, className = ""
       aria-modal="true"
     >
       <div
-        className={`relative w-full max-h-[90vh] overflow-y-auto bg-surface-card rounded-2xl shadow-2xl border border-surface-border text-content-primary ${className || "max-w-2xl p-6"}`}
+        className={`relative w-full max-h-[90vh] overflow-y-auto bg-surface-card bg-opacity-100 rounded-2xl shadow-2xl border border-surface-border text-content-primary ${className || "max-w-2xl p-6"}`}
+        style={{ backgroundColor: "#1A1A1A" }}
         onClick={(event) => {
           event.stopPropagation();
         }}

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { FiPlus, FiExternalLink, FiTrash2, FiRefreshCw, FiCheckCircle, FiClock } from "react-icons/fi";
+import { FiPlus, FiExternalLink, FiTrash2, FiRefreshCw, FiCheckCircle, FiClock, FiEye } from "react-icons/fi";
 import { FaLinkedin } from "react-icons/fa";
 import { toast } from "react-toastify";
 import {
@@ -285,7 +285,7 @@ const LinkedInManagement: React.FC = () => {
         ) : (
           <>
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
+              <table className="w-full text-left text-sm min-w-[640px]">
                 <thead className="bg-surface-elevated text-xs font-semibold uppercase tracking-wider text-content-muted border-b border-surface-border">
                   <tr>
                     <th className="py-3 px-4">Chủ đề bài viết</th>
@@ -301,8 +301,11 @@ const LinkedInManagement: React.FC = () => {
                       key={post.id}
                       className="hover:bg-surface-hover/60 transition-colors"
                     >
-                      <td className="py-3.5 px-4 font-medium text-content-primary max-w-xs truncate">
-                        {post.topic}
+                      <td
+                        className="py-3.5 px-4 font-medium text-content-primary max-w-xs truncate"
+                        title={post.topic || post.content || undefined}
+                      >
+                        {post.topic?.trim() || post.content?.trim().split("\n")[0]?.slice(0, 60)?.trim() || "Bài đăng LinkedIn"}
                       </td>
                       <td className="py-3.5 px-4">
                         <StatusBadge status={post.sourceType} />
@@ -318,10 +321,23 @@ const LinkedInManagement: React.FC = () => {
                           <Link
                             to={`/linkedin/posts/${post.id}`}
                             className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium text-cyan-400 hover:text-cyan-300 hover:bg-cyan-950/30 border border-transparent hover:border-cyan-800/40 transition-colors"
+                            title="Xem chi tiết / chỉnh sửa"
                           >
-                            <FiExternalLink className="w-3.5 h-3.5" />
-                            <span>Mở</span>
+                            <FiEye className="w-3.5 h-3.5" />
+                            <span>Chi tiết</span>
                           </Link>
+                          {post.providerPostId && (
+                            <a
+                              href={`https://www.linkedin.com/feed/update/${post.providerPostId}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium text-[#0a66c2] hover:text-[#398fe5] hover:bg-blue-950/30 border border-transparent hover:border-blue-800/40 transition-colors"
+                              title="Xem bài trực tiếp trên LinkedIn"
+                            >
+                              <FiExternalLink className="w-3.5 h-3.5" />
+                              <span>Live</span>
+                            </a>
+                          )}
                           <button
                             type="button"
                             onClick={() => setDeleteTargetId(post.id)}

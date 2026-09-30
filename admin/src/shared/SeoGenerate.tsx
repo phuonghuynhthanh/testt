@@ -61,60 +61,69 @@ const SeoGenerate: React.FC<SeoGenerateProps> = ({
     setInputContent(e.target.value);
   };
 
+  // Render modal dialog for generating SEO metadata with OpenAI.
   return (
-    <div className="fixed flex items-center justify-center h-screen z-[200]">
-      <Modal isOpen={true} onClose={onClose}>
-        <div className="p-4">
-          <h2 className="text-xl text-gray-th2 font-semibold mb-2">
-            Tạo nội dung SEO
-          </h2>
-          <p className="text-gray-600 mb-6">
-            Kiểm tra nội dung bên dưới trước khi tạo metadata SEO. AI sẽ phân tích thông tin này để tạo tiêu đề và mô tả tối ưu cho công cụ tìm kiếm.
-          </p>
+    <Modal isOpen={true} onClose={onClose}>
+      <div className="p-1 sm:p-2">
+        <h2 className="text-xl font-semibold text-content-primary mb-2">
+          Tạo nội dung SEO
+        </h2>
+        <p className="text-sm text-content-muted mb-6">
+          Kiểm tra nội dung bên dưới trước khi tạo metadata SEO. AI sẽ phân tích thông tin này để tạo tiêu đề và mô tả tối ưu cho công cụ tìm kiếm.
+        </p>
 
-          <div className="flex flex-col gap-4">
-            <div>
-              <label
-                htmlFor="title"
-                className="block font-medium mb-1 text-gray-th2"
-              >
-                Tiêu đề bài viết (dùng cho AI phân tích)
-              </label>
-              <input
-                id="title"
-                type="text"
-                value={inputTitle}
-                onChange={handleTitleChange}
-                className="w-full p-2 border rounded-md bg-gray-50"
-              />
-            </div>
+        <div className="flex flex-col gap-4">
+          <div>
+            <label
+              htmlFor="title"
+              className="block text-xs font-medium mb-1.5 text-content-secondary"
+            >
+              Tiêu đề bài viết (dùng cho AI phân tích)
+            </label>
+            <input
+              id="title"
+              type="text"
+              value={inputTitle}
+              onChange={handleTitleChange}
+              className="w-full px-3.5 py-2.5 rounded-xl border border-surface-border bg-surface-elevated text-content-primary placeholder-content-muted focus:outline-none focus:border-primary-green focus:ring-1 focus:ring-primary-green transition-colors text-sm"
+            />
+          </div>
 
-            <div>
-              <label
-                htmlFor="content"
-                className="block font-medium mb-1 text-gray-th2"
-              >
-                Nội dung bài viết (dùng cho AI phân tích)
-              </label>
-              <textarea
-                id="content"
-                value={inputContent}
-                onChange={handleContentChange}
-                rows={6}
-                className="w-full p-2 border rounded-md bg-gray-50"
-              />
-            </div>
+          <div>
+            <label
+              htmlFor="content"
+              className="block text-xs font-medium mb-1.5 text-content-secondary"
+            >
+              Nội dung bài viết (dùng cho AI phân tích)
+            </label>
+            <textarea
+              id="content"
+              value={inputContent}
+              onChange={handleContentChange}
+              rows={6}
+              className="w-full px-3.5 py-2.5 rounded-xl border border-surface-border bg-surface-elevated text-content-primary placeholder-content-muted focus:outline-none focus:border-primary-green focus:ring-1 focus:ring-primary-green transition-colors text-sm resize-none"
+            />
+          </div>
 
+          <div className="flex justify-end gap-3 mt-2">
             <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-xs font-semibold rounded-lg border border-surface-border text-content-secondary hover:text-content-primary hover:bg-surface-hover transition-colors"
+            >
+              Hủy
+            </button>
+            <button
+              type="button"
               onClick={handleConfirm}
-              className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
+              className="px-4 py-2 text-xs font-semibold rounded-lg bg-primary-green hover:bg-primary-green-dark text-primary-black transition-colors shadow-sm"
             >
               Tạo nội dung SEO
             </button>
           </div>
         </div>
-      </Modal>
-    </div>
+      </div>
+    </Modal>
   );
 };
 

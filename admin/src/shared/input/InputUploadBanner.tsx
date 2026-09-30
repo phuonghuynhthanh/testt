@@ -44,7 +44,7 @@ const InputUploadBanner: React.FC<InputUploadBannerProps> = ({
       <label className="block font-medium mb-1 text-primary-white">
         Ảnh Banner
       </label>
-      <div className="h-[150px] flex items-center mb-2 gap-2">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center mb-2 gap-3 min-h-[140px]">
         <div
           onDragOver={(e) => {
             e.preventDefault();
@@ -52,8 +52,8 @@ const InputUploadBanner: React.FC<InputUploadBannerProps> = ({
           }}
           onDragLeave={() => setIsDragging(false)}
           onDrop={handleOnDropBanner}
-          className={`flex justify-center items-center h-full border-2 border-dashed rounded-md p-4 text-center cursor-pointer transition-colors ${
-            isDragging ? "border-blue-400 bg-blue-50" : "border-gray-300"
+          className={`flex-1 flex justify-center items-center min-h-[120px] sm:h-[150px] border-2 border-dashed rounded-xl p-4 text-center cursor-pointer transition-colors ${
+            isDragging ? "border-primary-green bg-primary-green/10" : "border-surface-border hover:border-surface-hover hover:bg-surface-elevated/30"
           }`}
         >
           <input
@@ -67,8 +67,8 @@ const InputUploadBanner: React.FC<InputUploadBannerProps> = ({
             htmlFor="banner-upload"
             className="flex flex-col items-center justify-center space-y-2 cursor-pointer"
           >
-            <FaUpload className="text-2xl text-blue-500" />
-            <span className="text-sm text-gray-500">
+            <FaUpload className="text-2xl text-primary-green" />
+            <span className="text-sm text-content-muted">
               Nhấp hoặc kéo thả hình ảnh để tải lên
             </span>
           </label>
@@ -78,13 +78,13 @@ const InputUploadBanner: React.FC<InputUploadBannerProps> = ({
           <img
             src={URL.createObjectURL(fileImage)}
             alt="Xem trước Banner"
-            className="rounded-lg h-full w-[250px] object-fill border"
+            className="rounded-xl h-[140px] sm:h-[150px] w-full sm:w-[250px] object-cover border border-surface-border"
           />
         ) : bannerUrl ? (
           <img
             src={/^https?:\/\//i.test(bannerUrl) ? bannerUrl : `${IMAGE_URL}/${bannerUrl}`}
             alt="Xem trước Banner"
-            className="rounded-lg h-full w-[250px] object-fill border"
+            className="rounded-xl h-[140px] sm:h-[150px] w-full sm:w-[250px] object-cover border border-surface-border"
           />
         ) : null}
       </div>

@@ -32,6 +32,9 @@ const App = () => {
             <Route path={PATH.LINKEDIN_NEW} element={<LinkedInPost />} />
             <Route path={PATH.LINKEDIN_POST} element={<LinkedInPost />} />
           </Route>
+
+          {/* Catch-all fallback route */}
+          <Route path="*" element={<Navigate to={PATH.LOGIN} replace />} />
         </Routes>
       </Suspense>
     </div>

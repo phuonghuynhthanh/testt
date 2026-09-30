@@ -53,7 +53,7 @@ const BlogPreviewDemo: React.FC<BlogPreviewProps> = ({
       className="fixed inset-0 z-50 flex h-screen max-w-none flex-col overflow-hidden bg-primary-black p-5 font-markdown prose prose-a:no-underline"
       style={{ fontFamily: '"lexend", sans-serif' }}
     >
-      <div className="mb-4 shrink-0 border-b border-gray-200 pb-4">
+      <div className="mb-4 shrink-0 border-b border-surface-border pb-4">
         <HeaderActionButton
           onClose={onClose}
           onModeChange={setMode}
@@ -86,10 +86,10 @@ const BlogPreviewDemo: React.FC<BlogPreviewProps> = ({
                   <div className="mt-4 flex flex-wrap items-center gap-2 text-sm text-primary-white/80 sm:text-base">
                     <LuClock8 className="size-4 shrink-0" />
                     <span>9/3/2025</span>
-                    <span className="h-4 w-[2px] bg-gray-300"></span>
+                    <span className="h-4 w-[2px] bg-content-muted/40"></span>
                     <p>{tag}</p>
                   </div>
-                  <div className="my-4 h-[1px] w-full bg-gray-300"></div>
+                  <div className="my-4 h-[1px] w-full bg-surface-border"></div>
                   {banner && (
                     <div className="w-full rounded-md px-2 sm:px-4">
                       <img

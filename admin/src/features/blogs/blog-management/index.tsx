@@ -179,7 +179,7 @@ const BlogManagement: React.FC = () => {
         ) : (
           <>
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
+              <table className="w-full text-left text-sm min-w-[640px]">
                 <thead className="bg-surface-elevated text-xs font-semibold uppercase tracking-wider text-content-muted border-b border-surface-border">
                   <tr>
                     <th className="py-3 px-4">Tiêu đề bài viết</th>

@@ -29,7 +29,7 @@ const BlogBasicInfoForm = ({
 
   return (
     <div className="py-6 space-y-4">
-      <div className="flex justify-between items-center gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
         <InputField
           label="Mã bài viết"
           id="id"
@@ -50,7 +50,7 @@ const BlogBasicInfoForm = ({
         bannerUrl={blogData.banner_url}
         setBannerImage={setBannerImage}
       />
-      <div className="flex justify-between items-center gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
         <InputField
           label="Thẻ tag"
           id="tag"

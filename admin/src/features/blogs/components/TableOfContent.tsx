@@ -74,12 +74,7 @@ const TableOfContent: React.FC<TableOfContentProps> = ({
                   href={`#${heading.id}`}
                   onClick={(e) => handleScroll(e, heading.id)}
                   className={`
-                    block py-1.5 sm:py-2 px-2 sm:px-3 rounded-md transition-all duration-200
-                    ${
-                      editMode
-                        ? "cursor-not-allowed opacity-60 text-primary-white"
-                        : "hover:bg-primary-black-light hover:text-primary-white text-primary-white hover:shadow-sm cursor-pointer"
-                    }
+                    block py-1.5 sm:py-2 px-2 sm:px-3 rounded-lg transition-all duration-200
                     ${
                       heading.level === 2
                         ? "font-semibold text-xs sm:text-sm ml-0"
@@ -89,8 +84,8 @@ const TableOfContent: React.FC<TableOfContentProps> = ({
                     }
                     ${
                       editMode
-                        ? "text-gray-500"
-                        : "text-gray-700 hover:text-white"
+                        ? "cursor-not-allowed opacity-60 text-content-muted"
+                        : "hover:bg-surface-elevated hover:text-content-primary text-content-secondary cursor-pointer"
                     }
                   `}
                   style={{

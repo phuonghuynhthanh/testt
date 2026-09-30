@@ -351,17 +351,17 @@ const PublicationPanel = ({
   };
 
   if (publicationQuery.isLoading) {
-    return <div className="my-10 text-gray-300">Đang tải cài đặt xuất bản…</div>;
+    return <div className="my-10 text-content-muted">Đang tải cài đặt xuất bản…</div>;
   }
   if (publicationQuery.isError || !publication) {
-    return <div className="my-10 text-red-300">Không thể tải cài đặt xuất bản.</div>;
+    return <div className="my-10 text-rose-400">Không thể tải cài đặt xuất bản.</div>;
   }
 
   const mediaCountValid = hasValidMediaCount(
     mediaMode,
     selectedMedia.length,
   );
-  const altTextValid = selectedMedia.every((item) => item.altText.trim());
+  const altTextValid = selectedMedia.every((item) => Boolean((item.altText || "").trim()));
   const publishLabel = publishWeb && publishLinkedin
     ? "Xuất bản"
     : publishWeb

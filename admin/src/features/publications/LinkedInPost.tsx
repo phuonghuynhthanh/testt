@@ -50,12 +50,12 @@ const LinkedInPost: React.FC = () => {
 
   useEffect(() => {
     if (!detail.data) return;
-    setTopic(detail.data.topic);
-    setContent(detail.data.content);
-    setMediaMode(detail.data.mediaMode);
-    setMedia(detail.data.media);
-    setCandidates(detail.data.media);
-    setSourceType(detail.data.sourceType);
+    setTopic(detail.data.topic ?? "");
+    setContent(detail.data.content ?? "");
+    setMediaMode(detail.data.mediaMode ?? "none");
+    setMedia(detail.data.media ?? []);
+    setCandidates(detail.data.media ?? []);
+    setSourceType(detail.data.sourceType ?? "CUSTOM");
     const loaded = normalizeFactCheck(detail.data.factCheck);
     setFactCheck(loaded);
     setGeneration(detail.data.generation ?? {});
@@ -65,7 +65,7 @@ const LinkedInPost: React.FC = () => {
   const immutable = ["PUBLISHED", "PUBLISHING", "REVIEW_REQUIRED"].includes(detail.data?.status ?? "");
   const factCheckBlocked = factCheck.requiresHumanFactCheck && !factCheckAcknowledged;
   const mediaCountValid = mediaMode === "none" ? media.length === 0 : mediaMode === "single-image" ? media.length === 1 : media.length >= 2 && media.length <= 20;
-  const formValid = Boolean(topic.trim() && content.trim() && mediaCountValid && media.every((m) => m.altText.trim()) && !factCheckBlocked);
+  const formValid = Boolean((topic || "").trim() && (content || "").trim() && mediaCountValid && media.every((m) => (m.altText || "").trim()) && !factCheckBlocked);
 
   const invalidate = () => {
     client.invalidateQueries({ queryKey: ["linkedin-posts"] });
@@ -73,7 +73,7 @@ const LinkedInPost: React.FC = () => {
     client.invalidateQueries({ queryKey: ["linkedin-history"] });
   };
 
-  const payload = () => ({ topic: topic.trim(), content: content.trim(), mediaMode, media, factCheck, generation, sourceType });
+  const payload = () => ({ topic: (topic || "").trim(), content: (content || "").trim(), mediaMode, media, factCheck, generation, sourceType });
 
   const save = useMutation({
     mutationFn: () => id ? updateLinkedInPost(id, payload()) : createLinkedInPost({ ...payload(), action: "SAVE_DRAFT" }),
@@ -133,6 +133,22 @@ const LinkedInPost: React.FC = () => {
     else if (media.length < 20) setMedia([...media, { ...c, order: media.length + 1 }]);
   };
 
+  if (id && detail.isLoading) {
+    return (
+      <div className="py-20 text-center text-sm text-content-muted">
+        Đang tải bài đăng LinkedIn...
+      </div>
+    );
+  }
+
+  if (id && detail.isError) {
+    return (
+      <div className="py-20 text-center text-sm text-rose-400">
+        Không thể tải bài đăng LinkedIn: {apiErrorMessage(detail.error)}
+      </div>
+    );
+  }
+
   return (
     <section className="space-y-6 max-w-5xl mx-auto">
       <div>
@@ -160,7 +176,7 @@ const LinkedInPost: React.FC = () => {
           <input disabled={immutable} value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="Nhập chủ đề bài đăng..." className="w-full rounded-lg border border-surface-border bg-surface-elevated px-3.5 py-2 text-sm text-content-primary placeholder-content-muted focus:border-primary-green focus:outline-none focus:ring-1 focus:ring-primary-green transition disabled:opacity-50" />
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <button type="button" disabled={!topic.trim() || immutable || draft.isPending} onClick={() => draft.mutate()} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-950/40 text-purple-300 border border-purple-500/30 hover:bg-purple-900/50 text-xs font-semibold transition-colors disabled:opacity-50">
+          <button type="button" disabled={!(topic || "").trim() || immutable || draft.isPending} onClick={() => draft.mutate()} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-950/40 text-purple-300 border border-purple-500/30 hover:bg-purple-900/50 text-xs font-semibold transition-colors disabled:opacity-50">
             <BsStars className="text-sm" /><span>{draft.isPending ? "Đang tạo bằng AI..." : "Tạo bản nháp AI"}</span>
           </button>
           <button type="button" disabled={immutable || propose.isPending} onClick={() => propose.mutate()} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-elevated hover:bg-surface-hover text-content-secondary hover:text-content-primary border border-surface-border text-xs font-medium transition-colors disabled:opacity-50">

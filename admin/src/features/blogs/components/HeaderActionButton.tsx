@@ -4,6 +4,7 @@ import { IoIosSave } from "react-icons/io";
 
 export type BlogPreviewMode = "edit" | "markdown" | "preview";
 
+// Render action controls for blog preview and mode switcher.
 const HeaderActionButton = ({
   onClose,
   onModeChange,
@@ -22,22 +23,22 @@ const HeaderActionButton = ({
       <div className="flex items-center gap-4">
         <button
           onClick={onClose}
-          className="flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 rounded-lg transition-all duration-200 font-medium shadow-sm hover:shadow"
+          className="flex items-center gap-2 px-3.5 py-2 bg-surface-elevated hover:bg-surface-hover text-content-primary border border-surface-border rounded-xl transition-all duration-200 font-medium text-sm shadow-sm"
         >
           <IoClose className="w-5 h-5" />
           <span>Đóng</span>
         </button>
 
         {/* Segmented Control Toggle */}
-        <div className="flex items-center bg-gray-100 rounded-lg p-1 border border-gray-200 shadow-inner">
+        <div className="flex items-center bg-surface-elevated rounded-xl p-1 border border-surface-border">
           <button
             onClick={() => onModeChange("edit")}
             className={`
-              flex items-center gap-2 px-4 py-2 rounded-md transition-all duration-200 font-medium text-sm
+              flex items-center gap-2 px-3.5 py-1.5 rounded-lg transition-all duration-200 font-medium text-xs
               ${
                 mode === "edit"
-                  ? "bg-white text-blue-600 shadow-sm"
-                  : "bg-transparent text-gray-600 hover:text-gray-800"
+                  ? "bg-surface-card text-content-primary shadow-sm border border-surface-border"
+                  : "bg-transparent text-content-muted hover:text-content-primary"
               }
             `}
           >
@@ -47,11 +48,11 @@ const HeaderActionButton = ({
           <button
             onClick={() => onModeChange("markdown")}
             className={`
-              flex items-center gap-2 px-4 py-2 rounded-md transition-all duration-200 font-medium text-sm
+              flex items-center gap-2 px-3.5 py-1.5 rounded-lg transition-all duration-200 font-medium text-xs
               ${
                 mode === "markdown"
-                  ? "bg-white text-blue-600 shadow-sm"
-                  : "bg-transparent text-gray-600 hover:text-gray-800"
+                  ? "bg-surface-card text-content-primary shadow-sm border border-surface-border"
+                  : "bg-transparent text-content-muted hover:text-content-primary"
               }
             `}
           >
@@ -61,11 +62,11 @@ const HeaderActionButton = ({
           <button
             onClick={() => onModeChange("preview")}
             className={`
-              flex items-center gap-2 px-4 py-2 rounded-md transition-all duration-200 font-medium text-sm
+              flex items-center gap-2 px-3.5 py-1.5 rounded-lg transition-all duration-200 font-medium text-xs
               ${
                 mode === "preview"
-                  ? "bg-white text-blue-600 shadow-sm"
-                  : "bg-transparent text-gray-600 hover:text-gray-800"
+                  ? "bg-surface-card text-content-primary shadow-sm border border-surface-border"
+                  : "bg-transparent text-content-muted hover:text-content-primary"
               }
             `}
           >
@@ -79,12 +80,12 @@ const HeaderActionButton = ({
         <button
           onClick={onSave}
           disabled={isLoading}
-          className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed text-white rounded-lg transition-all duration-200 font-medium shadow-md hover:shadow-lg disabled:shadow-sm"
+          className="flex items-center gap-2 px-5 py-2 bg-primary-green hover:bg-primary-green-dark disabled:opacity-50 disabled:cursor-not-allowed text-primary-black font-semibold rounded-xl transition-all duration-200 text-xs shadow-md"
         >
           {isLoading ? (
             <>
               <svg
-                className="animate-spin h-5 w-5 text-white"
+                className="animate-spin h-4 w-4 text-primary-black"
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none"
                 viewBox="0 0 24 24"
@@ -107,7 +108,7 @@ const HeaderActionButton = ({
             </>
           ) : (
             <>
-              <IoIosSave className="w-5 h-5" />
+              <IoIosSave className="w-4 h-4" />
               <span>Lưu thay đổi</span>
             </>
           )}
