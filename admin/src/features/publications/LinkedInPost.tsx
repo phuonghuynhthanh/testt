@@ -2,8 +2,8 @@ import React, { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
-import { FiArrowLeft, FiSave, FiRefreshCw, FiSearch, FiAlertTriangle } from "react-icons/fi";
-import { BsStars } from "react-icons/bs";
+import { FiArrowDown, FiArrowLeft, FiArrowUp, FiSave, FiRefreshCw, FiSearch, FiAlertTriangle, FiUpload } from "react-icons/fi";
+import { BsFileEarmarkText, BsStars } from "react-icons/bs";
 import { FaLinkedin } from "react-icons/fa";
 import {
   createLinkedInPost,
@@ -15,11 +15,13 @@ import {
   searchLinkedInMedia,
   suggestPostMedia,
   updateLinkedInPost,
+  uploadLinkedInMedia,
 } from "../../services/linkedin/handleLinkedIn";
 import { apiErrorMessage } from "../../types/Api";
-import type { LinkedInSourceType } from "../../types/LinkedIn";
-import type { FactualReview, GeneratedLinkedInPost, LinkedInMediaMode, PexelsCandidate } from "../../types/Publication";
+import type { LinkedInAudience, LinkedInSourceType } from "../../types/LinkedIn";
+import type { FactualReview, GeneratedLinkedInPost, LinkedInMediaAsset, LinkedInMediaMode } from "../../types/Publication";
 import { PageHeader, SectionHeading, ConfirmDialog } from "../../shared/ui";
+import { linkedinMediaKey, linkedinMediaUrl } from "../../utils/linkedinMedia";
 
 const EMPTY_FACT_CHECK: FactualReview = { requiresHumanFactCheck: false, factCheckNotes: [] };
 
@@ -33,11 +35,14 @@ const LinkedInPost: React.FC = () => {
   const { post_id: id } = useParams<{ post_id: string }>();
   const navigate = useNavigate();
   const client = useQueryClient();
+  const [authorMode, setAuthorMode] = useState<"manual" | "ai">("manual");
   const [topic, setTopic] = useState("");
+  const [context, setContext] = useState("");
+  const [audience, setAudience] = useState<LinkedInAudience>("mixed");
   const [content, setContent] = useState("");
   const [mediaMode, setMediaMode] = useState<LinkedInMediaMode>("none");
-  const [media, setMedia] = useState<PexelsCandidate[]>([]);
-  const [candidates, setCandidates] = useState<PexelsCandidate[]>([]);
+  const [media, setMedia] = useState<LinkedInMediaAsset[]>([]);
+  const [candidates, setCandidates] = useState<LinkedInMediaAsset[]>([]);
   const [keywords, setKeywords] = useState("");
   const [sourceType, setSourceType] = useState<LinkedInSourceType>("CUSTOM");
   const [factCheck, setFactCheck] = useState<FactualReview>(EMPTY_FACT_CHECK);
@@ -45,6 +50,7 @@ const LinkedInPost: React.FC = () => {
   const [factCheckAcknowledged, setFactCheckAcknowledged] = useState(true);
   const [topics, setTopics] = useState<string[]>([]);
   const [confirm, setConfirm] = useState(false);
+  const [confirmAiOverwrite, setConfirmAiOverwrite] = useState(false);
 
   const detail = useQuery({ queryKey: ["linkedin-post", id], queryFn: () => getLinkedInPost(id!), enabled: Boolean(id) });
 
@@ -56,6 +62,7 @@ const LinkedInPost: React.FC = () => {
     setMedia(detail.data.media ?? []);
     setCandidates(detail.data.media ?? []);
     setSourceType(detail.data.sourceType ?? "CUSTOM");
+    setAuthorMode(detail.data.sourceType === "INDEPENDENT_AI" ? "ai" : "manual");
     const loaded = normalizeFactCheck(detail.data.factCheck);
     setFactCheck(loaded);
     setGeneration(detail.data.generation ?? {});
@@ -82,12 +89,13 @@ const LinkedInPost: React.FC = () => {
   });
 
   const draft = useMutation({
-    mutationFn: () => generateLinkedInDraft({ topic, targetAudience: "mixed", requestedMediaMode: mediaMode }),
+    mutationFn: () => generateLinkedInDraft({ topic, context, targetAudience: audience, requestedMediaMode: mediaMode }),
     onSuccess: (data) => {
       setContent(data.content); setMediaMode(data.media.mode); setSourceType("INDEPENDENT_AI");
       setFactCheck(data.factualReview); setGeneration(data.generated);
       setFactCheckAcknowledged(!data.factualReview.requiresHumanFactCheck);
       setKeywords(data.media.images.flatMap((img) => img.searchKeywords).join(", "));
+      setConfirmAiOverwrite(false);
       toast.success("Đã tạo bản nháp AI — chưa được lưu.");
     },
     onError: (e) => toast.error(apiErrorMessage(e)),
@@ -104,7 +112,27 @@ const LinkedInPost: React.FC = () => {
       const keys = keywords.split(",").map((v) => v.trim()).filter(Boolean);
       return id ? suggestPostMedia(id, keys) : searchLinkedInMedia(keys);
     },
-    onSuccess: setCandidates,
+    onSuccess: (items) => setCandidates([
+      ...media,
+      ...items.filter((item) => !media.some((selected) => linkedinMediaKey(selected) === linkedinMediaKey(item))),
+    ]),
+    onError: (e) => toast.error(apiErrorMessage(e)),
+  });
+
+  const upload = useMutation({
+    mutationFn: (files: File[]) => Promise.all(files.map(uploadLinkedInMedia)),
+    onSuccess: (items) => {
+      const maximum = mediaMode === "single-image" ? 1 : 20;
+      const next = (mediaMode === "single-image" ? items.slice(0, 1) : [...media, ...items])
+        .slice(0, maximum)
+        .map((item, index) => ({ ...item, order: index + 1 }));
+      setMedia(next);
+      setCandidates((current) => [
+        ...next,
+        ...current.filter((item) => !next.some((selected) => linkedinMediaKey(selected) === linkedinMediaKey(item))),
+      ]);
+      toast.success(`Đã tải lên ${items.length} ảnh.`);
+    },
     onError: (e) => toast.error(apiErrorMessage(e)),
   });
 
@@ -125,12 +153,35 @@ const LinkedInPost: React.FC = () => {
   });
 
   // Toggle image candidate selection in media array.
-  const toggleCandidate = (c: PexelsCandidate) => {
+  const toggleCandidate = (c: LinkedInMediaAsset) => {
     if (mediaMode === "none") return;
-    const exists = media.some((m) => m.providerId === c.providerId);
-    if (exists) setMedia(media.filter((m) => m.providerId !== c.providerId).map((m, i) => ({ ...m, order: i + 1 })));
+    const key = linkedinMediaKey(c);
+    const exists = media.some((m) => linkedinMediaKey(m) === key);
+    if (exists) setMedia(media.filter((m) => linkedinMediaKey(m) !== key).map((m, i) => ({ ...m, order: i + 1 })));
     else if (mediaMode === "single-image") setMedia([{ ...c, order: 1 }]);
     else if (media.length < 20) setMedia([...media, { ...c, order: media.length + 1 }]);
+  };
+
+  // Move one selected image while keeping contiguous provider order values.
+  const moveMedia = (key: string, delta: number) => {
+    const index = media.findIndex((item) => linkedinMediaKey(item) === key);
+    const destination = index + delta;
+    if (index < 0 || destination < 0 || destination >= media.length) return;
+    const next = [...media];
+    [next[index], next[destination]] = [next[destination], next[index]];
+    setMedia(next.map((item, order) => ({ ...item, order: order + 1 })));
+  };
+
+  // Protect administrator-authored copy before replacing it with an AI draft.
+  const generateAiDraft = () => {
+    if (content.trim()) setConfirmAiOverwrite(true);
+    else draft.mutate();
+  };
+
+  // Switch authoring intent without silently deleting the current draft.
+  const changeAuthorMode = (next: "manual" | "ai") => {
+    setAuthorMode(next);
+    if (next === "manual") setSourceType("CUSTOM");
   };
 
   if (id && detail.isLoading) {
@@ -169,21 +220,46 @@ const LinkedInPost: React.FC = () => {
         <div className="p-4 rounded-xl bg-rose-950/30 border border-rose-500/30 text-rose-300 text-xs">{detail.data.lastError}</div>
       )}
 
+      {!immutable && (
+        <div className="grid w-full grid-cols-2 gap-1 rounded-xl border border-surface-border bg-surface-card p-1 sm:flex sm:w-fit">
+          <button type="button" onClick={() => changeAuthorMode("manual")} className={`flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold transition-colors ${authorMode === "manual" ? "border border-primary-green/30 bg-surface-elevated text-primary-green" : "text-content-secondary hover:text-content-primary"}`}>
+            <BsFileEarmarkText className="text-sm" /><span>Viết thủ công</span>
+          </button>
+          <button type="button" onClick={() => changeAuthorMode("ai")} className={`flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold transition-colors ${authorMode === "ai" ? "border border-purple-500/30 bg-surface-elevated text-purple-300" : "text-content-secondary hover:text-content-primary"}`}>
+            <BsStars className="text-sm" /><span>Tạo bằng AI</span>
+          </button>
+        </div>
+      )}
+
       <div className="bg-surface-card p-6 rounded-xl border border-surface-border space-y-4">
         <SectionHeading title="Chủ đề & Nội dung" description="Chủ đề bài đăng và văn bản xuất bản" />
         <div>
           <label className="block text-xs font-medium text-content-secondary mb-1.5">Chủ đề bài đăng <span className="text-rose-400">*</span></label>
           <input disabled={immutable} value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="Nhập chủ đề bài đăng..." className="w-full rounded-lg border border-surface-border bg-surface-elevated px-3.5 py-2 text-sm text-content-primary placeholder-content-muted focus:border-primary-green focus:outline-none focus:ring-1 focus:ring-primary-green transition disabled:opacity-50" />
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <button type="button" disabled={!(topic || "").trim() || immutable || draft.isPending} onClick={() => draft.mutate()} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-950/40 text-purple-300 border border-purple-500/30 hover:bg-purple-900/50 text-xs font-semibold transition-colors disabled:opacity-50">
-            <BsStars className="text-sm" /><span>{draft.isPending ? "Đang tạo bằng AI..." : "Tạo bản nháp AI"}</span>
-          </button>
-          <button type="button" disabled={immutable || propose.isPending} onClick={() => propose.mutate()} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-elevated hover:bg-surface-hover text-content-secondary hover:text-content-primary border border-surface-border text-xs font-medium transition-colors disabled:opacity-50">
-            <FiRefreshCw className={`text-xs ${propose.isPending ? "animate-spin" : ""}`} /><span>Gợi ý chủ đề AI</span>
-          </button>
-        </div>
-        {topics.length > 0 && (
+        {authorMode === "ai" && !immutable && <div className="space-y-4 rounded-xl border border-purple-500/20 bg-purple-950/10 p-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div>
+              <label className="mb-1.5 block text-xs font-medium text-content-secondary">Ngữ cảnh bổ sung</label>
+              <textarea rows={3} value={context} onChange={(e) => setContext(e.target.value)} placeholder="Luận điểm, dữ liệu hoặc góc nhìn cần AI sử dụng..." className="w-full resize-y rounded-lg border border-surface-border bg-surface-elevated px-3.5 py-2 text-sm text-content-primary placeholder-content-muted focus:outline-none focus:ring-1 focus:ring-purple-400" />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-xs font-medium text-content-secondary">Đối tượng độc giả</label>
+              <select value={audience} onChange={(e) => setAudience(e.target.value as LinkedInAudience)} className="w-full rounded-lg border border-surface-border bg-surface-elevated px-3.5 py-2 text-sm text-content-primary focus:outline-none focus:ring-1 focus:ring-purple-400">
+                <option value="mixed">Hỗn hợp</option><option value="math">Toán học</option><option value="competitive-programming">Lập trình thi đấu</option><option value="software-engineering">Kỹ sư phần mềm</option><option value="machine-learning">Machine Learning</option><option value="systems">Hệ thống</option>
+              </select>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <button type="button" disabled={!(topic || "").trim() || draft.isPending} onClick={generateAiDraft} className="inline-flex items-center gap-1.5 rounded-lg border border-purple-500/30 bg-purple-950/40 px-3 py-1.5 text-xs font-semibold text-purple-300 transition-colors hover:bg-purple-900/50 disabled:opacity-50">
+              <BsStars className="text-sm" /><span>{draft.isPending ? "Đang tạo bằng AI..." : content ? "Tạo lại bằng AI" : "Tạo bản nháp AI"}</span>
+            </button>
+            <button type="button" disabled={propose.isPending} onClick={() => propose.mutate()} className="inline-flex items-center gap-1.5 rounded-lg border border-surface-border bg-surface-elevated px-3 py-1.5 text-xs font-medium text-content-secondary transition-colors hover:bg-surface-hover hover:text-content-primary disabled:opacity-50">
+              <FiRefreshCw className={`text-xs ${propose.isPending ? "animate-spin" : ""}`} /><span>Gợi ý chủ đề AI</span>
+            </button>
+          </div>
+        </div>}
+        {authorMode === "ai" && topics.length > 0 && (
           <div className="flex flex-wrap gap-2 pt-1">
             {topics.map((item) => (
               <button key={item} type="button" disabled={immutable} onClick={() => setTopic(item)} className="px-3 py-1 rounded-lg border border-surface-border bg-surface-elevated text-xs text-content-secondary hover:text-content-primary hover:border-primary-green/40 transition-colors text-left">
@@ -199,7 +275,7 @@ const LinkedInPost: React.FC = () => {
       </div>
 
       <div className="bg-surface-card p-6 rounded-xl border border-surface-border space-y-4">
-        <SectionHeading title="Hình ảnh bài đăng (Pexels)" description="Chọn chế độ ảnh và đính kèm hình ảnh chất lượng cao" />
+        <SectionHeading title="Hình ảnh bài đăng" description="Tìm ảnh Pexels hoặc tải ảnh trực tiếp từ thiết bị" />
         <div className="flex items-center gap-3">
           <label className="text-xs text-content-muted">Chế độ ảnh:</label>
           <select disabled={immutable} value={mediaMode} onChange={(e) => { const next = e.target.value as LinkedInMediaMode; setMediaMode(next); if (next === "none") setMedia([]); if (next === "single-image" && media.length > 1) setMedia(media.slice(0, 1)); }} className="rounded-lg border border-surface-border bg-surface-elevated px-3 py-1.5 text-xs text-content-primary focus:outline-none focus:ring-1 focus:ring-primary-green">
@@ -208,24 +284,33 @@ const LinkedInPost: React.FC = () => {
         </div>
         {mediaMode !== "none" && (
           <div className="space-y-4">
-            <div className="flex gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row">
               <input disabled={immutable} value={keywords} onChange={(e) => setKeywords(e.target.value)} placeholder="Từ khóa tìm kiếm ảnh Pexels..." className="flex-1 rounded-lg border border-surface-border bg-surface-elevated px-3.5 py-2 text-xs text-content-primary placeholder-content-muted focus:outline-none focus:ring-1 focus:ring-primary-green" />
               <button type="button" disabled={immutable || search.isPending} onClick={() => search.mutate()} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-surface-elevated hover:bg-surface-hover text-content-primary border border-surface-border text-xs font-semibold transition-colors disabled:opacity-50">
                 <FiSearch className="text-sm" /><span>{search.isPending ? "Đang tìm..." : "Tìm ảnh"}</span>
               </button>
+              <label className={`inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-surface-border bg-surface-elevated px-4 py-2 text-xs font-semibold text-content-primary transition-colors hover:bg-surface-hover ${immutable || upload.isPending ? "pointer-events-none opacity-50" : ""}`}>
+                <FiUpload className="text-sm" /><span>{upload.isPending ? "Đang tải..." : "Tải ảnh lên"}</span>
+                <input type="file" multiple={mediaMode === "multi-image"} accept="image/jpeg,image/png,image/gif" className="hidden" onChange={(event) => { const files = Array.from(event.target.files ?? []); if (files.length) upload.mutate(files); event.currentTarget.value = ""; }} />
+              </label>
             </div>
             <p className="text-xs text-content-muted">Đã chọn: <strong className="text-content-primary">{media.length}</strong> ảnh {mediaMode === "multi-image" ? "(cần 2–20 ảnh)" : "(cần 1 ảnh)"}</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {candidates.map((item) => {
-                const selected = media.some((m) => m.providerId === item.providerId);
+                const key = linkedinMediaKey(item);
+                const selected = media.some((m) => linkedinMediaKey(m) === key);
                 return (
-                  <article key={item.providerId} className={`rounded-xl border overflow-hidden bg-surface-elevated transition ${selected ? "border-primary-green ring-1 ring-primary-green" : "border-surface-border"}`}>
-                    <img src={item.imageUrl} alt={item.altText} className="h-36 w-full object-cover" />
+                  <article key={key} className={`rounded-xl border overflow-hidden bg-surface-elevated transition ${selected ? "border-primary-green ring-1 ring-primary-green" : "border-surface-border"}`}>
+                    <img src={linkedinMediaUrl(item)} alt={item.altText} className="h-36 w-full object-cover" />
                     <div className="p-3 space-y-2 text-xs">
-                      <p className="text-content-muted truncate">{item.attribution}</p>
+                      <p className="text-content-muted truncate">{item.provider === "pexels" ? item.attribution : item.fileName}</p>
                       {selected && (
-                        <input value={media.find((m) => m.providerId === item.providerId)?.altText ?? ""} onChange={(e) => setMedia(media.map((m) => m.providerId === item.providerId ? { ...m, altText: e.target.value } : m))} disabled={immutable} placeholder="Alt text (bắt buộc)..." className="w-full rounded border border-surface-border bg-surface-card px-2 py-1 text-xs text-content-primary focus:outline-none focus:ring-1 focus:ring-primary-green" />
+                        <input value={media.find((m) => linkedinMediaKey(m) === key)?.altText ?? ""} onChange={(e) => setMedia(media.map((m) => linkedinMediaKey(m) === key ? { ...m, altText: e.target.value } : m))} disabled={immutable} placeholder="Alt text (bắt buộc)..." className="w-full rounded border border-surface-border bg-surface-card px-2 py-1 text-xs text-content-primary focus:outline-none focus:ring-1 focus:ring-primary-green" />
                       )}
+                      {selected && media.length > 1 && <div className="flex gap-2">
+                        <button type="button" aria-label="Đưa ảnh lên trước" disabled={immutable || media.findIndex((m) => linkedinMediaKey(m) === key) === 0} onClick={() => moveMedia(key, -1)} className="flex-1 rounded border border-surface-border bg-surface-card py-1 text-content-secondary disabled:opacity-30"><FiArrowUp className="mx-auto" /></button>
+                        <button type="button" aria-label="Đưa ảnh xuống sau" disabled={immutable || media.findIndex((m) => linkedinMediaKey(m) === key) === media.length - 1} onClick={() => moveMedia(key, 1)} className="flex-1 rounded border border-surface-border bg-surface-card py-1 text-content-secondary disabled:opacity-30"><FiArrowDown className="mx-auto" /></button>
+                      </div>}
                       <button type="button" disabled={immutable} onClick={() => toggleCandidate(item)} className={`w-full py-1.5 rounded font-medium text-xs transition ${selected ? "bg-rose-950/40 text-rose-300 border border-rose-800/40 hover:bg-rose-900/40" : "bg-surface-card hover:bg-surface-border text-content-secondary hover:text-content-primary border border-surface-border"}`}>
                         {selected ? "Bỏ chọn" : "Chọn ảnh này"}
                       </button>
@@ -272,6 +357,18 @@ const LinkedInPost: React.FC = () => {
           </button>
         )}
       </div>
+
+      <ConfirmDialog
+        isOpen={confirmAiOverwrite}
+        title="Ghi đè nội dung bằng AI?"
+        message="Nội dung LinkedIn hiện tại sẽ được thay thế bằng bản nháp AI mới."
+        confirmLabel="Tiếp tục tạo lại"
+        cancelLabel="Hủy"
+        variant="primary"
+        isLoading={draft.isPending}
+        onConfirm={() => draft.mutate()}
+        onCancel={() => setConfirmAiOverwrite(false)}
+      />
 
       <ConfirmDialog
         isOpen={confirm}

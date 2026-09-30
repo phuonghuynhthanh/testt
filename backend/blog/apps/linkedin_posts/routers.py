@@ -3,7 +3,7 @@
 import json
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, status
 
 from apps.auth.services import require_admin
 from apps.linkedin_posts.exceptions import LinkedInError
@@ -14,9 +14,12 @@ from apps.linkedin_posts.schemas import (
     LinkedInPostCreate,
     LinkedInPostUpdate,
     TopicProposalRequest,
+    UploadedMedia,
 )
 from apps.linkedin_posts.services.history import LinkedInHistoryService
+from apps.linkedin_posts.services.image import validate_image_bytes
 from apps.linkedin_posts.services.posts import LinkedInPostService
+from apps.core.storage import StorageService
 from config import settings
 
 router = APIRouter(prefix="/linkedin", tags=["LinkedIn"])
@@ -203,3 +206,46 @@ async def search_media(keywords: list[str], _: str = Depends(require_admin)):
     finally:
         if service._owns_client:
             await service.client.aclose()
+
+
+# Store one administrator-selected image as safe LinkedIn media metadata.
+@router.post(
+    "/media/upload",
+    status_code=status.HTTP_201_CREATED,
+    response_model=UploadedMedia,
+)
+def upload_media(image: UploadFile, _: str = Depends(require_admin)):
+    if image.content_type not in {"image/jpeg", "image/png", "image/gif"}:
+        raise HTTPException(
+            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            detail="Ảnh LinkedIn chỉ hỗ trợ JPEG, PNG và GIF",
+        )
+    # Reject spoofed MIME metadata before the object enters shared storage.
+    content = image.file.read(settings.MEDIA_MAX_UPLOAD_MB * 1024 * 1024 + 1)
+    image.file.seek(0)
+    if len(content) > settings.MEDIA_MAX_UPLOAD_MB * 1024 * 1024:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail="Kích thước hình ảnh vượt quá giới hạn cho phép",
+        )
+    try:
+        validated = validate_image_bytes(content)
+    except LinkedInError as error:
+        raise HTTPException(
+            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            detail="Nội dung file không khớp định dạng ảnh được hỗ trợ",
+        ) from error
+    if validated.media_type != image.content_type:
+        raise HTTPException(
+            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            detail="MIME type không khớp với nội dung file ảnh",
+        )
+    file_name = Path(image.filename or "Ảnh tải lên").name
+    object_key = StorageService.upload_image(image, folder="linkedin")
+    alt_text = " ".join(Path(file_name).stem.replace("_", " ").replace("-", " ").split()) or "Ảnh tải lên"
+    return UploadedMedia(
+        objectKey=object_key,
+        fileName=file_name,
+        altText=alt_text,
+        order=1,
+    ).model_dump()

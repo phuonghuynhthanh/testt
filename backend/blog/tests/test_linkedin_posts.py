@@ -1,17 +1,24 @@
 import asyncio
 import json
+from io import BytesIO
+from types import SimpleNamespace
 
 import httpx
 import pytest
+from fastapi import HTTPException, UploadFile
+from starlette.datastructures import Headers
 
+from apps.core.storage import StorageService
 from apps.linkedin_posts.exceptions import LinkedInError
-from apps.linkedin_posts.schemas import Connection, FactualReview, GeneratedPost, ImagePlan, LinkedInArticleSource, LinkedInMode, MediaMode, MediaPlan, OrganizationVerification, PexelsCandidate, ValidatedImage
+from apps.linkedin_posts.routers import upload_media
+from apps.linkedin_posts.schemas import Connection, FactualReview, GeneratedPost, ImagePlan, LinkedInArticleSource, LinkedInMode, LinkedInPostCreate, LinkedInPostStatus, LinkedInPostUpdate, LinkedInSourceType, MediaMode, MediaPlan, OrganizationVerification, PexelsCandidate, UploadedMedia, ValidatedImage
 from apps.linkedin_posts.services.generator import LinkedInDraftGenerator, _generation_prompt, render_generated_post
 from apps.linkedin_posts.services.image import validate_image_bytes
 from apps.linkedin_posts.services.linkedin_client import LinkedInClient, error_for_response, retry_after_milliseconds
 from apps.linkedin_posts.services.organization import OrganizationVerifier
 from apps.linkedin_posts.services.pexels import PexelsService
 from apps.linkedin_posts.services.publisher import OrganizationPublisher, escape_linkedin_little_text
+from apps.linkedin_posts.services.posts import LinkedInPostService
 from apps.publications.schemas import PublicationUpdate
 
 
@@ -281,3 +288,109 @@ def test_pexels_download_rejects_untrusted_host():
 def test_custom_mode_is_never_generated():
     with pytest.raises(LinkedInError, match="administrator"):
         asyncio.run(LinkedInDraftGenerator(object()).draft(LinkedInArticleSource(title="Manual", content="Manual text", category="TECHNOLOGY", mode=LinkedInMode.CUSTOM)))
+
+
+# Accept only server-owned LinkedIn object keys for uploaded media.
+def test_uploaded_media_rejects_paths_outside_linkedin_prefix():
+    with pytest.raises(ValueError):
+        UploadedMedia(objectKey="../private/image.png", fileName="image.png", altText="Image")
+
+
+# Return contract-ready metadata and reject WebP before storing a LinkedIn upload.
+def test_linkedin_upload_contract(monkeypatch):
+    monkeypatch.setattr(StorageService, "upload_image", lambda *_args, **_kwargs: "linkedin/image.gif")
+    image = UploadFile(filename="market-chart.gif", file=BytesIO(b"GIF89a\x01\x00\x01\x00"), headers=Headers({"content-type": "image/gif"}))
+
+    result = upload_media(image, "admin")
+
+    assert result == {
+        "provider": "upload",
+        "objectKey": "linkedin/image.gif",
+        "fileName": "market-chart.gif",
+        "altText": "market chart",
+        "order": 1,
+    }
+    webp = UploadFile(filename="chart.webp", file=BytesIO(b"webp"), headers=Headers({"content-type": "image/webp"}))
+    with pytest.raises(HTTPException) as error:
+        upload_media(webp, "admin")
+    assert error.value.status_code == 415
+
+    spoofed = UploadFile(filename="chart.png", file=BytesIO(b"GIF89a\x01\x00\x01\x00"), headers=Headers({"content-type": "image/png"}))
+    with pytest.raises(HTTPException) as error:
+        upload_media(spoofed, "admin")
+    assert error.value.status_code == 415
+
+    monkeypatch.setattr("apps.linkedin_posts.routers.settings.MEDIA_MAX_UPLOAD_MB", 0)
+    oversized = UploadFile(filename="chart.gif", file=BytesIO(b"GIF89a\x01\x00\x01\x00"), headers=Headers({"content-type": "image/gif"}))
+    with pytest.raises(HTTPException) as error:
+        upload_media(oversized, "admin")
+    assert error.value.status_code == 413
+
+
+# Reject invalid provider, alt text, and media cardinality at the API boundary.
+def test_linkedin_media_contract_rejects_invalid_payloads():
+    with pytest.raises(ValueError):
+        UploadedMedia(objectKey="linkedin/image.png", fileName="image.png", altText="")
+    with pytest.raises(ValueError):
+        LinkedInPostCreate(
+            content="Post",
+            mediaMode=MediaMode.SINGLE,
+            media=[{"provider": "remote", "imageUrl": "https://example.com/image.png"}],
+        )
+    with pytest.raises(HTTPException) as error:
+        LinkedInPostService.save_reviewed(
+            LinkedInPostCreate(content="Post", mediaMode=MediaMode.SINGLE, media=[]),
+        )
+    assert error.value.status_code == 422
+
+
+# Resolve mixed uploaded and Pexels assets in their reviewed order.
+def test_mixed_media_resolves_to_validated_images(monkeypatch):
+    uploaded_bytes = b"GIF89a\x01\x00\x01\x00"
+    monkeypatch.setattr(StorageService, "read_image_bytes", lambda *_args, **_kwargs: uploaded_bytes)
+
+    # Return deterministic Pexels bytes without making a network request.
+    async def download(_self, _candidate):
+        return ValidatedImage(media_type="image/gif", width=2, height=2, bytes=b"pexels")
+
+    monkeypatch.setattr(PexelsService, "download", download)
+    post = SimpleNamespace(media=[
+        {"provider": "pexels", "providerId": "1", "sourceUrl": "https://www.pexels.com/photo/1", "imageUrl": "https://images.pexels.com/photos/1.jpg", "photographer": "A", "attribution": "Photo by A on Pexels", "altText": "Pexels", "order": 2},
+        {"provider": "upload", "objectKey": "linkedin/image.gif", "fileName": "image.gif", "altText": "Upload", "order": 1},
+    ])
+
+    images = asyncio.run(LinkedInPostService._images(post))
+
+    assert [(image.width, alt) for image, alt in images] == [(1, "Upload"), (2, "Pexels")]
+
+
+# Persist every editable field accepted by the LinkedIn update contract.
+def test_linkedin_update_persists_complete_editor_payload(monkeypatch):
+    post = SimpleNamespace(
+        id="post-1", content="Old", topic="Old topic", media_mode="none", media=[],
+        fact_check={}, generation={}, source_type="CUSTOM", status=LinkedInPostStatus.DRAFT.value,
+        provider_post_id=None, published_at=None, last_error=None, manually_edited=False,
+        deleted_at=None, created_at=None, modified_at=None,
+    )
+    captured = {}
+    monkeypatch.setattr(LinkedInPostService, "get", classmethod(lambda cls, _post_id: post))
+
+    # Apply the captured model update to the fake record returned to serialization.
+    def update(_post_id, **values):
+        captured.update(values)
+        for key, value in values.items():
+            setattr(post, key, value)
+        return post
+
+    monkeypatch.setattr("apps.linkedin_posts.services.posts.LinkedInPost.update", update)
+    data = LinkedInPostUpdate(
+        topic="New topic", content="New content", factCheck={"requiresHumanFactCheck": False},
+        generation={"style": "technical"}, sourceType=LinkedInSourceType.INDEPENDENT_AI,
+    )
+
+    result = LinkedInPostService.update("post-1", data)
+
+    assert result["topic"] == "New topic"
+    assert captured["fact_check"] == {"requiresHumanFactCheck": False}
+    assert captured["generation"] == {"style": "technical"}
+    assert captured["source_type"] == "INDEPENDENT_AI"

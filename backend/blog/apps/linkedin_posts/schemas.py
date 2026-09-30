@@ -250,6 +250,16 @@ class PexelsCandidate(StrictModel):
     order: int = Field(default=1, ge=1)
 
 
+class UploadedMedia(StrictModel):
+    """Reference an administrator upload stored under the LinkedIn prefix."""
+
+    provider: Literal["upload"] = "upload"
+    objectKey: str = Field(pattern=r"^linkedin/[^/]+$")
+    fileName: str = Field(min_length=1, max_length=255)
+    altText: str = Field(min_length=1, max_length=4086)
+    order: int = Field(default=1, ge=1)
+
+
 class ValidatedImage(StrictModel):
     """Represent byte-validated image input for an upload request."""
 
@@ -303,7 +313,7 @@ class LinkedInPostCreate(StrictModel):
     content: str = Field(min_length=1)
     topic: str | None = None
     mediaMode: MediaMode = MediaMode.NONE
-    media: list[dict] = Field(default_factory=list, max_length=20)
+    media: list[PexelsCandidate | UploadedMedia] = Field(default_factory=list, max_length=20)
     factCheck: dict | None = None
     generation: dict | None = None
     sourceType: LinkedInSourceType = LinkedInSourceType.CUSTOM
@@ -313,9 +323,13 @@ class LinkedInPostCreate(StrictModel):
 class LinkedInPostUpdate(StrictModel):
     """Permit reviewed-content edits only before irreversible publication."""
 
+    topic: str | None = Field(default=None, min_length=1)
     content: str | None = Field(default=None, min_length=1)
     mediaMode: MediaMode | None = None
-    media: list[dict] | None = Field(default=None, max_length=20)
+    media: list[PexelsCandidate | UploadedMedia] | None = Field(default=None, max_length=20)
+    factCheck: dict | None = None
+    generation: dict | None = None
+    sourceType: LinkedInSourceType | None = None
 
 
 # Strip Markdown-only syntax while preserving paragraphs for SAME mode.

@@ -3,7 +3,7 @@
 from enum import Enum
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from apps.linkedin_posts.schemas import LinkedInPostAction, PexelsCandidate
+from apps.linkedin_posts.schemas import LinkedInPostAction, PexelsCandidate, UploadedMedia
 
 
 class PublicationStatus(str, Enum):
@@ -63,7 +63,7 @@ class LinkedInContentUpdate(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
     content: str | None = Field(default=None, min_length=1)
-    media: list[PexelsCandidate] | None = Field(default=None, max_length=20)
+    media: list[PexelsCandidate | UploadedMedia] | None = Field(default=None, max_length=20)
 
     # Require one actual edit and preserve exact selected-image ordering.
     @model_validator(mode="after")
@@ -85,7 +85,7 @@ class LinkedInCommandRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     mode: LinkedInMode
     content: str = Field(min_length=1)
-    media: list[PexelsCandidate] = Field(default_factory=list, max_length=20)
+    media: list[PexelsCandidate | UploadedMedia] = Field(default_factory=list, max_length=20)
     includeWebLink: bool = True
     factCheck: dict | None = None
     generation: dict | None = None

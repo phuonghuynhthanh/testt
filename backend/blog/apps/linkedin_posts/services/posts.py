@@ -17,13 +17,16 @@ from apps.linkedin_posts.schemas import (
     LinkedInPostUpdate,
     MediaMode,
     PexelsCandidate,
+    UploadedMedia,
 )
+from apps.linkedin_posts.services.image import validate_image_bytes
 from apps.linkedin_posts.services.generator import LinkedInDraftGenerator
 from apps.linkedin_posts.services.history import LinkedInHistoryService
 from apps.linkedin_posts.services.gemini import GeminiLinkedInProvider
 from apps.linkedin_posts.services.organization import OrganizationVerifier
 from apps.linkedin_posts.services.pexels import PexelsService
 from apps.linkedin_posts.services.publisher import OrganizationPublisher
+from apps.core.storage import StorageService
 from config import settings
 from config.database import DatabaseManager
 
@@ -118,7 +121,10 @@ class LinkedInPostService:
                 status_code=422, detail="Selected media does not match mediaMode"
             )
         for item in media:
-            PexelsCandidate.model_validate(item)
+            if item.get("provider") == "upload":
+                UploadedMedia.model_validate(item)
+            else:
+                PexelsCandidate.model_validate(item)
 
     # Save reviewed content through the single LinkedIn persistence boundary.
     @classmethod
@@ -129,7 +135,7 @@ class LinkedInPostService:
         *,
         ready: bool = False,
     ) -> LinkedInPost:
-        media = list(data.media)
+        media = [item.model_dump() for item in data.media]
         cls._validate_media(data.mediaMode.value, media)
         values = {
             "content": data.content.strip(),
@@ -216,12 +222,20 @@ class LinkedInPostService:
                 post_id,
                 **{
                     "content": values.get("content", post.content),
+                    "topic": values.get("topic", post.topic),
                     "media_mode": (
                         values.get("mediaMode", post.media_mode).value
                         if hasattr(values.get("mediaMode", post.media_mode), "value")
                         else values.get("mediaMode", post.media_mode)
                     ),
                     "media": values.get("media", post.media),
+                    "fact_check": values.get("factCheck", post.fact_check),
+                    "generation": values.get("generation", post.generation),
+                    "source_type": (
+                        values.get("sourceType", post.source_type).value
+                        if hasattr(values.get("sourceType", post.source_type), "value")
+                        else values.get("sourceType", post.source_type)
+                    ),
                     "status": LinkedInPostStatus.READY.value,
                     "manually_edited": True,
                 },
@@ -240,18 +254,27 @@ class LinkedInPostService:
         post = cls.get(post_id, include_deleted=True)
         return cls.serialize(LinkedInPost.update(post.id, deleted_at=None))
 
-    # Re-download validated selected Pexels assets without replacing review choices.
+    # Resolve ordered Pexels and administrator uploads into byte-validated images.
     @staticmethod
     async def _images(post: LinkedInPost) -> list[tuple[object, str]]:
         service = PexelsService(settings.PEXELS_API_KEY)
         try:
-            return [
-                (
-                    await service.download(PexelsCandidate.model_validate(item)),
-                    PexelsCandidate.model_validate(item).altText,
-                )
-                for item in sorted(post.media or [], key=lambda item: item["order"])
-            ]
+            images = []
+            for item in sorted(post.media or [], key=lambda value: value["order"]):
+                if item.get("provider") == "upload":
+                    upload = UploadedMedia.model_validate(item)
+                    try:
+                        content = StorageService.read_image_bytes(
+                            upload.objectKey,
+                            settings.MEDIA_MAX_UPLOAD_MB * 1024 * 1024,
+                        )
+                    except HTTPException as error:
+                        raise LinkedInError("invalid_image", str(error.detail)) from error
+                    images.append((validate_image_bytes(content), upload.altText))
+                else:
+                    candidate = PexelsCandidate.model_validate(item)
+                    images.append((await service.download(candidate), candidate.altText))
+            return images
         finally:
             if service._owns_client:
                 await service.client.aclose()

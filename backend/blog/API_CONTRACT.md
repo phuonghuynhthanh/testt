@@ -2,7 +2,7 @@
 
 Tài liệu đặc tả toàn bộ API endpoints của hệ thống Blog & CMS Quant-VN dành cho đội ngũ phát triển Frontend (Admin CMS & Client Website).
 
-> **Contract version:** 1.0.0<br>
+> **Contract version:** 1.1.0<br>
 > **Backend baseline:** commit bàn giao chứa tài liệu này<br>
 > **Nguồn kiểm chứng:** FastAPI OpenAPI tại `GET /openapi.json` (Swagger UI: `GET /docs`)<br>
 > **Quy tắc thay đổi:** Mọi thay đổi request, response, status code hoặc enum phải cập nhật tài liệu này và OpenAPI trong cùng pull request.
@@ -134,6 +134,7 @@ Các API danh sách quản trị sử dụng cấu trúc phân trang chuẩn:
 | 46 | `POST` | `/linkedin/posts/{post_id}/media/suggest` | Admin | Gợi ý ảnh Pexels cho bài đăng LinkedIn độc lập |
 | 47 | `GET` | `/linkedin/organization/verify` | Admin | Kiểm tra quyền truy cập và phân quyền LinkedIn Company Page |
 | 48 | `POST` | `/linkedin/media/search` | Admin | Tìm kiếm hình ảnh trực tiếp từ Pexels qua keywords |
+| 49 | `POST` | `/linkedin/media/upload` | Admin | Upload ảnh quản trị viên chọn cho bài LinkedIn |
 
 ---
 
@@ -883,6 +884,7 @@ true
 }
 ```
 - **Enum `action`**: `SAVE_DRAFT` (chỉ lưu, status chuyển READY) | `PUBLISH_NOW` (lưu và đăng ngay lên LinkedIn).
+- `media` chấp nhận cả ảnh Pexels và ảnh upload theo schema tại endpoint 49; thứ tự xuất bản lấy từ trường `order`.
 - **Response (200 OK)**: Trả về trạng thái publication đầy đủ.
 
 #### 30. Chỉnh sửa nội dung / media LinkedIn đã lưu (Update LinkedIn Content)
@@ -908,6 +910,7 @@ true
   ]
 }
 ```
+- `media` chấp nhận cùng union Pexels/upload như endpoint 29.
 - **Response (200 OK)**: Trả về đối tượng publication đã cập nhật.
 
 #### 31. Gợi ý hình ảnh Pexels cho bài LinkedIn của Blog (Suggest Media for Blog)
@@ -1092,6 +1095,16 @@ true
   "action": "SAVE_DRAFT"
 }
 ```
+- `media` chấp nhận cả ảnh Pexels như trên và ảnh upload theo schema:
+```json
+{
+  "provider": "upload",
+  "objectKey": "linkedin/4a2b918c-391a-4938-bdf2-f8314e1a0210.png",
+  "fileName": "market-chart.png",
+  "altText": "Biểu đồ thị trường",
+  "order": 1
+}
+```
 - **Enum `action`**:
   - `SAVE_DRAFT`: Lưu bài vào database ở trạng thái `READY` hoặc `DRAFT`.
   - `PUBLISH_NOW`: Lưu bài và thực hiện lệnh đăng ngay lên LinkedIn.
@@ -1105,9 +1118,13 @@ true
 - **Request Body**:
 ```json
 {
+  "topic": "Chủ đề đã cập nhật",
   "content": "Nội dung bài viết mới...",
   "mediaMode": "none",
-  "media": []
+  "media": [],
+  "factCheck": {"requiresHumanFactCheck": false, "factCheckNotes": []},
+  "generation": {},
+  "sourceType": "INDEPENDENT_AI"
 }
 ```
 > *Lưu ý*: Chỉ được sửa khi bài ở trạng thái `DRAFT`, `READY` hoặc `FAILED`. Nếu bài đã `PUBLISHED` hoặc đang `PUBLISHING`, server sẽ trả lỗi `409 Conflict`.
@@ -1301,6 +1318,7 @@ true
   "stock chart"
 ]
 ```
+
 - **Response (200 OK)**:
 ```json
 {
@@ -1319,6 +1337,27 @@ true
 }
 ```
 
+#### 49. Upload ảnh trực tiếp cho LinkedIn (Upload LinkedIn Media)
+- **Method & Path**: `POST /linkedin/media/upload`
+- **Auth**: Admin (`Bearer <token>`)
+- **Headers**: `Content-Type: multipart/form-data`
+- **Form Fields**:
+  - `image` *(binary file, required)*: JPEG, PNG hoặc GIF; giới hạn bởi `MEDIA_MAX_UPLOAD_MB`, mặc định 10 MB.
+- **Response (201 Created)**:
+```json
+{
+  "provider": "upload",
+  "objectKey": "linkedin/4a2b918c-391a-4938-bdf2-f8314e1a0210.png",
+  "fileName": "market-chart.png",
+  "altText": "market chart",
+  "order": 1
+}
+```
+- `objectKey` luôn thuộc prefix `linkedin/`. Backend đọc trực tiếp object này khi xuất bản và không tải URL tùy ý do client cung cấp.
+- **Errors**:
+  - `413 Request Entity Too Large`: File vượt giới hạn cấu hình.
+  - `415 Unsupported Media Type`: File không phải JPEG, PNG hoặc GIF.
+
 ---
 
 ## 4. BẢNG MÃ LỖI VÀ XỬ LÝ SỰ CỐ (ERROR HANDLING GUIDE)
@@ -1330,7 +1369,7 @@ true
 | **404 Not Found** | Không tìm thấy ID bài viết / danh mục | Hiển thị màn hình 404 hoặc thông báo không tìm thấy bản ghi |
 | **409 Conflict** | Sửa bài đăng đang xuất bản, slug trùng, hoặc retry sai trạng thái | Không cho phép bấm nút chỉnh sửa/retry khi trạng thái không hợp lệ |
 | **413 Request Entity Too Large** | Ảnh upload vượt quá giới hạn `MEDIA_MAX_UPLOAD_MB` (mặc định 10 MB) | Lấy giới hạn của môi trường bàn giao và chặn file vượt giới hạn trước khi upload |
-| **415 Unsupported Media Type** | File ảnh không phải JPG/PNG/WebP/GIF | Kiểm tra mime-type file ở client trước khi submit |
+| **415 Unsupported Media Type** | File LinkedIn không phải JPEG/PNG/GIF, MIME sai hoặc chữ ký byte không hợp lệ | Kiểm tra mime-type file ở client trước khi submit |
 | **422 Unprocessable Entity** | Thiếu trường bắt buộc hoặc sai format Pydantic | Đánh dấu đỏ (highlight) các trường input bị lỗi dựa theo mảng `loc` trong response |
 | **429 Too Many Requests** | Vượt giới hạn API rate limit của LinkedIn / Gemini | Thông báo người dùng chờ vài phút trước khi thực hiện lại tác vụ AI / xuất bản |
 | **503 Service Unavailable** | MinIO hoặc LinkedIn API tạm thời không kết nối được | Bật banner cảnh báo hệ thống dịch vụ bên thứ 3 đang gián đoạn, cho phép bấm thử lại |

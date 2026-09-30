@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-toastify";
+import { FiArrowDown, FiArrowUp, FiUpload } from "react-icons/fi";
 import {
   generateLinkedInDraft,
   commandBlogLinkedIn,
@@ -12,13 +13,16 @@ import {
   verifyLinkedInOrganization,
 } from "../../../services/publication/handlePublication";
 import { isManualDraftConflict } from "../../../services/publication/error";
+import { uploadLinkedInMedia } from "../../../services/linkedin/handleLinkedIn";
 import { ConfirmDialog } from "../../../shared/ui";
 import { apiErrorMessage as publicationErrorMessage } from "../../../types/Api";
 import { formatCmsDate } from "../../../utils/date";
+import { linkedinMediaKey, linkedinMediaUrl } from "../../../utils/linkedinMedia";
 import type {
   FactualReview,
   GeneratedLinkedInPost,
   LinkedInMediaMode,
+  LinkedInMediaAsset,
   LinkedInMode,
   OrganizationVerification,
   PexelsCandidate,
@@ -39,15 +43,15 @@ type PendingConfirmation =
   | { kind: "replace-draft" }
   | null;
 
-// Identify selected Pexels media without mistaking generated image-plan entries for candidates.
-const isPexelsCandidate = (
+// Identify persisted media without mistaking generated image-plan entries for selections.
+const isSelectedMedia = (
   media: Publication["linkedinMedia"][number],
-): media is PexelsCandidate => "providerId" in media;
+): media is LinkedInMediaAsset => "provider" in media;
 
 // Compare only editable media fields so server refreshes do not create false dirty states.
-const mediaSignature = (items: PexelsCandidate[]): string =>
+const mediaSignature = (items: LinkedInMediaAsset[]): string =>
   JSON.stringify(
-    items.map(({ providerId, altText, order }) => ({ providerId, altText, order })),
+    items.map((item) => ({ key: linkedinMediaKey(item), altText: item.altText, order: item.order })),
   );
 
 // Enforce the exact image count represented by the backend media mode.
@@ -97,7 +101,7 @@ const PublicationPanel = ({
   const [factCheck, setFactCheck] = useState<FactualReview>({ requiresHumanFactCheck: false, factCheckNotes: [] });
   const [generation, setGeneration] = useState<GeneratedLinkedInPost>({});
   const [suggestions, setSuggestions] = useState<PexelsCandidate[]>([]);
-  const [selectedMedia, setSelectedMedia] = useState<PexelsCandidate[]>([]);
+  const [selectedMedia, setSelectedMedia] = useState<LinkedInMediaAsset[]>([]);
   const [keywordInput, setKeywordInput] = useState("");
   const [verification, setVerification] = useState<OrganizationVerification | null>(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
@@ -115,7 +119,7 @@ const PublicationPanel = ({
   });
   const publication = publicationQuery.data;
   const savedMedia = useMemo(
-    () => publication?.linkedinMedia.filter(isPexelsCandidate) ?? [],
+    () => publication?.linkedinMedia.filter(isSelectedMedia) ?? [],
     [publication],
   );
   const effectiveIncludeWebLink = publishWeb && publishLinkedin && includeWebLink;
@@ -149,7 +153,7 @@ const PublicationPanel = ({
     setMediaMode(publication.linkedinMediaMode);
     setFactCheck(publication.linkedinFactCheck ?? { requiresHumanFactCheck: false, factCheckNotes: [] });
     setGeneration(publication.linkedinGenerated ?? {});
-    setSelectedMedia(publication.linkedinMedia.filter(isPexelsCandidate));
+    setSelectedMedia(publication.linkedinMedia.filter(isSelectedMedia));
     if (!publication.linkedinFactCheck?.requiresHumanFactCheck) {
       setFactCheckAcknowledged(true);
     }
@@ -248,6 +252,18 @@ const PublicationPanel = ({
     onSuccess: (items) => setSuggestions(items),
     onError: (error) => toast.error(publicationErrorMessage(error)),
   });
+  const uploadMutation = useMutation({
+    mutationFn: (files: File[]) => Promise.all(files.map(uploadLinkedInMedia)),
+    onSuccess: (items) => {
+      const maximum = mediaMode === "single-image" ? 1 : 20;
+      const next = (mediaMode === "single-image" ? items.slice(0, 1) : [...selectedMedia, ...items])
+        .slice(0, maximum)
+        .map((item, index) => ({ ...item, order: index + 1 }));
+      setSelectedMedia(next);
+      toast.success(`Đã tải lên ${items.length} ảnh.`);
+    },
+    onError: (error) => toast.error(publicationErrorMessage(error)),
+  });
   const publishMutation = useMutation({
     // Send PUBLISH_NOW directly for reviewed LinkedIn copy; Web-only keeps its configured-channel command.
     mutationFn: () => publishLinkedin ? commandBlogLinkedIn(blogId, { mode, content, media: selectedMedia, includeWebLink: effectiveIncludeWebLink, factCheck, generation: { ...generation }, action: "PUBLISH_NOW" }) : publishBlog(blogId),
@@ -312,10 +328,11 @@ const PublicationPanel = ({
   };
 
   // Select candidates in deterministic order without exceeding provider limits.
-  const toggleMedia = (candidate: PexelsCandidate) => {
-    const exists = selectedMedia.some((item) => item.providerId === candidate.providerId);
+  const toggleMedia = (candidate: LinkedInMediaAsset) => {
+    const key = linkedinMediaKey(candidate);
+    const exists = selectedMedia.some((item) => linkedinMediaKey(item) === key);
     const next = exists
-      ? selectedMedia.filter((item) => item.providerId !== candidate.providerId)
+      ? selectedMedia.filter((item) => linkedinMediaKey(item) !== key)
       : [...selectedMedia, candidate];
     const maximum = mediaMode === "single-image" ? 1 : 20;
     setSelectedMedia(
@@ -323,12 +340,24 @@ const PublicationPanel = ({
     );
   };
 
+  // Move one selected image while keeping contiguous provider order values.
+  const moveMedia = (key: string, delta: number) => {
+    const index = selectedMedia.findIndex((item) => linkedinMediaKey(item) === key);
+    const destination = index + delta;
+    if (index < 0 || destination < 0 || destination >= selectedMedia.length) return;
+    const next = [...selectedMedia];
+    [next[index], next[destination]] = [next[destination], next[index]];
+    setSelectedMedia(next.map((item, order) => ({ ...item, order: order + 1 })));
+  };
+
   // Keep reviewed alt text synchronized with a selected candidate.
-  const updateAltText = (providerId: string, altText: string) => {
-    const update = (item: PexelsCandidate) =>
-      item.providerId === providerId ? { ...item, altText } : item;
-    setSuggestions((items) => items.map(update));
-    setSelectedMedia((items) => items.map(update));
+  const updateAltText = (key: string, altText: string) => {
+    setSuggestions((items) => items.map((item) =>
+      linkedinMediaKey(item) === key ? { ...item, altText } : item,
+    ));
+    setSelectedMedia((items) => items.map((item) =>
+      linkedinMediaKey(item) === key ? { ...item, altText } : item,
+    ));
   };
 
   // Request a safe initial generation and let the backend identify manual-edit conflicts.
@@ -408,7 +437,7 @@ const PublicationPanel = ({
     ...selectedMedia,
     ...suggestions.filter(
       (candidate) =>
-        !selectedMedia.some((item) => item.providerId === candidate.providerId),
+        !selectedMedia.some((item) => linkedinMediaKey(item) === linkedinMediaKey(candidate)),
     ),
   ];
   const modeDescription = {
@@ -474,17 +503,26 @@ const PublicationPanel = ({
               {mediaMode !== "none" && <div className="flex flex-wrap gap-2">
                 <input value={keywordInput} onChange={(event) => setKeywordInput(event.target.value)} placeholder="Từ khóa (tùy chọn)..." className="rounded-lg border border-surface-border bg-surface-elevated px-3 py-1.5 text-xs text-content-primary placeholder-content-muted focus:outline-none focus:ring-1 focus:ring-primary-green" />
                 <button type="button" onClick={searchMedia} disabled={suggestionsMutation.isPending || isPublished} className="rounded-lg bg-indigo-600 hover:bg-indigo-700 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50 transition-colors">{suggestionsMutation.isPending ? "Đang tìm…" : keywordInput.trim() ? "Tìm lại" : "Tìm gợi ý"}</button>
+                <label className={`inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-surface-border bg-surface-elevated px-3 py-1.5 text-xs font-semibold text-content-primary transition-colors hover:bg-surface-hover ${uploadMutation.isPending || isPublished ? "pointer-events-none opacity-50" : ""}`}>
+                  <FiUpload className="text-sm" /><span>{uploadMutation.isPending ? "Đang tải…" : "Tải ảnh lên"}</span>
+                  <input type="file" multiple={mediaMode === "multi-image"} accept="image/jpeg,image/png,image/gif" className="hidden" onChange={(event) => { const files = Array.from(event.target.files ?? []); if (files.length) uploadMutation.mutate(files); event.currentTarget.value = ""; }} />
+                </label>
               </div>}
             </div>
 
             {displayedCandidates.length > 0 && <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">{displayedCandidates.map((candidate) => {
-              const selected = selectedMedia.some((item) => item.providerId === candidate.providerId);
-              return <article key={candidate.providerId} className={`overflow-hidden rounded-xl border bg-surface-elevated text-xs transition ${selected ? "border-primary-green ring-1 ring-primary-green" : "border-surface-border"}`}>
-                <img src={candidate.imageUrl} alt={candidate.altText} className="h-32 w-full object-cover" />
+              const key = linkedinMediaKey(candidate);
+              const selected = selectedMedia.some((item) => linkedinMediaKey(item) === key);
+              return <article key={key} className={`overflow-hidden rounded-xl border bg-surface-elevated text-xs transition ${selected ? "border-primary-green ring-1 ring-primary-green" : "border-surface-border"}`}>
+                <img src={linkedinMediaUrl(candidate)} alt={candidate.altText} className="h-32 w-full object-cover" />
                 <div className="space-y-2 p-3 text-content-primary">
-                  <label className="block text-[11px] text-content-muted">Văn bản thay thế (Alt text)<input value={candidate.altText} onChange={(event) => updateAltText(candidate.providerId, event.target.value)} className="mt-1 w-full rounded border border-surface-border bg-surface-card p-1.5 text-xs text-content-primary focus:outline-none focus:ring-1 focus:ring-primary-green" /></label>
-                  <p className="text-content-muted truncate">Ảnh bởi {candidate.photographer}</p>
-                  <a href={candidate.sourceUrl} target="_blank" rel="noreferrer" className="block text-cyan-400 hover:text-cyan-300 underline text-[11px]">Xem trên Pexels</a>
+                  <label className="block text-[11px] text-content-muted">Văn bản thay thế (Alt text)<input value={candidate.altText} onChange={(event) => updateAltText(key, event.target.value)} className="mt-1 w-full rounded border border-surface-border bg-surface-card p-1.5 text-xs text-content-primary focus:outline-none focus:ring-1 focus:ring-primary-green" /></label>
+                  <p className="text-content-muted truncate">{candidate.provider === "pexels" ? `Ảnh bởi ${candidate.photographer}` : candidate.fileName}</p>
+                  {candidate.provider === "pexels" && <a href={candidate.sourceUrl} target="_blank" rel="noreferrer" className="block text-cyan-400 hover:text-cyan-300 underline text-[11px]">Xem trên Pexels</a>}
+                  {selected && selectedMedia.length > 1 && <div className="flex gap-2">
+                    <button type="button" aria-label="Đưa ảnh lên trước" disabled={isPublished || selectedMedia.findIndex((item) => linkedinMediaKey(item) === key) === 0} onClick={() => moveMedia(key, -1)} className="flex-1 rounded border border-surface-border bg-surface-card py-1 text-content-secondary disabled:opacity-30"><FiArrowUp className="mx-auto" /></button>
+                    <button type="button" aria-label="Đưa ảnh xuống sau" disabled={isPublished || selectedMedia.findIndex((item) => linkedinMediaKey(item) === key) === selectedMedia.length - 1} onClick={() => moveMedia(key, 1)} className="flex-1 rounded border border-surface-border bg-surface-card py-1 text-content-secondary disabled:opacity-30"><FiArrowDown className="mx-auto" /></button>
+                  </div>}
                   <button type="button" onClick={() => toggleMedia(candidate)} className={`w-full py-1.5 rounded-lg text-xs font-medium transition ${selected ? "bg-rose-950/40 text-rose-300 border border-rose-800/40 hover:bg-rose-900/40" : "bg-blue-600 hover:bg-blue-700 text-white"}`}>{selected ? "Bỏ chọn" : "Chọn ảnh này"}</button>
                 </div>
               </article>;

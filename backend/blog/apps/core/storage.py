@@ -119,6 +119,34 @@ class StorageService:
             )
         return object_key
 
+    # Read one bounded stored object without exposing storage credentials or URLs.
+    @classmethod
+    def read_image_bytes(cls, object_key: str, max_bytes: int) -> bytes:
+        safe_key = cls._sanitize_relative_path(object_key)
+        if not safe_key or safe_key != object_key.strip().strip("/"):
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Không tìm thấy hình ảnh")
+        response = None
+        try:
+            cls.initialize()
+            response = cls._get_client().get_object(settings.MINIO_BUCKET, safe_key)
+            content = response.read(max_bytes + 1)
+            if len(content) > max_bytes:
+                raise HTTPException(
+                    status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                    detail="Kích thước hình ảnh vượt quá giới hạn cho phép",
+                )
+            return content
+        except HTTPException:
+            raise
+        except S3Error as error:
+            if error.code in {"NoSuchKey", "NoSuchObject", "NoSuchBucket"}:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Không tìm thấy hình ảnh") from error
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Không thể tải hình ảnh") from error
+        finally:
+            if response is not None:
+                response.close()
+                response.release_conn()
+
     # Create a short-lived download URL without exposing MinIO credentials to browsers.
     @classmethod
     def presigned_image_url(cls, object_key: str) -> str:

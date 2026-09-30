@@ -2,10 +2,10 @@ import getAxiosClient from "../../lib/axios/axiosClient";
 import type { PaginatedResponse } from "../../types/Api";
 import type { LinkedInDraftResponse, LinkedInHistory, LinkedInPost, LinkedInPostStatus, LinkedInSourceType } from "../../types/LinkedIn";
 import type { LinkedInAudience } from "../../types/LinkedIn";
-import type { FactualReview, GeneratedLinkedInPost, LinkedInMediaMode, OrganizationVerification, PexelsCandidate } from "../../types/Publication";
+import type { FactualReview, GeneratedLinkedInPost, LinkedInMediaAsset, LinkedInMediaMode, OrganizationVerification, PexelsCandidate, UploadedMedia } from "../../types/Publication";
 
 export interface LinkedInListParams { page: number; pageSize: number; status?: LinkedInPostStatus; sourceType?: LinkedInSourceType; }
-export interface LinkedInPostInput { content: string; topic: string; mediaMode: LinkedInMediaMode; media: PexelsCandidate[]; factCheck: FactualReview; generation: GeneratedLinkedInPost; sourceType: LinkedInSourceType; action?: "SAVE_DRAFT" | "PUBLISH_NOW"; }
+export interface LinkedInPostInput { content: string; topic: string; mediaMode: LinkedInMediaMode; media: LinkedInMediaAsset[]; factCheck: FactualReview; generation: GeneratedLinkedInPost; sourceType: LinkedInSourceType; action?: "SAVE_DRAFT" | "PUBLISH_NOW"; }
 
 // Fetch one filtered page of standalone LinkedIn posts.
 export const listLinkedInPosts = async (params: LinkedInListParams): Promise<PaginatedResponse<LinkedInPost>> => (await getAxiosClient().get("/linkedin/posts", { params })).data;
@@ -31,6 +31,12 @@ export const retryLinkedInPost = async (id: string) => (await getAxiosClient().p
 export const suggestPostMedia = async (id: string, keywords: string[] = []) => (await getAxiosClient().post<{ items: PexelsCandidate[] }>(`/linkedin/posts/${id}/media/suggest`, keywords)).data.items;
 // Search Pexels directly for an unsaved post.
 export const searchLinkedInMedia = async (keywords: string[]) => (await getAxiosClient().post<{ items: PexelsCandidate[] }>("/linkedin/media/search", keywords)).data.items;
+// Upload one administrator image and return contract-ready LinkedIn media metadata.
+export const uploadLinkedInMedia = async (file: File) => {
+  const form = new FormData();
+  form.append("image", file);
+  return (await getAxiosClient().post<UploadedMedia>("/linkedin/media/upload", form)).data;
+};
 // Load recent live Company Page history.
 export const getLinkedInHistory = async (limit = 5) => (await getAxiosClient().get<LinkedInHistory>("/linkedin/history/recent", { params: { limit } })).data;
 // Synchronize provider history into the CMS.

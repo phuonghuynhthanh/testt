@@ -8,7 +8,7 @@ import { createUrl } from "../../../utils/blogUtils";
 import { apiErrorMessage } from "../../../types/Api";
 import type { IBlogData, SEO } from "../../../types/Blog";
 import { createBlogPost, generateBlogDraft } from "../../../services/blog/handleBlog";
-import { listCategories } from "../../../services/category/handleCategory";
+import { createCategory, listCategories } from "../../../services/category/handleCategory";
 import { PageHeader, SectionHeading, ConfirmDialog } from "../../../shared/ui";
 
 const EMPTY_BLOG: IBlogData = {
@@ -40,6 +40,20 @@ const BlogCreate: React.FC = () => {
   const categories = useQuery({
     queryKey: ["categories", { page: 1, pageSize: 100 }],
     queryFn: () => listCategories(),
+  });
+  const categoryName = blog.category.trim();
+  const categoryExists = categories.data?.items.some(
+    (item) => item.name.trim().toLocaleLowerCase("vi-VN") === categoryName.toLocaleLowerCase("vi-VN"),
+  );
+
+  const createCategoryMutation = useMutation({
+    mutationFn: () => createCategory(categoryName),
+    onSuccess: async (category) => {
+      updateBlog("category", category.name);
+      await client.invalidateQueries({ queryKey: ["categories"] });
+      toast.success(`Đã tạo danh mục “${category.name}”.`);
+    },
+    onError: (error) => toast.error(apiErrorMessage(error)),
   });
 
   // Update a top-level blog field.
@@ -190,6 +204,16 @@ const BlogCreate: React.FC = () => {
                 <option key={item.id} value={item.name} />
               ))}
             </datalist>
+            {categoryName && !categoryExists && (
+              <button
+                type="button"
+                disabled={createCategoryMutation.isPending}
+                onClick={() => createCategoryMutation.mutate()}
+                className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-primary-green/30 bg-primary-green/10 px-3 py-1.5 text-xs font-semibold text-primary-green transition-colors hover:bg-primary-green/15 disabled:opacity-50"
+              >
+                <span>{createCategoryMutation.isPending ? "Đang tạo danh mục..." : `+ Tạo danh mục “${categoryName}”`}</span>
+              </button>
+            )}
           </div>
 
           <div>

@@ -22,6 +22,16 @@ export interface PexelsCandidate {
   order: number;
 }
 
+export interface UploadedMedia {
+  provider: "upload";
+  objectKey: string;
+  fileName: string;
+  altText: string;
+  order: number;
+}
+
+export type LinkedInMediaAsset = PexelsCandidate | UploadedMedia;
+
 export interface ImagePlan {
   slotId: string;
   order: number;
@@ -71,7 +81,7 @@ export interface Publication {
   linkedinPublishedAt: string | null;
   linkedinError: LinkedInErrorData | null;
   linkedinMediaMode: LinkedInMediaMode;
-  linkedinMedia: Array<PexelsCandidate | ImagePlan>;
+  linkedinMedia: Array<LinkedInMediaAsset | ImagePlan>;
   linkedinFactCheck: FactualReview | null;
   linkedinGenerated: GeneratedLinkedInPost | null;
 }
@@ -83,7 +93,7 @@ export interface LinkedInDraftResponse {
   generated: GeneratedLinkedInPost;
 }
 
-export interface LinkedInCommand { mode: LinkedInMode; content: string; media: PexelsCandidate[]; includeWebLink: boolean; factCheck: FactualReview; generation: Record<string, unknown>; action: "SAVE_DRAFT" | "PUBLISH_NOW"; }
+export interface LinkedInCommand { mode: LinkedInMode; content: string; media: LinkedInMediaAsset[]; includeWebLink: boolean; factCheck: FactualReview; generation: Record<string, unknown>; action: "SAVE_DRAFT" | "PUBLISH_NOW"; }
 
 export interface PublicationUpdate {
   publishWeb: boolean;
@@ -100,7 +110,7 @@ export interface LinkedInDraftRequest {
 
 export interface LinkedInContentUpdate {
   content?: string;
-  media?: PexelsCandidate[];
+  media?: LinkedInMediaAsset[];
 }
 
 export interface MediaSuggestionRequest {
