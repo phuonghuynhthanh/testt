@@ -81,10 +81,11 @@ def get_blog_content_by_link_post(link_post: str, limit: Optional[int] = 4):
 def create_blog(
     blog_data: str = Form(...),
     _: str = Depends(require_admin),
-    image: UploadFile = File(...),
+    image: UploadFile = File(None),
+    action: schemas.BlogCreateAction = Form(schemas.BlogCreateAction.SAVE_PENDING),
 ):
     blog_data = schemas.BlogCreate(**json.loads(blog_data))
-    return BlogServices.create_blog(blog_data=blog_data, image=image)
+    return BlogServices.create_blog(blog_data=blog_data, image=image, action=action)
 
 
 # Update an existing Blog under administrator authorization.
@@ -119,6 +120,21 @@ def delete_blog(
 
 
 # Generate Blog markdown for the CMS administrator.
+@router.post(
+    "/ai/generate-draft",
+    summary="Generate a review-only Blog draft",
+    status_code=status.HTTP_200_OK,
+)
+# Generate a Blog proposal without writing any database or storage state.
+async def generate_blog_draft(
+    data: schemas.GenerateBlogData, _: str = Depends(require_admin)
+):
+    return await BlogServices.ai_generate_blog_markdown_with_title(
+        data.title, data.category
+    )
+
+
+# Keep the legacy endpoint as a side-effect-free alias during client migration.
 @router.post(
     "/ai-generate-markdown",
     summary="AI tạo nội dung bài viết theo tiêu đề",

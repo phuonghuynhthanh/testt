@@ -28,6 +28,32 @@ class MediaMode(str, Enum):
     MULTI = "multi-image"
 
 
+class LinkedInPostAction(str, Enum):
+    """Make persistence-only and immediate provider publication explicit."""
+
+    SAVE_DRAFT = "SAVE_DRAFT"
+    PUBLISH_NOW = "PUBLISH_NOW"
+
+
+class LinkedInPostStatus(str, Enum):
+    """Represent the provider-safe standalone LinkedIn lifecycle."""
+
+    DRAFT = "DRAFT"
+    READY = "READY"
+    PUBLISHING = "PUBLISHING"
+    PUBLISHED = "PUBLISHED"
+    FAILED = "FAILED"
+    REVIEW_REQUIRED = "REVIEW_REQUIRED"
+
+
+class LinkedInSourceType(str, Enum):
+    """Describe origin without coupling a post to a Blog."""
+
+    INDEPENDENT_AI = "INDEPENDENT_AI"
+    BLOG_ADAPTATION = "BLOG_ADAPTATION"
+    CUSTOM = "CUSTOM"
+
+
 class ImagePlan(StrictModel):
     """Describe a reviewable image suggestion from the structured generator."""
 
@@ -49,10 +75,16 @@ class MediaPlan(StrictModel):
     # Enforce LinkedIn's supported image cardinalities before a provider request.
     @model_validator(mode="after")
     def validate_images(self):
-        expected = {MediaMode.NONE: (0, 0), MediaMode.SINGLE: (1, 1), MediaMode.MULTI: (2, 20)}[self.mode]
+        expected = {
+            MediaMode.NONE: (0, 0),
+            MediaMode.SINGLE: (1, 1),
+            MediaMode.MULTI: (2, 20),
+        }[self.mode]
         if not expected[0] <= len(self.images) <= expected[1]:
             raise ValueError(f"media.images does not match {self.mode.value}")
-        if [image.order for image in self.images] != list(range(1, len(self.images) + 1)):
+        if [image.order for image in self.images] != list(
+            range(1, len(self.images) + 1)
+        ):
             raise ValueError("media image order must be sequential")
         if len({image.slotId for image in self.images}) != len(self.images):
             raise ValueError("media image slot IDs must be unique")
@@ -69,9 +101,29 @@ class Connection(StrictModel):
 class GeneratedPost(StrictModel):
     """Validate Gemini's structured LinkedIn draft before persisting it."""
 
-    style: Literal["relatable-memory", "one-liner", "technical-analogy", "question-first", "mini-problem", "contrarian", "short-story", "school-vs-market", "developer-pain", "observation"]
-    openingType: Literal["question", "memory", "statement", "contrast", "problem", "story", "one-liner"]
-    audience: Literal["math", "competitive-programming", "software-engineering", "machine-learning", "systems", "mixed"]
+    style: Literal[
+        "relatable-memory",
+        "one-liner",
+        "technical-analogy",
+        "question-first",
+        "mini-problem",
+        "contrarian",
+        "short-story",
+        "school-vs-market",
+        "developer-pain",
+        "observation",
+    ]
+    openingType: Literal[
+        "question", "memory", "statement", "contrast", "problem", "story", "one-liner"
+    ]
+    audience: Literal[
+        "math",
+        "competitive-programming",
+        "software-engineering",
+        "machine-learning",
+        "systems",
+        "mixed",
+    ]
     hookSource: str = Field(min_length=1)
     connection: Connection
     insight: str = Field(min_length=1)
@@ -86,8 +138,19 @@ class GeneratedPost(StrictModel):
     @classmethod
     def infer_opening_type(cls, value):
         if isinstance(value, dict) and "openingType" not in value:
-            inferred = {"relatable-memory": "memory", "one-liner": "one-liner", "question-first": "question", "mini-problem": "problem", "contrarian": "contrast", "short-story": "story", "school-vs-market": "contrast"}
-            value = {**value, "openingType": inferred.get(value.get("style"), "statement")}
+            inferred = {
+                "relatable-memory": "memory",
+                "one-liner": "one-liner",
+                "question-first": "question",
+                "mini-problem": "problem",
+                "contrarian": "contrast",
+                "short-story": "story",
+                "school-vs-market": "contrast",
+            }
+            value = {
+                **value,
+                "openingType": inferred.get(value.get("style"), "statement"),
+            }
         return value
 
     # Keep factual-review flags internally consistent and normalize canonical hashtags.
@@ -97,19 +160,34 @@ class GeneratedPost(StrictModel):
 
         if self.requiresHumanFactCheck != bool(self.factCheckNotes):
             raise ValueError("requiresHumanFactCheck must match factCheckNotes")
-        self.content = re.sub("\u0009ext\\{([^{}\\r\\n]*)\\}", lambda match: match.group(1).strip(), self.content)
-        if any((ord(char) < 32 and char not in "\n\r") or 127 <= ord(char) <= 159 for char in self.content):
+        self.content = re.sub(
+            "\u0009ext\\{([^{}\\r\\n]*)\\}",
+            lambda match: match.group(1).strip(),
+            self.content,
+        )
+        if any(
+            (ord(char) < 32 and char not in "\n\r") or 127 <= ord(char) <= 159
+            for char in self.content
+        ):
             raise ValueError("content must not contain control characters")
-        content_hashtags = re.findall(r"(?<!\w)#[^\W_][\w]*", self.content, flags=re.UNICODE)
-        self.content = re.sub(r"(?<!\w)#[^\W_][\w]*", "", self.content, flags=re.UNICODE)
+        content_hashtags = re.findall(
+            r"(?<!\w)#[^\W_][\w]*", self.content, flags=re.UNICODE
+        )
+        self.content = re.sub(
+            r"(?<!\w)#[^\W_][\w]*", "", self.content, flags=re.UNICODE
+        )
         self.content = re.sub(r" +(?=\r?$)", "", self.content, flags=re.MULTILINE)
         self.content = re.sub(r" {2,}", " ", self.content).strip()
         if not self.content:
             raise ValueError("content must contain text besides hashtags")
         normalized = []
         for tag in ["#VietQuant", *content_hashtags, *self.hashtags]:
-            clean = "#" + "".join(char for char in tag.lstrip("#") if char.isalnum() or char == "_")
-            if clean != "#" and clean.casefold() not in {item.casefold() for item in normalized}:
+            clean = "#" + "".join(
+                char for char in tag.lstrip("#") if char.isalnum() or char == "_"
+            )
+            if clean != "#" and clean.casefold() not in {
+                item.casefold() for item in normalized
+            }:
                 normalized.append(clean)
         if not 1 <= len(normalized) <= 4:
             raise ValueError("hashtags must contain 1 to 4 unique values")
@@ -195,6 +273,35 @@ class DraftResult(StrictModel):
     media: MediaPlan
     factualReview: FactualReview
     generated: GeneratedPost | None = None
+
+
+class IndependentDraftRequest(StrictModel):
+    """Request an independent LinkedIn preview without a Blog reference."""
+
+    topic: str = Field(min_length=1)
+    context: str = ""
+    targetAudience: str = "mixed"
+    requestedMediaMode: MediaMode = MediaMode.NONE
+
+
+class LinkedInPostCreate(StrictModel):
+    """Accept reviewed AI or manual content for saving or direct publication."""
+
+    content: str = Field(min_length=1)
+    mediaMode: MediaMode = MediaMode.NONE
+    media: list[dict] = Field(default_factory=list, max_length=20)
+    factCheck: dict | None = None
+    generation: dict | None = None
+    sourceType: LinkedInSourceType = LinkedInSourceType.CUSTOM
+    action: LinkedInPostAction = LinkedInPostAction.SAVE_DRAFT
+
+
+class LinkedInPostUpdate(StrictModel):
+    """Permit reviewed-content edits only before irreversible publication."""
+
+    content: str | None = Field(default=None, min_length=1)
+    mediaMode: MediaMode | None = None
+    media: list[dict] | None = Field(default=None, max_length=20)
 
 
 # Strip Markdown-only syntax while preserving paragraphs for SAME mode.

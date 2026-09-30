@@ -19,7 +19,7 @@ class GeminiAiService:
     async def generate_seo_keywords(cls, blog_title: str, blog_content: str):
         prompt = PromptService.prompt_seo_keywords(blog_title, blog_content)
         service = cls()
-        result = service.get_prompt_completion(prompt)
+        result = await service.get_prompt_completion(prompt)
 
         try:
             match = re.search(r"\[.*?\]", result, re.DOTALL)
@@ -37,7 +37,7 @@ class GeminiAiService:
     async def generate_seo_description(cls, blog_title: str, blog_content: str) -> str:
         prompt = PromptService.prompt_seo_description(blog_title, blog_content)
         service = cls()
-        return service.get_prompt_completion(prompt)
+        return await service.get_prompt_completion(prompt)
 
     @classmethod
     async def generate_blog_markdown(cls, title: str) -> GenerateSEOBlogMarkdownOut:

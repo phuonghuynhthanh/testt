@@ -11,6 +11,13 @@ class BlogState(str, Enum):
     REJECTED = "REJECTED"
 
 
+class BlogCreateAction(str, Enum):
+    """Make saving and immediate publication explicit commands."""
+
+    SAVE_PENDING = "SAVE_PENDING"
+    PUBLISH_NOW = "PUBLISH_NOW"
+
+
 class BlogCategory(str, Enum):
     INVESTMENT_INSIGHTS = "INVESTMENT_INSIGHTS"
     FOREIGN_INVESTMENT = "FOREIGN_INVESTMENT"

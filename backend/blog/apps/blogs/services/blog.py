@@ -58,11 +58,13 @@ class BlogServices:
             "modified_time": current_time,
         }
 
+    # Create reviewed Blog content with an explicit save or publish action.
     @classmethod
     def create_blog(
         cls,
         blog_data: schemas.BlogCreate,
         image: Optional[UploadFile] = None,
+        action: schemas.BlogCreateAction = schemas.BlogCreateAction.SAVE_PENDING,
     ):
         """
         Creates a new blog with the provided data.
@@ -91,7 +93,11 @@ class BlogServices:
                 banner_url=banner_url,
                 link_post=blog_data.link_post,
                 content=blog_data.content,
-                state=schemas.BlogState.PENDING,
+                state=(
+                    schemas.BlogState.APPROVED
+                    if action is schemas.BlogCreateAction.PUBLISH_NOW
+                    else schemas.BlogState.PENDING
+                ),
                 category=blog_data.category,
                 seo=seo_data,
             )
@@ -270,17 +276,21 @@ class BlogServices:
         Returns blogs and next request URL if more data exists.
         """
         with cls.get_db_session() as session:
-            query = select(
-                Blog.id,
-                Blog.tag,
-                Blog.title,
-                Blog.banner_url,
-                Blog.link_post,
-                Blog.created_at,
-                Blog.modified_at,
-                Blog.seo,
-                Blog.category,
-            ).filter(Blog.state == schemas.BlogState.APPROVED).filter(web_visible_clause(Blog.id))
+            query = (
+                select(
+                    Blog.id,
+                    Blog.tag,
+                    Blog.title,
+                    Blog.banner_url,
+                    Blog.link_post,
+                    Blog.created_at,
+                    Blog.modified_at,
+                    Blog.seo,
+                    Blog.category,
+                )
+                .filter(Blog.state == schemas.BlogState.APPROVED)
+                .filter(web_visible_clause(Blog.id))
+            )
             if category != "ALL":
                 query = query.filter(Blog.category == category.upper())
             total_query = select(func.count()).select_from(query.subquery())
@@ -384,20 +394,14 @@ class BlogServices:
     def _create_url(title: str) -> str:
         return slugify(title, lowercase=True, separator="-")
 
+    # Generate a complete editable Blog proposal without persistence.
     @classmethod
     async def ai_generate_blog_markdown_with_title(
         cls, title: str, category: str
-    ) -> str:
+    ) -> dict:
         try:
             url = cls._create_url(title)
-            ex_link = Blog.filter(Blog.link_post == url).first()
-            if ex_link:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"Bài viết với liên kết '{url}' đã tồn tại",
-                )
-
-            # Generate content and SEO
+            # Build a review-only proposal; duplicate slugs are validated when saving.
             markdown_output = await GeminiAiService.generate_blog_markdown(title)
             seo_dict = await GeminiAiService.generate_seo_keywords_and_description(
                 title, markdown_output.blog_content
@@ -410,19 +414,13 @@ class BlogServices:
                 author=settings.AUTHOR,
             )
             tag = await GeminiAiService.generate_tag_base_on_title(title=title)
-            blog = schemas.BlogCreate(
-                tag=tag,
-                title=title,
-                link_post=url,
-                content=markdown_output.blog_content,
-                seo=seo,
-                category=category,
-            )
-            blog = cls.create_blog(blog_data=blog)
             return {
-                "id": blog.id,
-                "message": "Tạo bài viết thành công",
-                "statusCode": status.HTTP_200_OK,
+                "tag": tag,
+                "title": title,
+                "link_post": url,
+                "category": category,
+                "content": markdown_output.blog_content,
+                "seo": seo.model_dump(),
             }
         except HTTPException as e:
             raise HTTPException(

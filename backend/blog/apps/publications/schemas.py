@@ -3,7 +3,7 @@
 from enum import Enum
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from apps.linkedin_posts.schemas import PexelsCandidate
+from apps.linkedin_posts.schemas import LinkedInPostAction, PexelsCandidate
 
 
 class PublicationStatus(str, Enum):
@@ -42,7 +42,9 @@ class PublicationUpdate(BaseModel):
             raise ValueError("at least one publication channel must be selected")
         if self.linkedinIncludeWebLink is None:
             self.linkedinIncludeWebLink = self.publishWeb and self.publishLinkedin
-        if self.linkedinIncludeWebLink and not (self.publishWeb and self.publishLinkedin):
+        if self.linkedinIncludeWebLink and not (
+            self.publishWeb and self.publishLinkedin
+        ):
             raise ValueError("a LinkedIn web link requires WEB + LINKEDIN")
         return self
 
@@ -70,7 +72,31 @@ class LinkedInContentUpdate(BaseModel):
             raise ValueError("content or media must be supplied")
         if self.content is not None and not self.content.strip():
             raise ValueError("content must not be blank")
-        if self.media is not None and [item.order for item in self.media] != list(range(1, len(self.media) + 1)):
+        if self.media is not None and [item.order for item in self.media] != list(
+            range(1, len(self.media) + 1)
+        ):
+            raise ValueError("selected media order must be sequential")
+        return self
+
+
+class LinkedInCommandRequest(BaseModel):
+    """Save reviewed Blog-derived LinkedIn content or publish it immediately."""
+
+    model_config = ConfigDict(extra="forbid")
+    mode: LinkedInMode
+    content: str = Field(min_length=1)
+    media: list[PexelsCandidate] = Field(default_factory=list, max_length=20)
+    includeWebLink: bool = True
+    factCheck: dict | None = None
+    generation: dict | None = None
+    action: LinkedInPostAction = LinkedInPostAction.SAVE_DRAFT
+
+    # Preserve exact selected-image ordering before saving reviewed media.
+    @model_validator(mode="after")
+    def validate_command(self):
+        if not self.content.strip():
+            raise ValueError("content must not be blank")
+        if [item.order for item in self.media] != list(range(1, len(self.media) + 1)):
             raise ValueError("selected media order must be sequential")
         return self
 
