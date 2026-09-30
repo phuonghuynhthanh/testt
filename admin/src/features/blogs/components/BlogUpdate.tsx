@@ -23,6 +23,7 @@ import { createUrl } from "../../../utils/blogUtils";
 import BlogPreviewDemo from "./BlogPreviewDemo";
 import BlogBasicInfoForm from "./BlogBasicInfoForm";
 import BlogSeoForm from "./BlogSeoForm";
+import { PageHeader } from "../../../shared/ui";
 
 const INIT_BLOG_DATA: IBlogData = {
   id: "",
@@ -239,7 +240,7 @@ const BlogUpdate = () => {
   }, []);
 
   return (
-    <div className="p-6 text-gray-th2">
+    <div className="space-y-6 max-w-5xl mx-auto">
       {openEditBlogContent && (
         <BlogPreviewDemo
           tag={blogData.tag}
@@ -253,14 +254,30 @@ const BlogUpdate = () => {
         />
       )}
 
-      <h1 className="text-2xl font-bold text-primary-white">Chi tiết bài viết</h1>
-
-      <BlogBasicInfoForm
-        blogData={blogData}
-        bannerImage={bannerImage}
-        setBannerImage={setBannerImage}
-        onFieldChange={handleChange}
+      <PageHeader
+        title="Chi tiết bài viết"
+        description="Chỉnh sửa thông tin cơ bản, cấu hình SEO và cập nhật nội dung bài viết"
+        actions={
+          <button
+            type="button"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary-green hover:bg-primary-green-dark text-primary-black font-semibold text-sm transition-colors shadow-sm disabled:opacity-50"
+            onClick={handleUpdate}
+            disabled={isLoading}
+          >
+            <span>{isLoading ? "Đang lưu..." : "Lưu thay đổi"}</span>
+            <IoIosSave className="text-lg" />
+          </button>
+        }
       />
+
+      <div className="bg-surface-card p-6 rounded-xl border border-surface-border">
+        <BlogBasicInfoForm
+          blogData={blogData}
+          bannerImage={bannerImage}
+          setBannerImage={setBannerImage}
+          onFieldChange={handleChange}
+        />
+      </div>
 
       <BlogSeoForm
         blogData={blogData}
@@ -276,32 +293,26 @@ const BlogUpdate = () => {
         onDeleteKeyword={handleDeleteKeyword}
       />
 
-      <div className="flex gap-6 items-end my-10">
-        <h4 className="text-xl text-primary-white">Nội dung bài viết</h4>
-        <span
-          className="hover:cursor-pointer underline-offset-4 hover:underline text-blue-500"
-          onClick={handleClickEditBlogContent}
-        >
-          {!openEditBlogContent ? "Chỉnh sửa nội dung" : "Ẩn nội dung"}
-        </span>
-        <button
-          type="button"
-          className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
-          onClick={handleFixMarkdownSyntax}
-        >
-          Sửa lỗi cú pháp Markdown
-        </button>
-      </div>
-
-      <div className="flex justify-end mt-4">
-        <button
-          type="button"
-          className="flex items-center gap-1 px-6 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700"
-          onClick={handleUpdate}
-          disabled={isLoading}
-        >
-          <span>Lưu thay đổi</span> <IoIosSave className="inline text-xl" />
-        </button>
+      <div className="bg-surface-card p-6 rounded-xl border border-surface-border space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-4 pb-3 border-b border-surface-border">
+          <h3 className="font-semibold text-content-primary text-base">Nội dung bài viết</h3>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              className="text-xs px-3 py-1.5 rounded-lg bg-surface-elevated hover:bg-surface-hover border border-surface-border text-cyan-400 font-medium transition-colors"
+              onClick={handleClickEditBlogContent}
+            >
+              {!openEditBlogContent ? "Mở trình soạn thảo Markdown" : "Thu gọn trình soạn thảo"}
+            </button>
+            <button
+              type="button"
+              className="rounded-lg bg-emerald-950/40 text-emerald-400 border border-emerald-500/30 px-3 py-1.5 text-xs font-medium hover:bg-emerald-900/50 transition-colors"
+              onClick={handleFixMarkdownSyntax}
+            >
+              Sửa lỗi cú pháp Markdown
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

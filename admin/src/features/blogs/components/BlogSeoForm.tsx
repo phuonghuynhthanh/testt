@@ -1,9 +1,9 @@
 import type { ChangeEvent, Dispatch, SetStateAction } from "react";
 import { BsStars } from "react-icons/bs";
-
 import InputField from "../../../shared/input/InputField";
 import InputSeoKeyword from "../../../shared/input/InputSeoKeyword";
 import SeoGenerate from "../../../shared/SeoGenerate";
+import SectionHeading from "../../../shared/ui/SectionHeading";
 import type { IBlogData, IEditorData } from "../../../types/Blog";
 import type { IDataSeoGenerate } from "../../../types/OpenAi";
 
@@ -23,7 +23,7 @@ interface BlogSeoFormProps {
   onDeleteKeyword: (index: number) => void;
 }
 
-// Render SEO metadata inputs and AI SEO generation controls.
+// Render SEO metadata inputs and AI SEO generation controls with dark surface styling.
 const BlogSeoForm = ({
   blogData,
   content,
@@ -38,16 +38,30 @@ const BlogSeoForm = ({
   onDeleteKeyword,
 }: BlogSeoFormProps) => {
   return (
-    <>
-      <h4 className="text-xl">SEO</h4>
-      <hr className="my-2" />
+    <div className="space-y-5 bg-surface-card p-6 rounded-xl border border-surface-border">
+      <SectionHeading
+        title="Thông tin SEO & Metadata"
+        description="Tối ưu hóa thẻ mô tả, từ khóa tìm kiếm và cấu hình chia sẻ bài viết"
+        action={
+          <button
+            type="button"
+            className="inline-flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-purple-950/40 text-purple-300 border border-purple-500/30 hover:bg-purple-900/50 hover:text-purple-200 transition-colors"
+            onClick={onGenerateSEO}
+          >
+            <BsStars className="text-sm text-purple-400" />
+            <span>Tạo SEO bằng AI</span>
+          </button>
+        }
+      />
+
       <div className="space-y-4">
-        <div className="flex justify-between items-center gap-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <InputField
             label="Thời gian xuất bản"
             id="published_time"
             name="published_time"
             value={blogData.seo.published_time ?? ""}
+            placeholder="Tự động khi xuất bản"
             readOnly
           />
           <InputField
@@ -55,23 +69,20 @@ const BlogSeoForm = ({
             id="modified_time"
             name="modified_time"
             value={blogData.seo.modified_time ?? ""}
+            placeholder="Tự động khi cập nhật"
             readOnly
           />
         </div>
+
         <InputField
           label="Tiêu đề SEO"
           id="seo.title"
           name="seo.title"
           value={blogData.seo.title}
-          placeholder="Nhập tiêu đề SEO..."
+          placeholder="Nhập tiêu đề SEO bài viết..."
           handleChange={onFieldChange}
         />
-        <button
-          className="px-2 py-2 text-lg text-primary-white font-medium rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 flex items-center gap-2"
-          onClick={onGenerateSEO}
-        >
-          Tạo nội dung SEO bằng AI <BsStars className="inline" />
-        </button>
+
         {isOpenGenerate && (
           <SeoGenerate
             dataArticle={content}
@@ -79,23 +90,25 @@ const BlogSeoForm = ({
             setDataSeoGenerate={setDataSeoGenerate}
           />
         )}
+
         <div className="flex flex-col">
           <label
             htmlFor="seo.description"
-            className="text-gray-th2 font-medium text-primary-white"
+            className="text-xs font-medium text-content-secondary mb-1.5"
           >
-            Mô tả SEO
+            Mô tả SEO (Meta Description)
           </label>
-          <input
-            type="text"
+          <textarea
             id="seo.description"
             name="seo.description"
+            rows={3}
             value={blogData.seo.description}
-            onChange={onFieldChange}
-            className="border border-gray-300 rounded-md p-2 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Nhập mô tả SEO..."
+            onChange={onFieldChange as unknown as (e: React.ChangeEvent<HTMLTextAreaElement>) => void}
+            className="w-full rounded-lg border border-surface-border bg-surface-elevated px-3.5 py-2 text-sm text-content-primary placeholder-content-muted focus:border-primary-green focus:outline-none focus:ring-1 focus:ring-primary-green transition resize-y"
+            placeholder="Nhập đoạn tóm tắt ngắn cho công cụ tìm kiếm Google..."
           />
         </div>
+
         <InputSeoKeyword
           keywords={blogData.seo.keywords}
           keywordInput={keywordInput}
@@ -104,7 +117,7 @@ const BlogSeoForm = ({
           handleDeleteKeyword={onDeleteKeyword}
         />
       </div>
-    </>
+    </div>
   );
 };
 

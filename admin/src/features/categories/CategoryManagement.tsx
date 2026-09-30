@@ -1,5 +1,6 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { FiPlus, FiEdit2, FiTrash2, FiFolder } from "react-icons/fi";
 import { toast } from "react-toastify";
 import Modal from "../../shared/Popup/Modal";
 import {
@@ -12,26 +13,33 @@ import {
 import { apiErrorMessage } from "../../types/Api";
 import type { Category } from "../../types/Category";
 import { formatCmsDate } from "../../utils/date";
+import {
+  PageHeader,
+  EmptyState,
+  ConfirmDialog,
+  Pagination,
+} from "../../shared/ui";
 
 const PAGE_SIZE = 20;
 
-// Manage categories with backend pagination and immediate soft-delete undo.
-const CategoryManagement = () => {
+// Manage categories with backend pagination, editing modal, and soft-delete confirmation.
+const CategoryManagement: React.FC = () => {
   const client = useQueryClient();
   const [page, setPage] = useState(1);
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Category | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Category | null>(null);
   const [name, setName] = useState("");
+
   const categories = useQuery({
     queryKey: ["categories", { page, pageSize: PAGE_SIZE }],
     queryFn: () => listCategories({ page, pageSize: PAGE_SIZE }),
   });
 
-  // Refresh every cached category page after a mutation.
+  // Invalidate and refetch cached category queries.
   const refresh = () => client.invalidateQueries({ queryKey: ["categories"] });
 
-  // Close and clear the shared create/edit dialog.
+  // Reset and close the category creation and editing modal.
   const closeForm = () => {
     setFormOpen(false);
     setEditing(null);
@@ -47,6 +55,7 @@ const CategoryManagement = () => {
     },
     onError: (error) => toast.error(apiErrorMessage(error)),
   });
+
   const rename = useMutation({
     mutationFn: () => updateCategory(editing!.id, name.trim()),
     onSuccess: () => {
@@ -56,6 +65,7 @@ const CategoryManagement = () => {
     },
     onError: (error) => toast.error(apiErrorMessage(error)),
   });
+
   const restore = useMutation({
     mutationFn: restoreCategory,
     onSuccess: () => {
@@ -64,13 +74,21 @@ const CategoryManagement = () => {
     },
     onError: (error) => toast.error(apiErrorMessage(error)),
   });
+
   const remove = useMutation({
     mutationFn: deleteCategory,
     onSuccess: (_, id) => {
       toast.success(
         <span>
-          Đã xóa danh mục. <button onClick={() => restore.mutate(id)} className="underline">Hoàn tác</button>
-        </span>,
+          Đã xóa danh mục.{" "}
+          <button
+            type="button"
+            onClick={() => restore.mutate(id)}
+            className="underline font-semibold ml-1 text-primary-green hover:opacity-80"
+          >
+            Hoàn tác
+          </button>
+        </span>
       );
       setDeleteTarget(null);
       refresh();
@@ -78,81 +96,179 @@ const CategoryManagement = () => {
     onError: (error) => toast.error(apiErrorMessage(error)),
   });
 
-  // Open the shared dialog for either a new or existing category.
+  // Open the modal form for either creating a new category or renaming an existing one.
   const openForm = (category?: Category) => {
     setEditing(category ?? null);
     setName(category?.name ?? "");
     setFormOpen(true);
   };
 
-  // Submit the active create or rename command.
-  const submitForm = () => {
+  // Submit the active create or rename form.
+  const submitForm = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (!name.trim()) return;
     if (editing) rename.mutate();
     else create.mutate();
   };
 
   return (
-    <section className="mx-auto max-w-4xl text-gray-th2">
-      <div className="flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-bold text-primary-white">Danh mục</h1>
-        <button onClick={() => openForm()} className="rounded bg-primary-green px-4 py-2 font-semibold text-primary-black">
-          + Tạo danh mục
-        </button>
-      </div>
+    <section className="space-y-6 max-w-5xl mx-auto">
+      <PageHeader
+        title="Danh mục bài viết"
+        description="Quản lý hệ thống phân loại danh mục cho các bài viết CMS"
+        actions={
+          <button
+            type="button"
+            onClick={() => openForm()}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary-green hover:bg-primary-green-dark text-primary-black font-semibold text-sm transition-colors shadow-sm"
+          >
+            <FiPlus className="w-4 h-4" />
+            <span>Tạo danh mục</span>
+          </button>
+        }
+      />
 
-      <div className="mt-5 overflow-x-auto rounded border border-gray-700">
+      <div className="bg-surface-card rounded-xl border border-surface-border overflow-hidden shadow-sm">
         {categories.isLoading ? (
-          <p className="p-6">Đang tải…</p>
+          <div className="py-20 text-center text-sm text-content-muted">
+            Đang tải dữ liệu danh mục...
+          </div>
         ) : categories.isError ? (
-          <p className="p-6 text-red-300">{apiErrorMessage(categories.error)}</p>
+          <div className="py-12 text-center text-sm text-rose-400">
+            {apiErrorMessage(categories.error)}
+          </div>
+        ) : (categories.data?.items.length ?? 0) === 0 ? (
+          <EmptyState
+            icon={<FiFolder className="w-6 h-6 text-primary-green" />}
+            title="Chưa có danh mục nào"
+            description="Tạo danh mục đầu tiên để gán cho các bài viết trên hệ thống."
+            action={
+              <button
+                type="button"
+                onClick={() => openForm()}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-lg bg-primary-green text-primary-black hover:bg-primary-green-dark transition-colors"
+              >
+                <FiPlus className="w-4 h-4" />
+                <span>Tạo danh mục ngay</span>
+              </button>
+            }
+          />
         ) : (
-          <table className="w-full min-w-[600px] text-left">
-            <thead className="bg-primary-black-light text-primary-white">
-              <tr><th className="p-3">Tên</th><th>Cập nhật</th><th>Thao tác</th></tr>
-            </thead>
-            <tbody>
-              {categories.data?.items.map((item) => (
-                <tr key={item.id} className="border-t border-gray-700">
-                  <td className="p-3">{item.name}</td>
-                  <td>{item.modifiedAt || item.modified_at ? formatCmsDate(item.modifiedAt ?? item.modified_at!) : "—"}</td>
-                  <td className="space-x-3">
-                    <button onClick={() => openForm(item)} className="text-blue-300">Sửa</button>
-                    <button onClick={() => setDeleteTarget(item)} className="text-red-300">Xóa</button>
-                  </td>
-                </tr>
-              ))}
-              {categories.data?.items.length === 0 && <tr><td colSpan={3} className="p-6 text-center">Chưa có danh mục.</td></tr>}
-            </tbody>
-          </table>
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-surface-elevated text-xs font-semibold uppercase tracking-wider text-content-muted border-b border-surface-border">
+                  <tr>
+                    <th className="py-3 px-4">Tên danh mục</th>
+                    <th className="py-3 px-4">Ngày cập nhật</th>
+                    <th className="py-3 px-4 text-right">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-surface-border">
+                  {categories.data?.items.map((item) => (
+                    <tr
+                      key={item.id}
+                      className="hover:bg-surface-hover/60 transition-colors"
+                    >
+                      <td className="py-3.5 px-4 font-medium text-content-primary">
+                        {item.name}
+                      </td>
+                      <td className="py-3.5 px-4 text-xs text-content-muted whitespace-nowrap">
+                        {item.modifiedAt || item.modified_at
+                          ? formatCmsDate(item.modifiedAt ?? item.modified_at!)
+                          : "—"}
+                      </td>
+                      <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                        <div className="inline-flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => openForm(item)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium text-cyan-400 hover:text-cyan-300 hover:bg-cyan-950/30 border border-transparent hover:border-cyan-800/40 transition-colors"
+                          >
+                            <FiEdit2 className="w-3.5 h-3.5" />
+                            <span>Sửa</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setDeleteTarget(item)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium text-rose-400 hover:text-rose-300 hover:bg-rose-950/30 border border-transparent hover:border-rose-800/40 transition-colors"
+                          >
+                            <FiTrash2 className="w-3.5 h-3.5" />
+                            <span>Xóa</span>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="border-t border-surface-border px-4 bg-surface-card">
+              <Pagination
+                page={categories.data?.page ?? page}
+                totalPages={categories.data?.totalPages ?? 1}
+                totalItems={categories.data?.total}
+                itemUnit="danh mục"
+                onPageChange={(p) => setPage(p)}
+              />
+            </div>
+          </>
         )}
       </div>
 
-      <div className="mt-4 flex items-center justify-center gap-4">
-        <button disabled={page <= 1} onClick={() => setPage((value) => value - 1)} className="rounded bg-gray-700 px-3 py-2 disabled:opacity-50">Trước</button>
-        <span>Trang {categories.data?.page ?? page} / {categories.data?.totalPages ?? 1} · {categories.data?.total ?? 0} danh mục</span>
-        <button disabled={!categories.data || page >= categories.data.totalPages} onClick={() => setPage((value) => value + 1)} className="rounded bg-gray-700 px-3 py-2 disabled:opacity-50">Sau</button>
-      </div>
-
-      <Modal isOpen={formOpen} onClose={closeForm}>
-        <h2 className="text-xl font-semibold text-primary-white">{editing ? "Sửa danh mục" : "Tạo danh mục"}</h2>
-        <label className="mt-4 block">Tên danh mục
-          <input autoFocus value={name} onChange={(event) => setName(event.target.value)} className="mt-1 w-full rounded bg-primary-black p-3" />
-        </label>
-        <div className="mt-5 flex justify-end gap-3">
-          <button onClick={closeForm}>Hủy</button>
-          <button disabled={!name.trim() || create.isPending || rename.isPending} onClick={submitForm} className="rounded bg-primary-green px-4 py-2 text-primary-black">Lưu</button>
-        </div>
+      <Modal isOpen={formOpen} onClose={closeForm} className="max-w-md p-6">
+        <form onSubmit={submitForm} className="space-y-4">
+          <h2 className="text-lg font-bold text-content-primary">
+            {editing ? "Cập nhật danh mục" : "Tạo danh mục mới"}
+          </h2>
+          <div>
+            <label
+              htmlFor="cat-name-input"
+              className="block text-xs font-medium text-content-secondary mb-1.5"
+            >
+              Tên danh mục <span className="text-rose-400">*</span>
+            </label>
+            <input
+              id="cat-name-input"
+              autoFocus
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Nhập tên danh mục..."
+              className="w-full rounded-lg border border-surface-border bg-surface-elevated px-3.5 py-2 text-sm text-content-primary placeholder-content-muted focus:border-primary-green focus:outline-none focus:ring-1 focus:ring-primary-green transition"
+            />
+          </div>
+          <div className="flex items-center justify-end gap-3 pt-3 border-t border-surface-border">
+            <button
+              type="button"
+              onClick={closeForm}
+              className="px-4 py-2 text-xs font-medium rounded-lg text-content-secondary hover:text-content-primary hover:bg-surface-elevated border border-surface-border transition-colors"
+            >
+              Hủy bỏ
+            </button>
+            <button
+              type="submit"
+              disabled={!name.trim() || create.isPending || rename.isPending}
+              className="px-4 py-2 text-xs font-semibold rounded-lg bg-primary-green hover:bg-primary-green-dark text-primary-black transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {create.isPending || rename.isPending ? "Đang lưu..." : "Lưu danh mục"}
+            </button>
+          </div>
+        </form>
       </Modal>
 
-      <Modal isOpen={Boolean(deleteTarget)} onClose={() => setDeleteTarget(null)}>
-        <h2 className="text-xl font-semibold text-primary-white">Xóa danh mục</h2>
-        <p className="mt-3">Danh mục sẽ được xóa khỏi danh sách sử dụng, không bị xóa vĩnh viễn.</p>
-        <div className="mt-5 flex justify-end gap-3">
-          <button onClick={() => setDeleteTarget(null)}>Hủy</button>
-          <button disabled={remove.isPending} onClick={() => deleteTarget && remove.mutate(deleteTarget.id)} className="rounded bg-red-700 px-4 py-2 text-white">Xóa danh mục</button>
-        </div>
-      </Modal>
+      <ConfirmDialog
+        isOpen={Boolean(deleteTarget)}
+        title="Xác nhận xóa danh mục"
+        message={`Danh mục "${deleteTarget?.name}" sẽ được xóa khỏi danh sách sử dụng nhưng không bị xóa vĩnh viễn khỏi cơ sở dữ liệu.`}
+        confirmLabel="Xóa danh mục"
+        cancelLabel="Hủy"
+        variant="danger"
+        isLoading={remove.isPending}
+        onConfirm={() => deleteTarget && remove.mutate(deleteTarget.id)}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </section>
   );
 };

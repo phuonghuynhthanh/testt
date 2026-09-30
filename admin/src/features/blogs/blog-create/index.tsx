@@ -1,13 +1,15 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { BsStars, BsFileEarmarkText } from "react-icons/bs";
+import { FiUpload, FiSend, FiSave } from "react-icons/fi";
 import { toast } from "react-toastify";
 import MarkdownEditor from "../../../shared/markdown/MarkdownEditor";
-import Modal from "../../../shared/Popup/Modal";
 import { createUrl } from "../../../utils/blogUtils";
 import { apiErrorMessage } from "../../../types/Api";
 import type { IBlogData, SEO } from "../../../types/Blog";
 import { createBlogPost, generateBlogDraft } from "../../../services/blog/handleBlog";
 import { listCategories } from "../../../services/category/handleCategory";
+import { PageHeader, SectionHeading, ConfirmDialog } from "../../../shared/ui";
 
 const EMPTY_BLOG: IBlogData = {
   tag: "",
@@ -25,32 +27,34 @@ const EMPTY_BLOG: IBlogData = {
   },
 };
 
-// Keep one editable Blog editor for manual writing and preview-only AI drafts.
-const BlogCreate = () => {
+// Render the blog creation editor supporting manual authoring, AI draft generation, and SEO fields.
+const BlogCreate: React.FC = () => {
   const client = useQueryClient();
   const [source, setSource] = useState<"manual" | "ai">("manual");
   const [blog, setBlog] = useState<IBlogData>(EMPTY_BLOG);
   const [image, setImage] = useState<File | null>(null);
   const [dirty, setDirty] = useState(false);
   const [confirmPublish, setConfirmPublish] = useState(false);
+  const [confirmRegenerate, setConfirmRegenerate] = useState(false);
+
   const categories = useQuery({
     queryKey: ["categories", { page: 1, pageSize: 100 }],
     queryFn: () => listCategories(),
   });
 
-  // Update one top-level Blog field from a visible editor control.
+  // Update a top-level blog field.
   const updateBlog = <K extends keyof IBlogData>(field: K, value: IBlogData[K]) => {
     setBlog((current) => ({ ...current, [field]: value }));
     setDirty(true);
   };
 
-  // Update one SEO field without keeping a hidden copy of AI output.
+  // Update an individual SEO metadata field.
   const updateSeo = <K extends keyof SEO>(field: K, value: SEO[K]) => {
     setBlog((current) => ({ ...current, seo: { ...current.seo, [field]: value } }));
     setDirty(true);
   };
 
-  // Keep an untouched slug synchronized with the title while allowing manual edits.
+  // Synchronize title changes with post slug and SEO title.
   const updateTitle = (title: string) => {
     setBlog((current) => ({
       ...current,
@@ -78,15 +82,19 @@ const BlogCreate = () => {
         seo: { ...current.seo, ...data.seo },
       }));
       setDirty(true);
+      setConfirmRegenerate(false);
       toast.success("Đã tạo bản nháp AI — chưa được lưu.");
     },
     onError: (error) => toast.error(apiErrorMessage(error)),
   });
+
   const save = useMutation({
-    mutationFn: (action: "SAVE_PENDING" | "PUBLISH_NOW") => createBlogPost({
-      ...blog,
-      link_post: blog.link_post.trim() || createUrl(blog.title),
-    }, image, action),
+    mutationFn: (action: "SAVE_PENDING" | "PUBLISH_NOW") =>
+      createBlogPost(
+        { ...blog, link_post: blog.link_post.trim() || createUrl(blog.title) },
+        image,
+        action
+      ),
     onSuccess: (_, action) => {
       toast.success(action === "PUBLISH_NOW" ? "Đã xuất bản website." : "Đã lưu chờ duyệt.");
       setDirty(false);
@@ -97,7 +105,6 @@ const BlogCreate = () => {
     onError: (error) => toast.error(apiErrorMessage(error)),
   });
 
-  // Warn only when the administrator has actual local work to lose.
   useEffect(() => {
     const before = (event: BeforeUnloadEvent) => {
       if (!dirty) return;
@@ -108,77 +115,248 @@ const BlogCreate = () => {
     return () => window.removeEventListener("beforeunload", before);
   }, [dirty]);
 
-  // Replace an existing draft only after explicit confirmation.
-  const regenerate = () => {
-    if (blog.content.trim() && !window.confirm("Bản nháp hiện tại sẽ bị thay thế. Tiếp tục?")) return;
-    draft.mutate();
+  // Request confirmation before overwriting existing content with AI draft.
+  const handleRegenerateClick = () => {
+    if (blog.content.trim()) setConfirmRegenerate(true);
+    else draft.mutate();
   };
 
   const formValid = Boolean(blog.title.trim() && blog.category.trim() && blog.content.trim());
 
   return (
-    <section className="mx-auto max-w-4xl space-y-5 text-gray-th2">
-      <div>
-        <h1 className="text-2xl font-bold text-primary-white">Viết bài</h1>
-        <label className="mr-5"><input type="radio" checked={source === "manual"} onChange={() => setSource("manual")} /> Viết thủ công</label>
-        <label><input type="radio" checked={source === "ai"} onChange={() => setSource("ai")} /> Tạo bản nháp bằng AI</label>
-      </div>
+    <section className="space-y-6 max-w-5xl mx-auto">
+      <PageHeader
+        title="Tạo bài viết mới"
+        description="Soạn thảo bài viết mới hoặc tạo nhanh bản nháp thông minh bằng trợ lý AI"
+      />
 
-      <label className="block">Tiêu đề
-        <input value={blog.title} onChange={(event) => updateTitle(event.target.value)} className="mt-1 w-full rounded border border-gray-600 bg-primary-black p-3 text-primary-white" />
-      </label>
-      <label className="block">Danh mục
-        <input list="blog-create-categories" value={blog.category} onChange={(event) => updateBlog("category", event.target.value)} placeholder="Chọn hoặc nhập danh mục mới" className="mt-1 w-full rounded border border-gray-600 bg-primary-black p-3 text-primary-white" />
-        <datalist id="blog-create-categories">{categories.data?.items.map((item) => <option key={item.id} value={item.name} />)}</datalist>
-      </label>
-      {source === "ai" && (
-        <button disabled={!blog.title.trim() || !blog.category.trim() || draft.isPending} onClick={regenerate} className="rounded bg-indigo-600 px-4 py-2 text-white disabled:opacity-50">
-          {draft.isPending ? "Đang tạo bằng AI…" : blog.content ? "Tạo lại bằng AI" : "Tạo bản nháp AI"}
+      <div className="flex p-1 rounded-xl bg-surface-card border border-surface-border w-fit gap-1">
+        <button
+          type="button"
+          onClick={() => setSource("manual")}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-colors ${
+            source === "manual"
+              ? "bg-surface-elevated text-primary-green border border-primary-green/30 shadow-sm"
+              : "text-content-secondary hover:text-content-primary"
+          }`}
+        >
+          <BsFileEarmarkText className="text-sm" />
+          <span>Viết thủ công</span>
         </button>
-      )}
-
-      <label className="block">Tag
-        <input value={blog.tag} onChange={(event) => updateBlog("tag", event.target.value)} className="mt-1 w-full rounded border border-gray-600 bg-primary-black p-3 text-primary-white" />
-      </label>
-      <label className="block">Đường dẫn bài viết
-        <input value={blog.link_post} onChange={(event) => updateBlog("link_post", event.target.value)} className="mt-1 w-full rounded border border-gray-600 bg-primary-black p-3 text-primary-white" />
-      </label>
-      <MarkdownEditor value={blog.content} title={blog.title} onChange={(value) => updateBlog("content", value)} height="h-96" placeholder="Nội dung Markdown…" />
-
-      <fieldset className="space-y-4 rounded border border-gray-700 p-4">
-        <legend className="px-2 font-semibold text-primary-white">SEO</legend>
-        <label className="block">Tiêu đề SEO
-          <input value={blog.seo.title} onChange={(event) => updateSeo("title", event.target.value)} className="mt-1 w-full rounded bg-primary-black p-3" />
-        </label>
-        <label className="block">Mô tả SEO
-          <textarea value={blog.seo.description} onChange={(event) => updateSeo("description", event.target.value)} className="mt-1 w-full rounded bg-primary-black p-3" />
-        </label>
-        <label className="block">URL SEO
-          <input value={blog.seo.url} onChange={(event) => updateSeo("url", event.target.value)} className="mt-1 w-full rounded bg-primary-black p-3" />
-        </label>
-        <label className="block">Từ khóa SEO, ngăn bằng dấu phẩy
-          <input value={blog.seo.keywords.join(", ")} onChange={(event) => updateSeo("keywords", event.target.value.split(",").map((value) => value.trim()).filter(Boolean))} className="mt-1 w-full rounded bg-primary-black p-3" />
-        </label>
-        <label className="block">Tác giả
-          <input value={blog.seo.author} onChange={(event) => updateSeo("author", event.target.value)} className="mt-1 w-full rounded bg-primary-black p-3" />
-        </label>
-      </fieldset>
-
-      <label className="block">Banner (không bắt buộc)
-        <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={(event) => { setImage(event.target.files?.[0] ?? null); setDirty(true); }} className="ml-3" />
-      </label>
-      <div className="flex flex-wrap gap-3">
-        <button disabled={!formValid || save.isPending} onClick={() => save.mutate("SAVE_PENDING")} className="rounded bg-gray-700 px-4 py-3 text-white disabled:opacity-50">{save.isPending ? "Đang lưu…" : "Lưu chờ duyệt"}</button>
-        <button disabled={!formValid || save.isPending} onClick={() => setConfirmPublish(true)} className="rounded bg-primary-green px-4 py-3 font-semibold text-primary-black disabled:opacity-50">Xuất bản Website ngay</button>
+        <button
+          type="button"
+          onClick={() => setSource("ai")}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-colors ${
+            source === "ai"
+              ? "bg-surface-elevated text-purple-300 border border-purple-500/30 shadow-sm"
+              : "text-content-secondary hover:text-content-primary"
+          }`}
+        >
+          <BsStars className="text-sm text-purple-400" />
+          <span>Tạo bản nháp bằng AI</span>
+        </button>
       </div>
 
-      <Modal isOpen={confirmPublish} onClose={() => setConfirmPublish(false)}>
-        <h2 className="text-xl text-primary-white">Bạn sắp xuất bản bài viết này lên website.</h2>
-        <div className="mt-5 flex gap-3">
-          <button onClick={() => setConfirmPublish(false)} className="rounded bg-gray-700 px-4 py-2 text-white">Hủy</button>
-          <button disabled={save.isPending} onClick={() => save.mutate("PUBLISH_NOW")} className="rounded bg-primary-green px-4 py-2 text-primary-black">Xuất bản</button>
+      <div className="bg-surface-card p-6 rounded-xl border border-surface-border space-y-4">
+        <SectionHeading title="Thông tin cơ bản" description="Tiêu đề, thể loại và định danh bài viết" />
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="md:col-span-2">
+            <label className="block text-xs font-medium text-content-secondary mb-1.5">
+              Tiêu đề bài viết <span className="text-rose-400">*</span>
+            </label>
+            <input
+              type="text"
+              value={blog.title}
+              onChange={(e) => updateTitle(e.target.value)}
+              placeholder="Nhập tiêu đề bài viết..."
+              className="w-full rounded-lg border border-surface-border bg-surface-elevated px-3.5 py-2 text-sm text-content-primary placeholder-content-muted focus:border-primary-green focus:outline-none focus:ring-1 focus:ring-primary-green transition"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-content-secondary mb-1.5">
+              Danh mục <span className="text-rose-400">*</span>
+            </label>
+            <input
+              list="blog-create-categories"
+              value={blog.category}
+              onChange={(e) => updateBlog("category", e.target.value)}
+              placeholder="Chọn hoặc nhập danh mục mới..."
+              className="w-full rounded-lg border border-surface-border bg-surface-elevated px-3.5 py-2 text-sm text-content-primary placeholder-content-muted focus:border-primary-green focus:outline-none focus:ring-1 focus:ring-primary-green transition"
+            />
+            <datalist id="blog-create-categories">
+              {categories.data?.items.map((item) => (
+                <option key={item.id} value={item.name} />
+              ))}
+            </datalist>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-content-secondary mb-1.5">Thẻ Tag</label>
+            <input
+              type="text"
+              value={blog.tag}
+              onChange={(e) => updateBlog("tag", e.target.value)}
+              placeholder="Ví dụ: Tài chính, AI, Machine Learning..."
+              className="w-full rounded-lg border border-surface-border bg-surface-elevated px-3.5 py-2 text-sm text-content-primary placeholder-content-muted focus:border-primary-green focus:outline-none focus:ring-1 focus:ring-primary-green transition"
+            />
+          </div>
+
+          <div className="md:col-span-2">
+            <label className="block text-xs font-medium text-content-secondary mb-1.5">Đường dẫn bài viết (Slug)</label>
+            <input
+              type="text"
+              value={blog.link_post}
+              onChange={(e) => updateBlog("link_post", e.target.value)}
+              placeholder="duong-dan-bai-viet"
+              className="w-full rounded-lg border border-surface-border bg-surface-elevated px-3.5 py-2 text-sm text-content-primary placeholder-content-muted focus:border-primary-green focus:outline-none focus:ring-1 focus:ring-primary-green transition"
+            />
+          </div>
         </div>
-      </Modal>
+
+        {source === "ai" && (
+          <div className="pt-2">
+            <button
+              type="button"
+              disabled={!blog.title.trim() || !blog.category.trim() || draft.isPending}
+              onClick={handleRegenerateClick}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-purple-950/40 text-purple-300 border border-purple-500/30 hover:bg-purple-900/50 text-xs font-semibold transition-colors disabled:opacity-50"
+            >
+              <BsStars className="text-sm text-purple-400" />
+              <span>{draft.isPending ? "Đang tạo bản nháp bằng AI..." : blog.content ? "Tạo lại bằng AI" : "Tạo bản nháp AI ngay"}</span>
+            </button>
+          </div>
+        )}
+      </div>
+
+      <div className="bg-surface-card p-6 rounded-xl border border-surface-border space-y-4">
+        <SectionHeading title="Nội dung bài viết" description="Định dạng Markdown tiêu chuẩn" />
+        <MarkdownEditor
+          value={blog.content}
+          title={blog.title}
+          onChange={(val) => updateBlog("content", val)}
+          height="h-96"
+          placeholder="Soạn thảo nội dung bài viết bằng Markdown..."
+        />
+      </div>
+
+      <div className="bg-surface-card p-6 rounded-xl border border-surface-border space-y-4">
+        <SectionHeading title="Cấu hình SEO" description="Tối ưu thẻ tìm kiếm cho bài viết" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="md:col-span-2">
+            <label className="block text-xs font-medium text-content-secondary mb-1.5">Tiêu đề SEO</label>
+            <input
+              type="text"
+              value={blog.seo.title}
+              onChange={(e) => updateSeo("title", e.target.value)}
+              placeholder="Nhập tiêu đề SEO..."
+              className="w-full rounded-lg border border-surface-border bg-surface-elevated px-3.5 py-2 text-sm text-content-primary placeholder-content-muted focus:border-primary-green focus:outline-none focus:ring-1 focus:ring-primary-green transition"
+            />
+          </div>
+          <div className="md:col-span-2">
+            <label className="block text-xs font-medium text-content-secondary mb-1.5">Mô tả SEO</label>
+            <textarea
+              rows={3}
+              value={blog.seo.description}
+              onChange={(e) => updateSeo("description", e.target.value)}
+              placeholder="Nhập mô tả tóm tắt..."
+              className="w-full rounded-lg border border-surface-border bg-surface-elevated px-3.5 py-2 text-sm text-content-primary placeholder-content-muted focus:border-primary-green focus:outline-none focus:ring-1 focus:ring-primary-green transition resize-y"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-content-secondary mb-1.5">Từ khóa SEO (cách nhau bởi dấu phẩy)</label>
+            <input
+              type="text"
+              value={blog.seo.keywords.join(", ")}
+              onChange={(e) => updateSeo("keywords", e.target.value.split(",").map((v) => v.trim()).filter(Boolean))}
+              placeholder="keyword 1, keyword 2..."
+              className="w-full rounded-lg border border-surface-border bg-surface-elevated px-3.5 py-2 text-sm text-content-primary placeholder-content-muted focus:border-primary-green focus:outline-none focus:ring-1 focus:ring-primary-green transition"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-content-secondary mb-1.5">Tác giả</label>
+            <input
+              type="text"
+              value={blog.seo.author}
+              onChange={(e) => updateSeo("author", e.target.value)}
+              placeholder="VietQuant"
+              className="w-full rounded-lg border border-surface-border bg-surface-elevated px-3.5 py-2 text-sm text-content-primary placeholder-content-muted focus:border-primary-green focus:outline-none focus:ring-1 focus:ring-primary-green transition"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-surface-card p-6 rounded-xl border border-surface-border space-y-3">
+        <SectionHeading title="Ảnh bìa bài viết" description="Tải lên tệp ảnh (JPEG, PNG, WebP) - Tùy chọn" />
+        <div className="flex items-center gap-3">
+          <label className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-surface-elevated hover:bg-surface-hover text-content-secondary hover:text-content-primary border border-surface-border text-xs font-medium cursor-pointer transition-colors">
+            <FiUpload className="text-sm" />
+            <span>{image ? image.name : "Chọn tệp ảnh bìa"}</span>
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              onChange={(e) => { setImage(e.target.files?.[0] ?? null); setDirty(true); }}
+              className="hidden"
+            />
+          </label>
+          {image && (
+            <button
+              type="button"
+              onClick={() => setImage(null)}
+              className="text-xs text-rose-400 hover:text-rose-300 underline"
+            >
+              Gỡ ảnh
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-center justify-end gap-3 pt-2">
+        <button
+          type="button"
+          disabled={!formValid || save.isPending}
+          onClick={() => save.mutate("SAVE_PENDING")}
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg border border-surface-border bg-surface-elevated hover:bg-surface-hover text-content-primary text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          <FiSave className="text-base" />
+          <span>{save.isPending ? "Đang lưu..." : "Lưu chờ duyệt"}</span>
+        </button>
+
+        <button
+          type="button"
+          disabled={!formValid || save.isPending}
+          onClick={() => setConfirmPublish(true)}
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary-green hover:bg-primary-green-dark text-primary-black text-sm font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed shadow-md"
+        >
+          <FiSend className="text-base" />
+          <span>Xuất bản Website ngay</span>
+        </button>
+      </div>
+
+      <ConfirmDialog
+        isOpen={confirmRegenerate}
+        title="Ghi đè nội dung bằng AI?"
+        message="Nội dung bài viết hiện tại sẽ bị thay thế bằng bản nháp mới do AI sinh ra. Bạn có chắc chắn muốn tiếp tục?"
+        confirmLabel="Tiếp tục tạo lại"
+        cancelLabel="Hủy bỏ"
+        variant="primary"
+        isLoading={draft.isPending}
+        onConfirm={() => draft.mutate()}
+        onCancel={() => setConfirmRegenerate(false)}
+      />
+
+      <ConfirmDialog
+        isOpen={confirmPublish}
+        title="Xác nhận xuất bản bài viết"
+        message="Bài viết sẽ được xuất bản công khai ngay lập tức lên website VietQuant."
+        confirmLabel="Xuất bản ngay"
+        cancelLabel="Hủy"
+        variant="primary"
+        isLoading={save.isPending}
+        onConfirm={() => save.mutate("PUBLISH_NOW")}
+        onCancel={() => setConfirmPublish(false)}
+      />
     </section>
   );
 };

@@ -1,7 +1,10 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
+import { FiArrowLeft, FiSave, FiRefreshCw, FiSearch, FiAlertTriangle } from "react-icons/fi";
+import { BsStars } from "react-icons/bs";
+import { FaLinkedin } from "react-icons/fa";
 import {
   createLinkedInPost,
   generateLinkedInDraft,
@@ -13,29 +16,20 @@ import {
   suggestPostMedia,
   updateLinkedInPost,
 } from "../../services/linkedin/handleLinkedIn";
-import Modal from "../../shared/Popup/Modal";
 import { apiErrorMessage } from "../../types/Api";
 import type { LinkedInSourceType } from "../../types/LinkedIn";
-import type {
-  FactualReview,
-  GeneratedLinkedInPost,
-  LinkedInMediaMode,
-  PexelsCandidate,
-} from "../../types/Publication";
+import type { FactualReview, GeneratedLinkedInPost, LinkedInMediaMode, PexelsCandidate } from "../../types/Publication";
+import { PageHeader, SectionHeading, ConfirmDialog } from "../../shared/ui";
 
-const EMPTY_FACT_CHECK: FactualReview = {
-  requiresHumanFactCheck: false,
-  factCheckNotes: [],
-};
+const EMPTY_FACT_CHECK: FactualReview = { requiresHumanFactCheck: false, factCheckNotes: [] };
 
-// Normalize older persisted records whose fact-check object may be empty.
-const normalizeFactCheck = (value?: Partial<FactualReview> | null): FactualReview => ({
-  requiresHumanFactCheck: Boolean(value?.requiresHumanFactCheck),
-  factCheckNotes: value?.factCheckNotes ?? [],
+const normalizeFactCheck = (val?: Partial<FactualReview> | null): FactualReview => ({
+  requiresHumanFactCheck: Boolean(val?.requiresHumanFactCheck),
+  factCheckNotes: val?.factCheckNotes ?? [],
 });
 
-// Author, review, persist, and publish one standalone LinkedIn post.
-const LinkedInPost = () => {
+// Author, review, persist, and publish a standalone LinkedIn post.
+const LinkedInPost: React.FC = () => {
   const { post_id: id } = useParams<{ post_id: string }>();
   const navigate = useNavigate();
   const client = useQueryClient();
@@ -51,13 +45,9 @@ const LinkedInPost = () => {
   const [factCheckAcknowledged, setFactCheckAcknowledged] = useState(true);
   const [topics, setTopics] = useState<string[]>([]);
   const [confirm, setConfirm] = useState(false);
-  const detail = useQuery({
-    queryKey: ["linkedin-post", id],
-    queryFn: () => getLinkedInPost(id!),
-    enabled: Boolean(id),
-  });
 
-  // Load persisted values into the same form used before the first save.
+  const detail = useQuery({ queryKey: ["linkedin-post", id], queryFn: () => getLinkedInPost(id!), enabled: Boolean(id) });
+
   useEffect(() => {
     if (!detail.data) return;
     setTopic(detail.data.topic);
@@ -66,239 +56,218 @@ const LinkedInPost = () => {
     setMedia(detail.data.media);
     setCandidates(detail.data.media);
     setSourceType(detail.data.sourceType);
-    const loadedFactCheck = normalizeFactCheck(detail.data.factCheck);
-    setFactCheck(loadedFactCheck);
+    const loaded = normalizeFactCheck(detail.data.factCheck);
+    setFactCheck(loaded);
     setGeneration(detail.data.generation ?? {});
-    setFactCheckAcknowledged(!loadedFactCheck.requiresHumanFactCheck);
+    setFactCheckAcknowledged(!loaded.requiresHumanFactCheck);
   }, [detail.data]);
 
-  const immutable = detail.data?.status === "PUBLISHED"
-    || detail.data?.status === "PUBLISHING"
-    || detail.data?.status === "REVIEW_REQUIRED";
+  const immutable = ["PUBLISHED", "PUBLISHING", "REVIEW_REQUIRED"].includes(detail.data?.status ?? "");
   const factCheckBlocked = factCheck.requiresHumanFactCheck && !factCheckAcknowledged;
-  const mediaCountValid = mediaMode === "none"
-    ? media.length === 0
-    : mediaMode === "single-image"
-      ? media.length === 1
-      : media.length >= 2 && media.length <= 20;
-  const mediaValid = mediaCountValid && media.every((item) => item.altText.trim());
-  const formValid = Boolean(topic.trim() && content.trim() && mediaValid && !factCheckBlocked);
+  const mediaCountValid = mediaMode === "none" ? media.length === 0 : mediaMode === "single-image" ? media.length === 1 : media.length >= 2 && media.length <= 20;
+  const formValid = Boolean(topic.trim() && content.trim() && mediaCountValid && media.every((m) => m.altText.trim()) && !factCheckBlocked);
 
-  // Refresh all LinkedIn views affected by persistence or publication.
   const invalidate = () => {
     client.invalidateQueries({ queryKey: ["linkedin-posts"] });
     if (id) client.invalidateQueries({ queryKey: ["linkedin-post", id] });
     client.invalidateQueries({ queryKey: ["linkedin-history"] });
   };
 
-  // Build the reviewed payload from only the currently visible editor state.
-  const reviewedPayload = () => ({
-    topic: topic.trim(),
-    content: content.trim(),
-    mediaMode,
-    media,
-    factCheck,
-    generation,
-    sourceType,
-  });
+  const payload = () => ({ topic: topic.trim(), content: content.trim(), mediaMode, media, factCheck, generation, sourceType });
 
   const save = useMutation({
-    mutationFn: () => id
-      ? updateLinkedInPost(id, reviewedPayload())
-      : createLinkedInPost({ ...reviewedPayload(), action: "SAVE_DRAFT" }),
-    onSuccess: (post) => {
-      toast.success("Đã lưu bản nháp LinkedIn.");
-      invalidate();
-      if (!id) navigate(`/linkedin/posts/${post.id}`);
-    },
-    onError: (error) => toast.error(apiErrorMessage(error)),
+    mutationFn: () => id ? updateLinkedInPost(id, payload()) : createLinkedInPost({ ...payload(), action: "SAVE_DRAFT" }),
+    onSuccess: (res) => { toast.success("Đã lưu bản nháp LinkedIn."); invalidate(); if (!id) navigate(`/linkedin/posts/${res.id}`); },
+    onError: (e) => toast.error(apiErrorMessage(e)),
   });
+
   const draft = useMutation({
-    mutationFn: () => generateLinkedInDraft({
-      topic,
-      targetAudience: "mixed",
-      requestedMediaMode: mediaMode,
-    }),
+    mutationFn: () => generateLinkedInDraft({ topic, targetAudience: "mixed", requestedMediaMode: mediaMode }),
     onSuccess: (data) => {
-      setContent(data.content);
-      setMediaMode(data.media.mode);
-      setSourceType("INDEPENDENT_AI");
-      setFactCheck(data.factualReview);
-      setGeneration(data.generated);
+      setContent(data.content); setMediaMode(data.media.mode); setSourceType("INDEPENDENT_AI");
+      setFactCheck(data.factualReview); setGeneration(data.generated);
       setFactCheckAcknowledged(!data.factualReview.requiresHumanFactCheck);
-      setKeywords(data.media.images.flatMap((image) => image.searchKeywords).join(", "));
+      setKeywords(data.media.images.flatMap((img) => img.searchKeywords).join(", "));
       toast.success("Đã tạo bản nháp AI — chưa được lưu.");
     },
-    onError: (error) => toast.error(apiErrorMessage(error)),
+    onError: (e) => toast.error(apiErrorMessage(e)),
   });
+
   const propose = useMutation({
-    mutationFn: () => proposeLinkedInTopics({
-      count: 3,
-      recentLimit: 20,
-      targetAudience: "mixed",
-    }),
-    onSuccess: (data) => setTopics(data.topics),
-    onError: (error) => toast.error(apiErrorMessage(error)),
+    mutationFn: () => proposeLinkedInTopics({ count: 3, recentLimit: 20, targetAudience: "mixed" }),
+    onSuccess: (d) => setTopics(d.topics),
+    onError: (e) => toast.error(apiErrorMessage(e)),
   });
+
   const search = useMutation({
     mutationFn: () => {
-      const parsedKeywords = keywords.split(",").map((value) => value.trim()).filter(Boolean);
-      return id ? suggestPostMedia(id, parsedKeywords) : searchLinkedInMedia(parsedKeywords);
+      const keys = keywords.split(",").map((v) => v.trim()).filter(Boolean);
+      return id ? suggestPostMedia(id, keys) : searchLinkedInMedia(keys);
     },
     onSuccess: setCandidates,
-    onError: (error) => toast.error(apiErrorMessage(error)),
+    onError: (e) => toast.error(apiErrorMessage(e)),
   });
+
   const publish = useMutation({
     mutationFn: async () => {
-      if (!id) return createLinkedInPost({ ...reviewedPayload(), action: "PUBLISH_NOW" });
-      await updateLinkedInPost(id, reviewedPayload());
+      if (!id) return createLinkedInPost({ ...payload(), action: "PUBLISH_NOW" });
+      await updateLinkedInPost(id, payload());
       return publishLinkedInPost(id);
     },
-    onSuccess: () => {
-      toast.success("Đã gửi yêu cầu đăng LinkedIn.");
-      setConfirm(false);
-      invalidate();
-    },
-    onError: (error) => toast.error(apiErrorMessage(error)),
+    onSuccess: () => { toast.success("Đã gửi yêu cầu đăng LinkedIn."); setConfirm(false); invalidate(); },
+    onError: (e) => toast.error(apiErrorMessage(e)),
   });
+
   const retry = useMutation({
     mutationFn: () => retryLinkedInPost(id!),
-    onSuccess: () => {
-      toast.success("Đã gửi yêu cầu thử lại.");
-      invalidate();
-    },
-    onError: (error) => toast.error(apiErrorMessage(error)),
+    onSuccess: () => { toast.success("Đã gửi yêu cầu thử lại."); invalidate(); },
+    onError: (e) => toast.error(apiErrorMessage(e)),
   });
 
-  // Keep selected media consistent with the backend mode constraints.
-  const changeMediaMode = (next: LinkedInMediaMode) => {
-    setMediaMode(next);
-    if (next === "none") setMedia([]);
-    if (next === "single-image" && media.length > 1) setMedia(media.slice(0, 1));
-  };
-
-  // Select, replace, or remove a candidate according to the active media mode.
-  const toggleCandidate = (candidate: PexelsCandidate) => {
+  // Toggle image candidate selection in media array.
+  const toggleCandidate = (c: PexelsCandidate) => {
     if (mediaMode === "none") return;
-    const selected = media.some((item) => item.providerId === candidate.providerId);
-    if (selected) {
-      setMedia(media
-        .filter((item) => item.providerId !== candidate.providerId)
-        .map((item, index) => ({ ...item, order: index + 1 })));
-    } else if (mediaMode === "single-image") {
-      setMedia([{ ...candidate, order: 1 }]);
-    } else if (media.length < 20) {
-      setMedia([...media, { ...candidate, order: media.length + 1 }]);
-    }
-  };
-
-  // Edit required accessibility text on the selected media payload.
-  const updateAltText = (providerId: string, altText: string) => {
-    setMedia(media.map((item) => item.providerId === providerId ? { ...item, altText } : item));
+    const exists = media.some((m) => m.providerId === c.providerId);
+    if (exists) setMedia(media.filter((m) => m.providerId !== c.providerId).map((m, i) => ({ ...m, order: i + 1 })));
+    else if (mediaMode === "single-image") setMedia([{ ...c, order: 1 }]);
+    else if (media.length < 20) setMedia([...media, { ...c, order: media.length + 1 }]);
   };
 
   return (
-    <section className="mx-auto max-w-4xl space-y-5 text-gray-th2">
-      <Link to="/linkedin" className="text-blue-300">← Quản lý LinkedIn</Link>
-      <h1 className="text-2xl font-bold text-primary-white">{id ? "Bài LinkedIn" : "Tạo bài LinkedIn"}</h1>
+    <section className="space-y-6 max-w-5xl mx-auto">
+      <div>
+        <Link to="/linkedin" className="inline-flex items-center gap-1.5 text-xs text-content-muted hover:text-primary-green mb-3 transition-colors">
+          <FiArrowLeft className="w-3.5 h-3.5" />
+          <span>Quay lại Quản lý LinkedIn</span>
+        </Link>
+        <PageHeader title={id ? "Chi tiết bài LinkedIn" : "Tạo bài đăng LinkedIn"} description="Biên soạn, kiểm tra tính xác thực và đăng bài trực tiếp lên LinkedIn" />
+      </div>
 
       {immutable && (
-        <p className="rounded border border-orange-400 p-3 text-orange-200">
-          {detail.data?.status === "REVIEW_REQUIRED"
-            ? "Trạng thái không chắc chắn. Kiểm tra Company Page trước khi tiếp tục; không được retry tự động."
-            : "Bài đăng này không thể chỉnh sửa ở trạng thái hiện tại."}
-        </p>
-      )}
-      {detail.data?.lastError && <p className="rounded border border-red-700 p-3 text-red-200">{detail.data.lastError}</p>}
-
-      <label className="block">Chủ đề
-        <input disabled={immutable} value={topic} onChange={(event) => setTopic(event.target.value)} className="mt-1 w-full rounded bg-primary-black p-3" />
-      </label>
-      <div className="flex flex-wrap gap-3">
-        <button disabled={!topic.trim() || immutable} onClick={() => draft.mutate()} className="rounded bg-indigo-600 px-3 py-2 text-white">
-          {draft.isPending ? "Đang tạo bằng AI…" : "Tạo bản nháp AI"}
-        </button>
-        <button disabled={immutable} onClick={() => propose.mutate()} className="rounded bg-gray-700 px-3 py-2">Gợi ý chủ đề AI</button>
-      </div>
-      <div className="flex flex-wrap gap-2">
-        {topics.map((item) => <button key={item} disabled={immutable} onClick={() => setTopic(item)} className="rounded border border-gray-600 p-2 text-left">{item}</button>)}
-      </div>
-
-      <label className="block">Nội dung
-        <textarea disabled={immutable} value={content} onChange={(event) => setContent(event.target.value)} className="mt-1 min-h-48 w-full rounded bg-primary-black p-3" />
-      </label>
-
-      <label>Media mode
-        <select disabled={immutable} value={mediaMode} onChange={(event) => changeMediaMode(event.target.value as LinkedInMediaMode)} className="ml-2 rounded bg-primary-black p-2">
-          <option value="none">Không ảnh</option>
-          <option value="single-image">Một ảnh</option>
-          <option value="multi-image">Nhiều ảnh</option>
-        </select>
-      </label>
-      {mediaMode !== "none" && (
-        <div>
-          <div className="flex gap-2">
-            <input disabled={immutable} value={keywords} onChange={(event) => setKeywords(event.target.value)} placeholder="Từ khóa Pexels, ngăn bằng dấu phẩy" className="flex-1 rounded bg-primary-black p-2" />
-            <button disabled={immutable || search.isPending} onClick={() => search.mutate()} className="rounded bg-gray-700 p-2">
-              {search.isPending ? "Đang tìm ảnh…" : id ? "Gợi ý ảnh" : "Tìm ảnh"}
-            </button>
-          </div>
-          <p className="mt-2 text-sm">Đã chọn {media.length} ảnh{mediaMode === "multi-image" ? " (cần 2–20)" : " (cần 1)"}.</p>
-          <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-3">
-            {candidates.map((item) => {
-              const selected = media.some((value) => value.providerId === item.providerId);
-              return (
-                <article key={item.providerId} className={`overflow-hidden rounded border text-left ${selected ? "border-primary-green" : "border-gray-700"}`}>
-                  <img src={item.imageUrl} alt={item.altText} className="h-32 w-full object-cover" />
-                  <div className="space-y-2 p-2 text-sm">
-                    <p>{item.attribution}</p>
-                    {selected && <input value={media.find((value) => value.providerId === item.providerId)?.altText ?? ""} onChange={(event) => updateAltText(item.providerId, event.target.value)} disabled={immutable} placeholder="Alt text bắt buộc" className="w-full rounded bg-primary-black p-2" />}
-                    <button disabled={immutable} onClick={() => toggleCandidate(item)} className="rounded bg-gray-700 px-3 py-2">{selected ? "Bỏ chọn" : "Chọn"}</button>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
+        <div className="p-4 rounded-xl bg-amber-950/30 border border-amber-500/30 text-amber-300 text-xs flex items-center gap-3">
+          <FiAlertTriangle className="text-lg shrink-0 text-amber-400" />
+          <span>{detail.data?.status === "REVIEW_REQUIRED" ? "Trạng thái không chắc chắn. Vui lòng kiểm tra trang Company Page trước khi thực hiện." : "Bài đăng này ở trạng thái chỉ đọc và không thể chỉnh sửa."}</span>
         </div>
       )}
+      {detail.data?.lastError && (
+        <div className="p-4 rounded-xl bg-rose-950/30 border border-rose-500/30 text-rose-300 text-xs">{detail.data.lastError}</div>
+      )}
+
+      <div className="bg-surface-card p-6 rounded-xl border border-surface-border space-y-4">
+        <SectionHeading title="Chủ đề & Nội dung" description="Chủ đề bài đăng và văn bản xuất bản" />
+        <div>
+          <label className="block text-xs font-medium text-content-secondary mb-1.5">Chủ đề bài đăng <span className="text-rose-400">*</span></label>
+          <input disabled={immutable} value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="Nhập chủ đề bài đăng..." className="w-full rounded-lg border border-surface-border bg-surface-elevated px-3.5 py-2 text-sm text-content-primary placeholder-content-muted focus:border-primary-green focus:outline-none focus:ring-1 focus:ring-primary-green transition disabled:opacity-50" />
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <button type="button" disabled={!topic.trim() || immutable || draft.isPending} onClick={() => draft.mutate()} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-950/40 text-purple-300 border border-purple-500/30 hover:bg-purple-900/50 text-xs font-semibold transition-colors disabled:opacity-50">
+            <BsStars className="text-sm" /><span>{draft.isPending ? "Đang tạo bằng AI..." : "Tạo bản nháp AI"}</span>
+          </button>
+          <button type="button" disabled={immutable || propose.isPending} onClick={() => propose.mutate()} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-elevated hover:bg-surface-hover text-content-secondary hover:text-content-primary border border-surface-border text-xs font-medium transition-colors disabled:opacity-50">
+            <FiRefreshCw className={`text-xs ${propose.isPending ? "animate-spin" : ""}`} /><span>Gợi ý chủ đề AI</span>
+          </button>
+        </div>
+        {topics.length > 0 && (
+          <div className="flex flex-wrap gap-2 pt-1">
+            {topics.map((item) => (
+              <button key={item} type="button" disabled={immutable} onClick={() => setTopic(item)} className="px-3 py-1 rounded-lg border border-surface-border bg-surface-elevated text-xs text-content-secondary hover:text-content-primary hover:border-primary-green/40 transition-colors text-left">
+                {item}
+              </button>
+            ))}
+          </div>
+        )}
+        <div>
+          <label className="block text-xs font-medium text-content-secondary mb-1.5">Nội dung bài viết <span className="text-rose-400">*</span></label>
+          <textarea disabled={immutable} rows={7} value={content} onChange={(e) => setContent(e.target.value)} placeholder="Soạn nội dung bài đăng LinkedIn..." className="w-full rounded-lg border border-surface-border bg-surface-elevated px-3.5 py-2.5 text-sm text-content-primary placeholder-content-muted focus:border-primary-green focus:outline-none focus:ring-1 focus:ring-primary-green transition resize-y disabled:opacity-50" />
+        </div>
+      </div>
+
+      <div className="bg-surface-card p-6 rounded-xl border border-surface-border space-y-4">
+        <SectionHeading title="Hình ảnh bài đăng (Pexels)" description="Chọn chế độ ảnh và đính kèm hình ảnh chất lượng cao" />
+        <div className="flex items-center gap-3">
+          <label className="text-xs text-content-muted">Chế độ ảnh:</label>
+          <select disabled={immutable} value={mediaMode} onChange={(e) => { const next = e.target.value as LinkedInMediaMode; setMediaMode(next); if (next === "none") setMedia([]); if (next === "single-image" && media.length > 1) setMedia(media.slice(0, 1)); }} className="rounded-lg border border-surface-border bg-surface-elevated px-3 py-1.5 text-xs text-content-primary focus:outline-none focus:ring-1 focus:ring-primary-green">
+            <option value="none">Không kèm ảnh</option><option value="single-image">Một ảnh</option><option value="multi-image">Nhiều ảnh (2-20)</option>
+          </select>
+        </div>
+        {mediaMode !== "none" && (
+          <div className="space-y-4">
+            <div className="flex gap-2">
+              <input disabled={immutable} value={keywords} onChange={(e) => setKeywords(e.target.value)} placeholder="Từ khóa tìm kiếm ảnh Pexels..." className="flex-1 rounded-lg border border-surface-border bg-surface-elevated px-3.5 py-2 text-xs text-content-primary placeholder-content-muted focus:outline-none focus:ring-1 focus:ring-primary-green" />
+              <button type="button" disabled={immutable || search.isPending} onClick={() => search.mutate()} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-surface-elevated hover:bg-surface-hover text-content-primary border border-surface-border text-xs font-semibold transition-colors disabled:opacity-50">
+                <FiSearch className="text-sm" /><span>{search.isPending ? "Đang tìm..." : "Tìm ảnh"}</span>
+              </button>
+            </div>
+            <p className="text-xs text-content-muted">Đã chọn: <strong className="text-content-primary">{media.length}</strong> ảnh {mediaMode === "multi-image" ? "(cần 2–20 ảnh)" : "(cần 1 ảnh)"}</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {candidates.map((item) => {
+                const selected = media.some((m) => m.providerId === item.providerId);
+                return (
+                  <article key={item.providerId} className={`rounded-xl border overflow-hidden bg-surface-elevated transition ${selected ? "border-primary-green ring-1 ring-primary-green" : "border-surface-border"}`}>
+                    <img src={item.imageUrl} alt={item.altText} className="h-36 w-full object-cover" />
+                    <div className="p-3 space-y-2 text-xs">
+                      <p className="text-content-muted truncate">{item.attribution}</p>
+                      {selected && (
+                        <input value={media.find((m) => m.providerId === item.providerId)?.altText ?? ""} onChange={(e) => setMedia(media.map((m) => m.providerId === item.providerId ? { ...m, altText: e.target.value } : m))} disabled={immutable} placeholder="Alt text (bắt buộc)..." className="w-full rounded border border-surface-border bg-surface-card px-2 py-1 text-xs text-content-primary focus:outline-none focus:ring-1 focus:ring-primary-green" />
+                      )}
+                      <button type="button" disabled={immutable} onClick={() => toggleCandidate(item)} className={`w-full py-1.5 rounded font-medium text-xs transition ${selected ? "bg-rose-950/40 text-rose-300 border border-rose-800/40 hover:bg-rose-900/40" : "bg-surface-card hover:bg-surface-border text-content-secondary hover:text-content-primary border border-surface-border"}`}>
+                        {selected ? "Bỏ chọn" : "Chọn ảnh này"}
+                      </button>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
 
       {(factCheck.requiresHumanFactCheck || factCheck.factCheckNotes.length > 0) && (
-        <section className="rounded border border-yellow-500 p-4">
-          <h2 className="font-semibold text-yellow-200">Kiểm tra tính chính xác</h2>
+        <div className="bg-amber-950/20 border border-amber-500/30 rounded-xl p-5 space-y-3">
+          <h3 className="font-semibold text-amber-300 text-sm flex items-center gap-2">
+            <FiAlertTriangle className="text-amber-400" /><span>Kiểm tra tính chính xác của nội dung</span>
+          </h3>
           {factCheck.factCheckNotes.length > 0 ? (
-            <ul className="mt-2 list-disc space-y-1 pl-5">{factCheck.factCheckNotes.map((note) => <li key={note}>{note}</li>)}</ul>
-          ) : (
-            <p className="mt-2">Nội dung này cần được kiểm tra thủ công.</p>
-          )}
+            <ul className="list-disc pl-5 space-y-1 text-xs text-amber-200/90">{factCheck.factCheckNotes.map((note) => <li key={note}>{note}</li>)}</ul>
+          ) : <p className="text-xs text-amber-200/90">Nội dung này cần được người quản trị kiểm tra thủ công trước khi xuất bản.</p>}
           {factCheck.requiresHumanFactCheck && (
-            <label className="mt-3 flex gap-2">
-              <input type="checkbox" disabled={immutable} checked={factCheckAcknowledged} onChange={(event) => setFactCheckAcknowledged(event.target.checked)} />
-              Tôi đã kiểm tra các thông tin trên.
+            <label className="flex items-center gap-2.5 pt-2 text-xs text-amber-200 cursor-pointer">
+              <input type="checkbox" disabled={immutable} checked={factCheckAcknowledged} onChange={(e) => setFactCheckAcknowledged(e.target.checked)} className="rounded" />
+              <span>Tôi xác nhận đã kiểm tra và đối chiếu các thông tin trên là chính xác.</span>
             </label>
           )}
-        </section>
+        </div>
       )}
 
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-wrap items-center justify-end gap-3 pt-2">
         {!immutable && (
-          <button disabled={!formValid || save.isPending} onClick={() => save.mutate()} className="rounded bg-gray-700 px-4 py-3 disabled:opacity-50">Lưu bản nháp</button>
+          <button type="button" disabled={!formValid || save.isPending} onClick={() => save.mutate()} className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg border border-surface-border bg-surface-elevated hover:bg-surface-hover text-content-primary text-sm font-medium transition-colors disabled:opacity-40">
+            <FiSave className="text-base" /><span>Lưu bản nháp</span>
+          </button>
         )}
         {!immutable && detail.data?.status !== "FAILED" && (
-          <button disabled={!formValid || publish.isPending} onClick={() => setConfirm(true)} className="rounded bg-[#0a66c2] px-4 py-3 text-white disabled:opacity-50">Đăng ngay lên LinkedIn</button>
+          <button type="button" disabled={!formValid || publish.isPending} onClick={() => setConfirm(true)} className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-[#0a66c2] hover:bg-[#084e96] text-white text-sm font-semibold transition-colors disabled:opacity-40 shadow-md">
+            <FaLinkedin className="text-base" /><span>Đăng ngay lên LinkedIn</span>
+          </button>
         )}
         {id && detail.data?.status === "FAILED" && (
-          <button disabled={retry.isPending} onClick={() => retry.mutate()} className="rounded bg-red-700 px-4 py-3 text-white">Thử lại</button>
+          <button type="button" disabled={retry.isPending} onClick={() => retry.mutate()} className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-sm font-semibold transition-colors disabled:opacity-40">
+            <FiRefreshCw className="text-base" /><span>Thử lại xuất bản</span>
+          </button>
         )}
       </div>
 
-      <Modal isOpen={confirm} onClose={() => setConfirm(false)}>
-        <h2 className="text-xl text-primary-white">Đăng ngay lên LinkedIn?</h2>
-        <p className="mt-2">{topic} · {mediaMode} · {media.length} ảnh</p>
-        <div className="mt-4 flex gap-3">
-          <button onClick={() => setConfirm(false)}>Hủy</button>
-          <button disabled={publish.isPending} onClick={() => publish.mutate()} className="rounded bg-[#0a66c2] px-3 py-2 text-white">Đăng ngay</button>
-        </div>
-      </Modal>
+      <ConfirmDialog
+        isOpen={confirm}
+        title="Xác nhận đăng bài lên LinkedIn"
+        message={`Bạn sắp xuất bản bài đăng "${topic}" (${mediaMode !== "none" ? `${media.length} ảnh` : "không ảnh"}) lên trang Company Page chính thức.`}
+        confirmLabel="Đăng bài ngay"
+        cancelLabel="Hủy"
+        variant="primary"
+        isLoading={publish.isPending}
+        onConfirm={() => publish.mutate()}
+        onCancel={() => setConfirm(false)}
+      />
     </section>
   );
 };

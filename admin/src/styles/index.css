@@ -16,6 +16,27 @@
 html,
 body {
   background-color: #121212;
+  color: #F9FAFB;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+:focus-visible {
+  outline: 2px solid #07e86c;
+  outline-offset: 2px;
+}
+
+input,
+select,
+textarea {
+  background-color: #222222;
+  color: #F9FAFB;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #9CA3AF;
 }
 
 html {

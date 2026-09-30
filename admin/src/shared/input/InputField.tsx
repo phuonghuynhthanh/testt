@@ -10,8 +10,10 @@ interface InputFieldProps {
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => void;
   placeholder?: string;
+  className?: string;
 }
 
+// Render a standardized form text input with dark surface styling and clear focus states.
 const InputField: React.FC<InputFieldProps> = ({
   label,
   id,
@@ -20,10 +22,11 @@ const InputField: React.FC<InputFieldProps> = ({
   readOnly = false,
   handleChange,
   placeholder,
+  className = "",
 }) => {
   return (
-    <div className="flex-1 flex flex-col">
-      <label htmlFor={id} className="text-primary-white font-medium">
+    <div className={`flex-1 flex flex-col ${className}`}>
+      <label htmlFor={id} className="text-xs font-medium text-content-secondary mb-1.5">
         {label}
       </label>
       <input
@@ -33,10 +36,12 @@ const InputField: React.FC<InputFieldProps> = ({
         value={value}
         onChange={handleChange}
         readOnly={readOnly}
-        className={`border border-gray-300 rounded-md p-2 mt-1 bg-primary-black-light text-primary-white first-line: ${
-          readOnly ? " cursor-not-allowed text-primary-white/80" : ""
-        }`}
         placeholder={placeholder}
+        className={`w-full rounded-lg border border-surface-border px-3.5 py-2 text-sm text-content-primary placeholder-content-muted transition ${
+          readOnly
+            ? "bg-surface-card/60 text-content-muted cursor-not-allowed border-dashed"
+            : "bg-surface-elevated focus:border-primary-green focus:outline-none focus:ring-1 focus:ring-primary-green"
+        }`}
       />
     </div>
   );

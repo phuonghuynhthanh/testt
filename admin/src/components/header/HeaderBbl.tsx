@@ -6,19 +6,21 @@ interface HeaderMblProps {
   isSidebarOpen: boolean;
 }
 
+// Render the mobile header with accessible hamburger toggle button and brand logo.
 const HeaderMbl = ({ onToggleSidebar, isSidebarOpen }: HeaderMblProps) => {
   return (
-    <div className="h-full w-full flex items-center justify-between bg-primary-black px-4 relative">
+    <div className="h-full w-full flex items-center justify-between bg-surface-base border-b border-surface-border px-4 relative">
       {/* Hamburger Menu Button - Left */}
       <button
+        type="button"
         onClick={onToggleSidebar}
-        className="p-2 rounded-lg hover:bg-gray-100 transition-colors duration-200 z-10"
-        aria-label={isSidebarOpen ? "Close menu" : "Open menu"}
+        className="p-2 rounded-lg text-content-primary hover:text-white hover:bg-surface-elevated transition-colors duration-200 z-10 focus:outline-none focus:ring-2 focus:ring-primary-green"
+        aria-label={isSidebarOpen ? "Đóng menu" : "Mở menu"}
       >
         {isSidebarOpen ? (
-          <HiX className="text-2xl text-gray-700" />
+          <HiX className="text-2xl text-content-primary" />
         ) : (
-          <HiMenuAlt3 className="text-2xl text-gray-700" />
+          <HiMenuAlt3 className="text-2xl text-content-primary" />
         )}
       </button>
 

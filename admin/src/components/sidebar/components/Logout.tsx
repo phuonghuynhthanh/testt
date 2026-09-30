@@ -18,12 +18,15 @@ const Logout = () => {
     }
   };
   return (
-    <div onClick={handleLogout}>
-      <hr />
-      <div className="grow transition-all duration-300 ease-in-out bg-transparent flex gap-2 hover:text-red-500 justify-start items-center h-10 hover:cursor-pointer hover:bg-gray-hover rounded-lg">
-        <span className="font-semibold">Đăng xuất</span>
-        <RiLogoutBoxRFill className="shrink-0 fill-current " size={18} />
-      </div>
+    <div className="pt-3 border-t border-surface-border">
+      <button
+        type="button"
+        onClick={handleLogout}
+        className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-content-secondary hover:text-rose-400 hover:bg-rose-950/20 border border-transparent hover:border-rose-900/30 transition-colors duration-200 group text-sm font-medium"
+      >
+        <span>Đăng xuất</span>
+        <RiLogoutBoxRFill className="text-content-muted group-hover:text-rose-400 transition-colors" size={18} />
+      </button>
     </div>
   );
 };

@@ -60,7 +60,7 @@ const BlogBasicInfoForm = ({
           placeholder="Nhập thẻ tag..."
         />
         <div className="flex flex-1 flex-col">
-          <label htmlFor="category" className="font-medium text-primary-white">Danh mục</label>
+          <label htmlFor="category" className="text-xs font-medium text-content-secondary mb-1.5">Danh mục</label>
           <input
             list="blog-update-categories"
             id="category"
@@ -68,7 +68,7 @@ const BlogBasicInfoForm = ({
             value={blogData.category}
             onChange={onFieldChange}
             placeholder="Chọn hoặc nhập danh mục mới..."
-            className="mt-1 rounded-md border border-gray-300 bg-primary-black-light p-2 text-primary-white"
+            className="w-full rounded-lg border border-surface-border bg-surface-elevated px-3.5 py-2 text-sm text-content-primary placeholder-content-muted focus:border-primary-green focus:outline-none focus:ring-1 focus:ring-primary-green transition"
           />
           <datalist id="blog-update-categories">
             {categories.data?.items.map((category) => <option key={category.id} value={category.name} />)}
