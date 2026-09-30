@@ -12,6 +12,7 @@ import {
   verifyLinkedInOrganization,
 } from "../../../services/publication/handlePublication";
 import { isManualDraftConflict } from "../../../services/publication/error";
+import { ConfirmDialog } from "../../../shared/ui";
 import { apiErrorMessage as publicationErrorMessage } from "../../../types/Api";
 import { formatCmsDate } from "../../../utils/date";
 import type {
@@ -30,6 +31,13 @@ interface PublicationPanelProps {
   blogState?: string;
   linkedinWorkspace?: boolean;
 }
+
+type PendingConfirmation =
+  | { kind: "regenerate-conflict" }
+  | { kind: "disable-linkedin" }
+  | { kind: "change-mode"; mode: LinkedInMode }
+  | { kind: "replace-draft" }
+  | null;
 
 // Identify selected Pexels media without mistaking generated image-plan entries for candidates.
 const isPexelsCandidate = (
@@ -93,6 +101,7 @@ const PublicationPanel = ({
   const [keywordInput, setKeywordInput] = useState("");
   const [verification, setVerification] = useState<OrganizationVerification | null>(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [pendingConfirmation, setPendingConfirmation] = useState<PendingConfirmation>(null);
   const [draftStale, setDraftStale] = useState(false);
   const [previewDirty, setPreviewDirty] = useState(false);
   const [factCheckAcknowledged, setFactCheckAcknowledged] = useState(false);
@@ -217,10 +226,7 @@ const PublicationPanel = ({
     },
     onError: (error, regenerate) => {
       if (!regenerate && isManualDraftConflict(error)) {
-        const approved = window.confirm(
-          "Bản nháp này có các chỉnh sửa thủ công. Tạo lại sẽ ghi đè lên nội dung này. Tiếp tục?",
-        );
-        if (approved) draftMutation.mutate(true);
+        setPendingConfirmation({ kind: "regenerate-conflict" });
         return;
       }
       toast.error(publicationErrorMessage(error));
@@ -287,11 +293,8 @@ const PublicationPanel = ({
       return;
     }
     if (publishLinkedin && !publishWeb) return;
-    if (
-      publishLinkedin &&
-      (contentDirty || mediaDirty) &&
-      !window.confirm("Tắt LinkedIn và hủy bỏ các chỉnh sửa cục bộ chưa lưu?")
-    ) {
+    if (publishLinkedin && (contentDirty || mediaDirty)) {
+      setPendingConfirmation({ kind: "disable-linkedin" });
       return;
     }
     setPublishLinkedin(!publishLinkedin);
@@ -301,12 +304,8 @@ const PublicationPanel = ({
   // Protect draft work before changing a mode that clears persisted generation data.
   const changeMode = (nextMode: LinkedInMode) => {
     if (nextMode === mode) return;
-    if (
-      (content || selectedMedia.length > 0) &&
-      !window.confirm(
-        "Thay đổi chế độ và lưu cài đặt sẽ xóa bản nháp và hình ảnh LinkedIn hiện tại. Tiếp tục?",
-      )
-    ) {
+    if (content || selectedMedia.length > 0) {
+      setPendingConfirmation({ kind: "change-mode", mode: nextMode });
       return;
     }
     setMode(nextMode);
@@ -335,11 +334,33 @@ const PublicationPanel = ({
   // Request a safe initial generation and let the backend identify manual-edit conflicts.
   const generateDraft = () => {
     if (mode === "CUSTOM" || settingsDirty) return;
-    if (contentDirty && !window.confirm("Các chỉnh sửa LinkedIn chưa lưu sẽ bị thay thế. Tiếp tục?")) {
+    if (contentDirty) {
+      setPendingConfirmation({ kind: "replace-draft" });
       return;
     }
     draftMutation.mutate(false);
   };
+
+  // Execute the destructive draft or channel change selected in the shared dialog.
+  const confirmPendingAction = () => {
+    const action = pendingConfirmation;
+    setPendingConfirmation(null);
+    if (!action) return;
+    if (action.kind === "regenerate-conflict") draftMutation.mutate(true);
+    if (action.kind === "disable-linkedin") {
+      setPublishLinkedin(false);
+      setIncludeWebLink(false);
+    }
+    if (action.kind === "change-mode") setMode(action.mode);
+    if (action.kind === "replace-draft") draftMutation.mutate(false);
+  };
+
+  // Explain the exact data loss associated with the pending destructive action.
+  const pendingMessage = pendingConfirmation?.kind === "disable-linkedin"
+    ? "Tắt LinkedIn sẽ hủy các chỉnh sửa nội dung và hình ảnh cục bộ chưa lưu."
+    : pendingConfirmation?.kind === "change-mode"
+      ? "Thay đổi chế độ sẽ xóa bản nháp và hình ảnh LinkedIn hiện tại khi lưu cài đặt."
+      : "Các chỉnh sửa LinkedIn chưa lưu sẽ bị thay thế bằng bản nháp mới.";
 
   // Convert optional comma or newline-separated phrases into backend keywords.
   const searchMedia = () => {
@@ -497,13 +518,29 @@ const PublicationPanel = ({
         </div>
       </div>
 
-      {showConfirmation && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-xs p-4"><div className="w-full max-w-md rounded-2xl bg-surface-card border border-surface-border p-6 text-content-primary shadow-2xl space-y-4">
-        <h3 className="text-base font-bold">Xác nhận xuất bản</h3>
-        <p className="text-xs text-content-secondary">Mục tiêu: {publishWeb ? "Website" : ""}{publishWeb && publishLinkedin ? " + " : ""}{publishLinkedin ? "LinkedIn" : ""}</p>
-        {publishLinkedin && <div className="text-xs text-content-muted space-y-1 bg-surface-elevated p-3 rounded-lg border border-surface-border"><p>Chế độ LinkedIn: {publication.linkedinMode}</p><p>Liên kết website: {publication.linkedinIncludeWebLink ? "Bao gồm" : "Không bao gồm"}</p><p>Hình ảnh: {savedMedia.length} hình ảnh</p><p>Trạng thái LinkedIn: {statusCopy[publication.linkedinStatus]}</p></div>}
-        {publishWeb && publishLinkedin && <p className="text-xs text-content-muted">Website sẽ được xuất bản trước. Sau đó LinkedIn sẽ được xuất bản tiếp theo.</p>}
-        <div className="flex justify-end gap-3 pt-3 border-t border-surface-border"><button type="button" onClick={() => setShowConfirmation(false)} className="rounded-lg border border-surface-border bg-surface-elevated hover:bg-surface-hover px-4 py-2 text-xs text-content-secondary hover:text-content-primary transition-colors">Hủy</button><button type="button" onClick={() => publishMutation.mutate()} disabled={publishMutation.isPending} className="rounded-lg bg-emerald-600 hover:bg-emerald-700 px-4 py-2 text-xs font-semibold text-white transition-colors">{publishMutation.isPending ? "Đang xuất bản…" : "Xuất bản ngay"}</button></div>
-      </div></div>}
+      <ConfirmDialog
+        isOpen={showConfirmation}
+        title="Xác nhận xuất bản"
+        message={`Xuất bản tới ${publishWeb ? "Website" : ""}${publishWeb && publishLinkedin ? " và " : ""}${publishLinkedin ? `LinkedIn (${savedMedia.length} hình ảnh)` : ""}.`}
+        confirmLabel="Xuất bản ngay"
+        cancelLabel="Hủy"
+        variant="primary"
+        isLoading={publishMutation.isPending}
+        onConfirm={() => publishMutation.mutate()}
+        onCancel={() => setShowConfirmation(false)}
+      />
+
+      <ConfirmDialog
+        isOpen={Boolean(pendingConfirmation)}
+        title="Xác nhận thay đổi"
+        message={pendingMessage}
+        confirmLabel="Tiếp tục"
+        cancelLabel="Hủy"
+        variant="danger"
+        isLoading={draftMutation.isPending}
+        onConfirm={confirmPendingAction}
+        onCancel={() => setPendingConfirmation(null)}
+      />
     </section>
   );
 };

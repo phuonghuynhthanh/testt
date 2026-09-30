@@ -19,19 +19,21 @@ const HeaderActionButton = ({
   isLoading: boolean;
 }) => {
   return (
-    <div className="flex items-center justify-between gap-4">
-      <div className="flex items-center gap-4">
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
         <button
+          type="button"
           onClick={onClose}
-          className="flex items-center gap-2 px-3.5 py-2 bg-surface-elevated hover:bg-surface-hover text-content-primary border border-surface-border rounded-xl transition-all duration-200 font-medium text-sm shadow-sm"
+          className="flex w-fit items-center gap-2 px-3.5 py-2 bg-surface-elevated hover:bg-surface-hover text-content-primary border border-surface-border rounded-xl transition-all duration-200 font-medium text-sm shadow-sm"
         >
           <IoClose className="w-5 h-5" />
           <span>Đóng</span>
         </button>
 
         {/* Segmented Control Toggle */}
-        <div className="flex items-center bg-surface-elevated rounded-xl p-1 border border-surface-border">
+        <div className="grid w-full grid-cols-3 items-center bg-surface-elevated rounded-xl p-1 border border-surface-border sm:flex sm:w-auto">
           <button
+            type="button"
             onClick={() => onModeChange("edit")}
             className={`
               flex items-center gap-2 px-3.5 py-1.5 rounded-lg transition-all duration-200 font-medium text-xs
@@ -46,6 +48,7 @@ const HeaderActionButton = ({
             <span>Chỉnh sửa</span>
           </button>
           <button
+            type="button"
             onClick={() => onModeChange("markdown")}
             className={`
               flex items-center gap-2 px-3.5 py-1.5 rounded-lg transition-all duration-200 font-medium text-xs
@@ -60,6 +63,7 @@ const HeaderActionButton = ({
             <span>Mã Markdown</span>
           </button>
           <button
+            type="button"
             onClick={() => onModeChange("preview")}
             className={`
               flex items-center gap-2 px-3.5 py-1.5 rounded-lg transition-all duration-200 font-medium text-xs
@@ -78,9 +82,10 @@ const HeaderActionButton = ({
 
       {onSave && (
         <button
+          type="button"
           onClick={onSave}
           disabled={isLoading}
-          className="flex items-center gap-2 px-5 py-2 bg-primary-green hover:bg-primary-green-dark disabled:opacity-50 disabled:cursor-not-allowed text-primary-black font-semibold rounded-xl transition-all duration-200 text-xs shadow-md"
+          className="flex w-full items-center justify-center gap-2 px-5 py-2 bg-primary-green hover:bg-primary-green-dark disabled:opacity-50 disabled:cursor-not-allowed text-primary-black font-semibold rounded-xl transition-all duration-200 text-xs shadow-md sm:w-auto"
         >
           {isLoading ? (
             <>

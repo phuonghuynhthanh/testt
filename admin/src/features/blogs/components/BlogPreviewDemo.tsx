@@ -50,7 +50,7 @@ const BlogPreviewDemo: React.FC<BlogPreviewProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex h-screen max-w-none flex-col overflow-hidden bg-primary-black p-5 font-markdown prose prose-a:no-underline"
+      className="fixed inset-0 z-50 flex h-screen max-w-none flex-col overflow-hidden bg-primary-black p-3 font-markdown prose prose-a:no-underline sm:p-5"
       style={{ fontFamily: '"lexend", sans-serif' }}
     >
       <div className="mb-4 shrink-0 border-b border-surface-border pb-4">
@@ -77,7 +77,7 @@ const BlogPreviewDemo: React.FC<BlogPreviewProps> = ({
           {/* Main layout */}
           <div className="mx-auto flex max-w-6xl">
             {/* Left content */}
-            <div className="flex-1 pr-8">
+            <div className="min-w-0 flex-1 xl:pr-8">
               {isPreviewMode && (
                 <div>
                   <h1 className="mb-3 font-markdown text-2xl font-semibold leading-tight text-primary-white sm:text-3xl md:text-4xl">

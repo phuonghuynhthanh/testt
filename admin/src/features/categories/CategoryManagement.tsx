@@ -217,7 +217,12 @@ const CategoryManagement: React.FC = () => {
         )}
       </div>
 
-      <Modal isOpen={formOpen} onClose={closeForm} className="max-w-md p-6">
+      <Modal
+        isOpen={formOpen}
+        onClose={closeForm}
+        className="max-w-md p-6"
+        ariaLabel={editing ? "Cập nhật danh mục" : "Tạo danh mục mới"}
+      >
         <form onSubmit={submitForm} className="space-y-4">
           <h2 className="text-lg font-bold text-content-primary">
             {editing ? "Cập nhật danh mục" : "Tạo danh mục mới"}
@@ -231,7 +236,7 @@ const CategoryManagement: React.FC = () => {
             </label>
             <input
               id="cat-name-input"
-              autoFocus
+              data-autofocus
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}

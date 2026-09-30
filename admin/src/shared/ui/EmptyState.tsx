@@ -6,7 +6,6 @@ interface EmptyStateProps {
   title: string;
   description?: string;
   action?: React.ReactNode;
-  className?: string;
 }
 
 // Render a placeholder state when a table or collection has no content to display.
@@ -15,12 +14,9 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   title,
   description,
   action,
-  className = "",
 }) => {
   return (
-    <div
-      className={`flex flex-col items-center justify-center py-16 px-4 text-center rounded-xl border border-dashed border-surface-border bg-surface-card/40 ${className}`}
-    >
+    <div className="flex flex-col items-center justify-center py-16 px-4 text-center rounded-xl border border-dashed border-surface-border bg-surface-card/40">
       <div className="w-12 h-12 rounded-full bg-surface-elevated flex items-center justify-center text-content-muted mb-4 text-xl">
         {icon || <FiInbox className="w-6 h-6" />}
       </div>

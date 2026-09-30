@@ -6,8 +6,6 @@ type StatusValue = BlogState | LinkedInPostStatus | LinkedInSourceType | string;
 
 interface StatusBadgeProps {
   status: StatusValue;
-  size?: "sm" | "md";
-  className?: string;
 }
 
 interface BadgeConfig {
@@ -89,18 +87,12 @@ const getBadgeConfig = (status: StatusValue): BadgeConfig => {
 // Render a styled status indicator badge with semantic colors and localized label.
 export const StatusBadge: React.FC<StatusBadgeProps> = ({
   status,
-  size = "sm",
-  className = "",
 }) => {
   const { label, classes } = getBadgeConfig(status);
-  const sizeClasses =
-    size === "sm"
-      ? "text-xs px-2.5 py-0.5"
-      : "text-sm px-3 py-1";
 
   return (
     <span
-      className={`inline-flex items-center font-medium rounded-full border tracking-wide whitespace-nowrap ${classes} ${sizeClasses} ${className}`}
+      className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium tracking-wide whitespace-nowrap ${classes}`}
     >
       <span className="w-1.5 h-1.5 rounded-full bg-current mr-1.5 opacity-80" />
       {label}

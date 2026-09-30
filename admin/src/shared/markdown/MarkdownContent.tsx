@@ -21,7 +21,7 @@ const getText = (child: React.ReactNode): string => {
   return getText((child as any)?.props?.children);
 };
 
-// Hàm chung để tạo heading component
+// Create semantic heading renderers with stable anchor IDs.
 const createHeadingComponent =
   (className: string) =>
   ({ node, children, ...props }: any) => {
@@ -149,7 +149,8 @@ const MarkdownContent: React.FC<MarkdownContentProps> = ({ content }) => {
                     borderRadius: "8px",
                     padding: "1rem",
                     fontSize: "17px",
-                    backgroundColor: "#f5f5f5",
+                    backgroundColor: "#222222",
+                    color: "#F9FAFB",
                     lineHeight: "1.5",
                   }}
                   {...rest}
@@ -158,7 +159,7 @@ const MarkdownContent: React.FC<MarkdownContentProps> = ({ content }) => {
                 </SyntaxHighlighter>
               ) : (
                 <code
-                  className="bg-gray-100 text-base text-primary-white px-1 py-0.5 rounded"
+                  className="bg-surface-elevated text-base text-content-primary px-1 py-0.5 rounded"
                   {...rest}
                 >
                   {children}
@@ -167,7 +168,7 @@ const MarkdownContent: React.FC<MarkdownContentProps> = ({ content }) => {
             },
             pre({ children }) {
               return (
-                <pre className="bg-gray-100 text-primary-white p-3 rounded-md border-2 border-gray-200 overflow-auto">
+                <pre className="bg-surface-elevated text-content-primary p-3 rounded-md border border-surface-border overflow-auto">
                   {children}
                 </pre>
               );

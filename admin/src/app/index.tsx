@@ -34,7 +34,7 @@ const App = () => {
           </Route>
 
           {/* Catch-all fallback route */}
-          <Route path="*" element={<Navigate to={PATH.LOGIN} replace />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>
     </div>

@@ -130,11 +130,11 @@ const BlogCreate: React.FC = () => {
         description="Soạn thảo bài viết mới hoặc tạo nhanh bản nháp thông minh bằng trợ lý AI"
       />
 
-      <div className="flex p-1 rounded-xl bg-surface-card border border-surface-border w-fit gap-1">
+      <div className="grid w-full grid-cols-2 gap-1 rounded-xl border border-surface-border bg-surface-card p-1 sm:flex sm:w-fit">
         <button
           type="button"
           onClick={() => setSource("manual")}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-colors ${
+          className={`flex items-center justify-center gap-2 px-2 py-2 rounded-lg text-xs font-semibold transition-colors sm:px-4 ${
             source === "manual"
               ? "bg-surface-elevated text-primary-green border border-primary-green/30 shadow-sm"
               : "text-content-secondary hover:text-content-primary"
@@ -146,7 +146,7 @@ const BlogCreate: React.FC = () => {
         <button
           type="button"
           onClick={() => setSource("ai")}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-colors ${
+          className={`flex items-center justify-center gap-2 px-2 py-2 rounded-lg text-xs font-semibold transition-colors sm:px-4 ${
             source === "ai"
               ? "bg-surface-elevated text-purple-300 border border-purple-500/30 shadow-sm"
               : "text-content-secondary hover:text-content-primary"
@@ -262,6 +262,16 @@ const BlogCreate: React.FC = () => {
               onChange={(e) => updateSeo("description", e.target.value)}
               placeholder="Nhập mô tả tóm tắt..."
               className="w-full rounded-lg border border-surface-border bg-surface-elevated px-3.5 py-2 text-sm text-content-primary placeholder-content-muted focus:border-primary-green focus:outline-none focus:ring-1 focus:ring-primary-green transition resize-y"
+            />
+          </div>
+          <div className="md:col-span-2">
+            <label className="block text-xs font-medium text-content-secondary mb-1.5">URL SEO</label>
+            <input
+              type="text"
+              value={blog.seo.url}
+              onChange={(e) => updateSeo("url", e.target.value)}
+              placeholder="https://vietquant.vn/duong-dan-bai-viet"
+              className="w-full rounded-lg border border-surface-border bg-surface-elevated px-3.5 py-2 text-sm text-content-primary placeholder-content-muted focus:border-primary-green focus:outline-none focus:ring-1 focus:ring-primary-green transition"
             />
           </div>
           <div>

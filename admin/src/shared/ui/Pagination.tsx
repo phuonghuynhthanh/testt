@@ -7,7 +7,6 @@ interface PaginationProps {
   totalItems?: number;
   itemUnit?: string;
   onPageChange: (newPage: number) => void;
-  className?: string;
 }
 
 // Render accessible pagination navigation with previous/next controls and page summary.
@@ -17,16 +16,13 @@ export const Pagination: React.FC<PaginationProps> = ({
   totalItems,
   itemUnit = "mục",
   onPageChange,
-  className = "",
 }) => {
   const safeTotalPages = Math.max(1, totalPages || 1);
   const isFirstPage = page <= 1;
   const isLastPage = page >= safeTotalPages;
 
   return (
-    <div
-      className={`flex flex-col sm:flex-row items-center justify-between gap-4 py-4 px-2 text-sm text-content-secondary ${className}`}
-    >
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-4 px-2 text-sm text-content-secondary">
       <div className="text-xs sm:text-sm text-content-muted">
         {totalItems !== undefined ? (
           <span>

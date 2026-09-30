@@ -63,7 +63,7 @@ const SeoGenerate: React.FC<SeoGenerateProps> = ({
 
   // Render modal dialog for generating SEO metadata with OpenAI.
   return (
-    <Modal isOpen={true} onClose={onClose}>
+    <Modal isOpen={true} onClose={onClose} ariaLabel="Tạo nội dung SEO">
       <div className="p-1 sm:p-2">
         <h2 className="text-xl font-semibold text-content-primary mb-2">
           Tạo nội dung SEO
