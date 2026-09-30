@@ -19,6 +19,7 @@ from apps.linkedin_posts.schemas import (
     PexelsCandidate,
 )
 from apps.linkedin_posts.services.generator import LinkedInDraftGenerator
+from apps.linkedin_posts.services.history import LinkedInHistoryService
 from apps.linkedin_posts.services.gemini import GeminiLinkedInProvider
 from apps.linkedin_posts.services.organization import OrganizationVerifier
 from apps.linkedin_posts.services.pexels import PexelsService
@@ -36,6 +37,7 @@ class LinkedInPostService:
         return {
             "id": post.id,
             "content": post.content,
+            "topic": post.topic,
             "mediaMode": post.media_mode,
             "media": post.media or [],
             "factCheck": post.fact_check,
@@ -46,14 +48,17 @@ class LinkedInPostService:
             "publishedAt": post.published_at,
             "lastError": post.last_error,
             "manuallyEdited": post.manually_edited,
+            "deletedAt": post.deleted_at,
             "createdAt": post.created_at,
             "modifiedAt": post.modified_at,
         }
 
     # Load one local record or use FastAPI's standard not-found response.
     @staticmethod
-    def get(post_id: str) -> LinkedInPost:
+    def get(post_id: str, include_deleted: bool = False) -> LinkedInPost:
         post = LinkedInPost.get(post_id)
+        if post and post.deleted_at and not include_deleted:
+            post = None
         if not post:
             raise HTTPException(
                 status_code=404, detail="Không tìm thấy bài đăng LinkedIn"
@@ -62,13 +67,15 @@ class LinkedInPostService:
 
     # Return all local history without any provider call.
     @classmethod
-    def list(cls) -> list[dict]:
-        return [
-            cls.serialize(post)
-            for post in LinkedInPost.filter(True)
-            .order_by(LinkedInPost.modified_at.desc())
-            .all()
-        ]
+    def list(cls, page: int = 1, page_size: int = 20, status: str | None = None, source_type: str | None = None) -> dict:
+        query = LinkedInPost.filter(LinkedInPost.deleted_at.is_(None))
+        if status:
+            query = query.filter(LinkedInPost.status == status)
+        if source_type:
+            query = query.filter(LinkedInPost.source_type == source_type)
+        total = query.count()
+        posts = query.order_by(LinkedInPost.modified_at.desc(), LinkedInPost.id.desc()).offset((page - 1) * page_size).limit(page_size).all()
+        return {"items": [cls.serialize(post) for post in posts], "page": page, "pageSize": page_size, "total": total, "totalPages": (total + page_size - 1) // page_size}
 
     # Generate an independent preview and intentionally do not create a LinkedInPost.
     @classmethod
@@ -82,7 +89,7 @@ class LinkedInPostService:
                 data.context,
                 data.targetAudience,
                 data.requestedMediaMode.value,
-                cls.generation_history(),
+                [item.model_dump(mode="json") for item in await LinkedInHistoryService().recent()],
             )
             return {
                 "content": result.content,
@@ -126,6 +133,7 @@ class LinkedInPostService:
         cls._validate_media(data.mediaMode.value, media)
         values = {
             "content": data.content.strip(),
+            "topic": data.topic.strip() if data.topic else None,
             "media_mode": data.mediaMode.value,
             "media": media,
             "fact_check": data.factCheck,
@@ -180,40 +188,6 @@ class LinkedInPostService:
             else cls.serialize(post)
         )
 
-    # Return structured generation history shared by independent and Blog-derived AI.
-    @classmethod
-    def generation_history(cls, limit: int = 5) -> list[dict]:
-        rows = (
-            LinkedInPost.filter(LinkedInPost.generation.is_not(None))
-            .order_by(LinkedInPost.modified_at.desc())
-            .limit(limit)
-            .all()
-        )
-        history = []
-        for post in rows:
-            generated = post.generation
-            if not isinstance(generated, dict) or not isinstance(
-                generated.get("connection"), dict
-            ):
-                continue
-            lines = [
-                line.strip()
-                for line in str(generated.get("content", post.content)).splitlines()
-                if line.strip()
-            ]
-            history.append(
-                {
-                    "topic": str(generated.get("insight", "")),
-                    "style": str(generated.get("style", "")),
-                    "openingType": str(generated.get("openingType", "")),
-                    "hookSource": str(generated.get("hookSource", "")),
-                    "connection": f"{generated['connection'].get('from', '')} -> {generated['connection'].get('to', '')}",
-                    "opening": lines[0] if lines else "",
-                    "cta": lines[-1] if lines else "",
-                }
-            )
-        return history
-
     # Edit only states where a revised review can still be safely published.
     @classmethod
     def update(cls, post_id: str, data: LinkedInPostUpdate) -> dict:
@@ -254,19 +228,17 @@ class LinkedInPostService:
             )
         )
 
-    # Remove only unpublished local content; external deletion is deliberately unsupported.
+    # Soft-delete only local content; the external Company Page post is intentionally untouched.
     @classmethod
     def delete(cls, post_id: str) -> None:
         post = cls.get(post_id)
-        if post.status in {
-            LinkedInPostStatus.PUBLISHED.value,
-            LinkedInPostStatus.PUBLISHING.value,
-            LinkedInPostStatus.REVIEW_REQUIRED.value,
-        }:
-            raise HTTPException(
-                status_code=409, detail="This LinkedIn post cannot be deleted"
-            )
-        LinkedInPost.delete(post)
+        LinkedInPost.update(post.id, deleted_at=datetime.now(timezone.utc))
+
+    # Restore a local CMS record without any provider side effect.
+    @classmethod
+    def restore(cls, post_id: str) -> dict:
+        post = cls.get(post_id, include_deleted=True)
+        return cls.serialize(LinkedInPost.update(post.id, deleted_at=None))
 
     # Re-download validated selected Pexels assets without replacing review choices.
     @staticmethod

@@ -1,14 +1,14 @@
 from contextlib import contextmanager
 from datetime import timedelta
-from typing import List, Optional
-
+from typing import Optional
 from fastapi import HTTPException, UploadFile, status
-from psycopg2 import IntegrityError
 from slugify import slugify
 from sqlalchemy import desc, func, select
+from sqlalchemy.exc import IntegrityError
 
 from apps.blogs import schemas
 from apps.blogs.models import Blog
+from apps.categories.models import Category
 from apps.core.storage import StorageService
 from apps.core.date_time import DateTime
 from apps.core.publication_visibility import web_visible_clause
@@ -19,6 +19,35 @@ from config.database import DatabaseManager
 
 
 class BlogServices:
+    # Normalize a display name into the durable category lookup key.
+    @staticmethod
+    def _category_slug(name: str) -> str:
+        return slugify(name.strip(), separator="-")
+
+    # Reuse, restore, or create a category only at a Blog persistence boundary.
+    @classmethod
+    def resolve_category(cls, name: str) -> Category:
+        slug = cls._category_slug(name)
+        if not slug:
+            raise HTTPException(status_code=422, detail="Category is required")
+        with cls.get_db_session() as session:
+            category = session.query(Category).filter(Category.slug == slug).first()
+            if category:
+                category.name, category.deleted_at = name.strip(), None
+            else:
+                category = Category(name=name.strip(), slug=slug)
+                session.add(category)
+            try:
+                session.commit()
+            except IntegrityError:
+                # Reuse the row won by a concurrent request instead of exposing a duplicate error.
+                session.rollback()
+                category = session.query(Category).filter(Category.slug == slug).one()
+                category.name, category.deleted_at = name.strip(), None
+                session.commit()
+            session.refresh(category)
+            return category
+
     @staticmethod
     @contextmanager
     def get_db_session():
@@ -87,6 +116,7 @@ class BlogServices:
                 uploaded_banner_url = banner_url
 
             seo_data = cls._create_seo_data(blog_data.seo, banner_url)
+            category = cls.resolve_category(str(blog_data.category))
             blog = Blog.create(
                 tag=blog_data.tag,
                 title=blog_data.title,
@@ -98,7 +128,8 @@ class BlogServices:
                     if action is schemas.BlogCreateAction.PUBLISH_NOW
                     else schemas.BlogState.PENDING
                 ),
-                category=blog_data.category,
+                category=category.name,
+                category_id=category.id,
                 seo=seo_data,
             )
         except IntegrityError:
@@ -133,7 +164,9 @@ class BlogServices:
         uploaded_banner_url = None
         try:
             with cls.get_db_session() as session:
-                blog = session.query(Blog).filter(Blog.id == id).first()
+                blog = session.query(Blog).filter(
+                    (Blog.id == id) & Blog.deleted_at.is_(None)
+                ).first()
                 ex_link = (
                     session.query(Blog.link_post)
                     .filter((Blog.link_post == data.link_post) & (Blog.id != id))
@@ -165,6 +198,9 @@ class BlogServices:
             for field_name, field_value in field_mappings.items():
                 if field_value is not None:
                     update_data[field_name] = field_value
+            if data.category is not None:
+                category = cls.resolve_category(data.category)
+                update_data.update(category=category.name, category_id=category.id)
             new_banner_url = blog.banner_url
             if image is not None:
                 folder_for_new_banner = data.link_post or blog.link_post
@@ -209,7 +245,9 @@ class BlogServices:
         """
         try:
             with cls.get_db_session() as session:
-                blog = session.query(Blog).filter(Blog.id == id).first()
+                blog = session.query(Blog).filter(
+                    (Blog.id == id) & Blog.deleted_at.is_(None)
+                ).first()
 
                 if not blog:
                     raise HTTPException(
@@ -217,16 +255,8 @@ class BlogServices:
                         detail="Không tìm thấy bài viết",
                     )
 
-                banner_url = blog.banner_url
-                link_post = blog.link_post
-                session.delete(blog)
+                blog.deleted_at = DateTime.now()
                 session.commit()
-                cls.delete_image_url(banner_url)
-                # StorageService logs cleanup errors; the committed delete stays successful.
-                try:
-                    StorageService.delete_key(link_post)
-                except Exception:
-                    pass
                 return {"message": "Xóa bài viết thành công"}
         except HTTPException:
             raise
@@ -238,9 +268,7 @@ class BlogServices:
             )
 
     @classmethod
-    def get_blogs_for_admin(
-        cls, state: Optional[str] = None
-    ) -> List[schemas.ListBlogAdmin]:
+    def get_blogs_for_admin(cls, state: Optional[str] = None, category: Optional[str] = None, page: int = 1, page_size: int = 20) -> dict:
         query = select(
             Blog.id,
             Blog.tag,
@@ -254,14 +282,18 @@ class BlogServices:
             Blog.category,
         )
 
+        query = query.where(Blog.deleted_at.is_(None))
         if state is not None:
             query = query.filter(Blog.state == state)
+        if category is not None:
+            query = query.filter(Blog.category == category)
 
-        query = query.order_by(desc(Blog.modified_at))
+        query = query.order_by(desc(Blog.modified_at), desc(Blog.id))
 
         with cls.get_db_session() as session:
-            blogs = session.execute(query).mappings().all()
-            return list(blogs) if blogs else []
+            total = session.execute(select(func.count()).select_from(query.subquery())).scalar_one()
+            blogs = session.execute(query.offset((page - 1) * page_size).limit(page_size)).mappings().all()
+            return {"items": list(blogs), "page": page, "pageSize": page_size, "total": total, "totalPages": (total + page_size - 1) // page_size}
 
     @classmethod
     def get_blog_for_client(
@@ -289,6 +321,7 @@ class BlogServices:
                     Blog.category,
                 )
                 .filter(Blog.state == schemas.BlogState.APPROVED)
+                .filter(Blog.deleted_at.is_(None))
                 .filter(web_visible_clause(Blog.id))
             )
             if category != "ALL":
@@ -320,7 +353,9 @@ class BlogServices:
     def get_blog_by_id(cls, blog_id: str):
         try:
             with cls.get_db_session() as session:
-                blog = Blog.filter(Blog.id == blog_id).first()
+                blog = session.query(Blog).filter(
+                    Blog.id == blog_id, Blog.deleted_at.is_(None)
+                ).first()
                 if not blog:
                     raise HTTPException(
                         status_code=status.HTTP_404_NOT_FOUND,
@@ -356,9 +391,10 @@ class BlogServices:
         try:
             with cls.get_db_session() as session:
 
-                blog = Blog.filter(
+                blog = session.query(Blog).filter(
                     (Blog.link_post == link_post)
                     & (Blog.state == schemas.BlogState.APPROVED)
+                    & (Blog.deleted_at.is_(None))
                     & web_visible_clause(Blog.id)
                 ).first()
                 if not blog:
@@ -440,14 +476,14 @@ class BlogServices:
         Returns True if link_post is available, False otherwise.
         If link_post is available, returns the blog_id of the blog that is using it.
         """
-        blog = Blog.filter(Blog.link_post == link_post).first()
+        blog = Blog.filter(Blog.link_post == link_post).filter(Blog.deleted_at.is_(None)).first()
         return blog is not None
 
     @classmethod
     def related_blog(cls, current_blog: str, limit: int):
         try:
             with cls.get_db_session() as session:
-                blog = Blog.filter(Blog.id == current_blog).first()
+                blog = Blog.filter(Blog.id == current_blog).filter(Blog.deleted_at.is_(None)).first()
                 if not blog:
                     raise HTTPException(
                         status_code=status.HTTP_404_NOT_FOUND,

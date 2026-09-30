@@ -38,7 +38,9 @@ def _generation_prompt(source: LinkedInArticleSource, **overrides: str) -> str:
         "publishAt": "",
         "requestedMediaMode": "",
         "recentPosts": json.dumps(
-            [post.model_dump() for post in source.recentPosts], ensure_ascii=False
+            [post.model_dump(mode="json") for post in source.recentPosts],
+            ensure_ascii=False,
+            default=str,
         ),
     }
     replacements.update(overrides)

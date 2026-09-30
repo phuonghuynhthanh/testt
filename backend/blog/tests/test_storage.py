@@ -306,9 +306,14 @@ def test_blog_update_deletes_old_banner_after_database_update(monkeypatch):
         def __and__(self, _other):
             return self
 
+        # Support the active-row predicate used by soft-delete queries.
+        def is_(self, _other):
+            return self
+
     class FakeBlog:
         id = Field()
         link_post = Field()
+        deleted_at = Field()
 
         # Record when the database write is reached.
         @staticmethod

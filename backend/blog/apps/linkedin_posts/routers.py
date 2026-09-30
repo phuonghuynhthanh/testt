@@ -1,6 +1,9 @@
 """Admin-only provider diagnostics and safe Pexels search."""
 
-from fastapi import APIRouter, Depends, HTTPException, status
+import json
+from pathlib import Path
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from apps.auth.services import require_admin
 from apps.linkedin_posts.exceptions import LinkedInError
@@ -10,11 +13,19 @@ from apps.linkedin_posts.schemas import (
     IndependentDraftRequest,
     LinkedInPostCreate,
     LinkedInPostUpdate,
+    TopicProposalRequest,
 )
+from apps.linkedin_posts.services.history import LinkedInHistoryService
 from apps.linkedin_posts.services.posts import LinkedInPostService
 from config import settings
 
 router = APIRouter(prefix="/linkedin", tags=["LinkedIn"])
+TOPIC_PROPOSAL_ATTEMPTS = 3
+
+
+# Normalize topics for deterministic recent-history and in-batch duplicate checks.
+def _normalized_topic(value: str) -> str:
+    return " ".join(value.strip().casefold().split())
 
 
 # Generate a standalone preview without persisting or posting it.
@@ -22,13 +33,16 @@ router = APIRouter(prefix="/linkedin", tags=["LinkedIn"])
 async def generate_draft(
     data: IndependentDraftRequest, _: str = Depends(require_admin)
 ):
-    return await LinkedInPostService.generate_draft(data)
+    try:
+        return await LinkedInPostService.generate_draft(data)
+    except LinkedInError as error:
+        raise _http_error(error) from error
 
 
-# Return standalone LinkedIn records without calling the provider.
+# Return bounded standalone LinkedIn records without calling the provider.
 @router.get("/posts")
-def list_posts(_: str = Depends(require_admin)):
-    return LinkedInPostService.list()
+def list_posts(page: int = Query(1, ge=1), pageSize: int = Query(20, ge=1, le=100), status: str | None = None, sourceType: str | None = None, _: str = Depends(require_admin)):
+    return LinkedInPostService.list(page, pageSize, status, sourceType)
 
 
 # Return one standalone LinkedIn record.
@@ -55,6 +69,70 @@ def update_post(
 @router.delete("/posts/{post_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_post(post_id: str, _: str = Depends(require_admin)):
     LinkedInPostService.delete(post_id)
+
+
+# Restore a soft-deleted local record without altering the Company Page.
+@router.post("/posts/{post_id}/restore")
+def restore_post(post_id: str, _: str = Depends(require_admin)):
+    return LinkedInPostService.restore(post_id)
+
+
+# Return exactly the provider-first history passed into AI generation.
+@router.get("/history/recent")
+async def recent_history(limit: int = Query(5, ge=1, le=50), _: str = Depends(require_admin)):
+    try:
+        return {"source": "linkedin", "items": [item.model_dump(mode="json") for item in await LinkedInHistoryService().recent(limit)]}
+    except LinkedInError as error:
+        raise _http_error(error) from error
+
+
+# Explicitly refresh the read-only provider view; no deletion state is inferred.
+@router.post("/history/sync")
+async def sync_history(_: str = Depends(require_admin)):
+    try:
+        return {"source": "linkedin", "items": [item.model_dump(mode="json") for item in await LinkedInHistoryService().recent(50)]}
+    except LinkedInError as error:
+        raise _http_error(error) from error
+
+
+# Propose fresh topics from real recent Company Page content without persistence.
+@router.post("/ai/propose-topics")
+async def propose_topics(data: TopicProposalRequest, _: str = Depends(require_admin)):
+    try:
+        history = await LinkedInHistoryService().recent(data.recentLimit)
+    except LinkedInError as error:
+        raise _http_error(error) from error
+    # Keep this deliberately small: Gemini receives the source guideline plus live history.
+    from apps.linkedin_posts.services.gemini import GeminiLinkedInProvider
+    provider = GeminiLinkedInProvider(settings.GEMINI_API_KEY or "", settings.GEMINI_MODEL)
+    try:
+        seen = {_normalized_topic(item.topic) for item in history if item.topic}
+        topics = []
+        system_prompt = (Path(__file__).parent / "prompts" / "system.md").read_text(encoding="utf-8")
+        # Retry only structured-output duplication and stop after the fixed attempt budget.
+        for _attempt in range(TOPIC_PROPOSAL_ATTEMPTS):
+            remaining = data.count - len(topics)
+            prompt = "Đề xuất các chủ đề LinkedIn mới. Trả JSON object {topics: string[]}. Không lặp topic gần đây hoặc trong batch.\n" + json.dumps({"count": remaining, "targetAudience": data.targetAudience, "guideline": data.guideline, "recentPosts": [item.model_dump(mode="json") for item in history], "alreadySelected": topics}, ensure_ascii=False)
+            payload = await provider._request(system_prompt, prompt, {"type": "object", "properties": {"topics": {"type": "array", "minItems": remaining, "maxItems": remaining, "items": {"type": "string"}}}, "required": ["topics"]}, "propose topics")
+            values = payload.get("topics", []) if isinstance(payload, dict) else []
+            for value in values if isinstance(values, list) else []:
+                topic = " ".join(str(value).strip().split())
+                normalized = _normalized_topic(topic)
+                if topic and normalized not in seen:
+                    seen.add(normalized)
+                    topics.append(topic)
+                if len(topics) == data.count:
+                    break
+            if len(topics) == data.count:
+                break
+        if len(topics) < data.count:
+            raise HTTPException(status_code=422, detail="AI did not return enough distinct fresh topics")
+        return {"topics": topics, "historySource": "linkedin"}
+    except LinkedInError as error:
+        raise _http_error(error) from error
+    finally:
+        if provider._owns_client:
+            await provider.client.aclose()
 
 
 # Publish an existing reviewed post without generating or selecting new media.
@@ -95,7 +173,7 @@ def _http_error(error: LinkedInError) -> HTTPException:
         if error.code == "rate_limited"
         else (
             status.HTTP_503_SERVICE_UNAVAILABLE
-            if error.code in {"linkedin_unavailable", "network_error"}
+            if error.code in {"linkedin_unavailable", "network_error", "provider_history_unavailable"}
             else status.HTTP_422_UNPROCESSABLE_ENTITY
         )
     )

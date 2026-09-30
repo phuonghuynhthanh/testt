@@ -1,6 +1,7 @@
 """Strict, Blog-independent LinkedIn input and output contracts."""
 
 from enum import Enum
+from datetime import datetime
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -213,12 +214,15 @@ class RecentPost(StrictModel):
     """Carry only the structured history needed by diversity validation."""
 
     topic: str = ""
-    style: str
-    openingType: str
-    hookSource: str
-    connection: str
+    providerPostId: str | None = None
+    content: str = ""
+    style: str = ""
+    openingType: str = ""
+    hookSource: str = ""
+    connection: str = ""
     opening: str = ""
     cta: str = ""
+    publishedAt: datetime | None = None
 
 
 class LinkedInArticleSource(StrictModel):
@@ -284,10 +288,20 @@ class IndependentDraftRequest(StrictModel):
     requestedMediaMode: MediaMode = MediaMode.NONE
 
 
+class TopicProposalRequest(StrictModel):
+    """Request bounded, non-persistent AI topic suggestions."""
+
+    count: int = Field(default=3, ge=1, le=10)
+    recentLimit: int = Field(default=20, ge=5, le=50)
+    targetAudience: str = "mixed"
+    guideline: str = ""
+
+
 class LinkedInPostCreate(StrictModel):
     """Accept reviewed AI or manual content for saving or direct publication."""
 
     content: str = Field(min_length=1)
+    topic: str | None = None
     mediaMode: MediaMode = MediaMode.NONE
     media: list[dict] = Field(default_factory=list, max_length=20)
     factCheck: dict | None = None

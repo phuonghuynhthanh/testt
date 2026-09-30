@@ -23,6 +23,7 @@ from apps.linkedin_posts.services.generator import (
 from apps.linkedin_posts.services.gemini import GeminiLinkedInProvider
 from apps.linkedin_posts.services.pexels import PexelsService
 from apps.linkedin_posts.services.posts import LinkedInPostService
+from apps.linkedin_posts.services.history import LinkedInHistoryService
 from apps.publications.models import BlogPublication
 from apps.publications.schemas import (
     DraftRequest,
@@ -184,7 +185,7 @@ class PublicationService:
 
     # Build a neutral Blog source with cross-domain LinkedIn generation history.
     @classmethod
-    def _source(
+    async def _source(
         cls, blog: Blog, mode: ProviderMode, include_link: bool
     ) -> LinkedInArticleSource:
         return LinkedInArticleSource(
@@ -194,7 +195,7 @@ class PublicationService:
             tags=[blog.tag] if blog.tag else [],
             canonicalUrl=canonical_blog_url(blog.link_post) if include_link else None,
             mode=mode,
-            recentPosts=LinkedInPostService.generation_history(),
+            recentPosts=(await LinkedInHistoryService().recent()) if mode is ProviderMode.SUMMARY else [],
         )
 
     # Generate a review-only preview without creating or changing any database row.
@@ -217,7 +218,7 @@ class PublicationService:
         )
         try:
             result = await LinkedInDraftGenerator(provider).draft(
-                cls._source(blog, ProviderMode(data.mode.value), data.includeWebLink)
+                await cls._source(blog, ProviderMode(data.mode.value), data.includeWebLink)
             )
             return {
                 "content": result.content,
@@ -230,7 +231,14 @@ class PublicationService:
                 ),
             }
         except LinkedInError as error:
-            raise HTTPException(status_code=422, detail=error.as_dict()) from error
+            raise HTTPException(
+                status_code=(
+                    status.HTTP_503_SERVICE_UNAVAILABLE
+                    if error.code == "provider_history_unavailable"
+                    else status.HTTP_422_UNPROCESSABLE_ENTITY
+                ),
+                detail=error.as_dict(),
+            ) from error
         finally:
             if provider._owns_client:
                 await provider.client.aclose()
@@ -245,6 +253,7 @@ class PublicationService:
         media = [item.model_dump() for item in data.media]
         reviewed = LinkedInPostCreate(
             content=data.content,
+            topic=getattr(blog, "title", None),
             mediaMode=_media_mode(media),
             media=media,
             factCheck=data.factCheck,

@@ -14,8 +14,18 @@ from sqlalchemy import (
     select,
     text,
 )
+from slugify import slugify
 
 from apps.core.date_time import DateTime
+
+LEGACY_CATEGORY_NAMES = {
+    "INVESTMENT_INSIGHTS",
+    "FOREIGN_INVESTMENT",
+    "KNOWLEDGE_BASE",
+    "TUTORIALS",
+    "CAREER",
+    "NEWS",
+}
 
 
 # Upgrade an earlier local publication table and create Web-only rows for legacy Blogs.
@@ -64,10 +74,50 @@ def apply(engine) -> None:
     )
     metadata.create_all(engine, tables=[linkedin_posts])
 
+    # Create categories before adding the Blog foreign key on legacy databases.
+    metadata = MetaData()
+    categories = Table(
+        "categories", metadata,
+        Column("id", String, primary_key=True), Column("name", String, nullable=False),
+        Column("slug", String, nullable=False, unique=True), Column("created_at", SQLDateTime),
+        Column("modified_at", SQLDateTime), Column("deleted_at", SQLDateTime),
+    )
+    metadata.create_all(engine, tables=[categories])
+
+    # Add recoverable local state and topic metadata without discarding existing content.
+    inspector = inspect(engine)
+    with engine.begin() as connection:
+        linkedin_columns = {column["name"] for column in inspector.get_columns("linkedin_posts")}
+        if "topic" not in linkedin_columns:
+            connection.execute(text("ALTER TABLE linkedin_posts ADD COLUMN topic VARCHAR"))
+        if "deleted_at" not in linkedin_columns:
+            connection.execute(text("ALTER TABLE linkedin_posts ADD COLUMN deleted_at TIMESTAMP"))
+        blog_columns = {column["name"] for column in inspector.get_columns("blogs")}
+        if "deleted_at" not in blog_columns:
+            connection.execute(text("ALTER TABLE blogs ADD COLUMN deleted_at TIMESTAMP"))
+        if "category_id" not in blog_columns:
+            connection.execute(
+                text(
+                    "ALTER TABLE blogs ADD COLUMN category_id VARCHAR REFERENCES categories(id)"
+                )
+            )
+
+    # Backfill all historical values and seed every category from the removed enum.
     metadata = MetaData()
     blogs = Table("blogs", metadata, autoload_with=engine)
     publications = Table("post_publications", metadata, autoload_with=engine)
     with engine.begin() as connection:
+        category_rows = connection.execute(select(blogs.c.category)).scalars().all() if "category" in blogs.c else []
+        now = DateTime.now()
+        names = LEGACY_CATEGORY_NAMES | {str(value).strip() for value in category_rows if value}
+        for name in names:
+            slug = slugify(name, separator="-")
+            existing = connection.execute(select(categories.c.id).where(categories.c.slug == slug)).scalar_one_or_none()
+            category_id = existing or str(uuid4())
+            if not existing:
+                connection.execute(categories.insert().values(id=category_id, name=name, slug=slug, created_at=now, modified_at=now))
+            if "category" in blogs.c and "category_id" in blogs.c:
+                connection.execute(blogs.update().where(blogs.c.category == name, blogs.c.category_id.is_(None)).values(category_id=category_id))
         missing_ids = (
             connection.execute(
                 select(blogs.c.id)
@@ -154,4 +204,20 @@ def apply(engine) -> None:
                 publications.update()
                 .where(publications.c.id == row["id"])
                 .values(linkedin_record_id=record_id)
+            )
+
+    # Retrofit the real foreign key on PostgreSQL databases upgraded by an earlier draft.
+    inspector = inspect(engine)
+    has_category_fk = any(
+        foreign_key.get("referred_table") == "categories"
+        and foreign_key.get("constrained_columns") == ["category_id"]
+        for foreign_key in inspector.get_foreign_keys("blogs")
+    )
+    if engine.dialect.name == "postgresql" and not has_category_fk:
+        with engine.begin() as connection:
+            connection.execute(
+                text(
+                    "ALTER TABLE blogs ADD CONSTRAINT fk_blogs_category_id_categories "
+                    "FOREIGN KEY (category_id) REFERENCES categories(id)"
+                )
             )

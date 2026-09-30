@@ -18,15 +18,6 @@ class BlogCreateAction(str, Enum):
     PUBLISH_NOW = "PUBLISH_NOW"
 
 
-class BlogCategory(str, Enum):
-    INVESTMENT_INSIGHTS = "INVESTMENT_INSIGHTS"
-    FOREIGN_INVESTMENT = "FOREIGN_INVESTMENT"
-    KNOWLEDGE = "KNOWLEDGE_BASE"
-    TUTORIALS = "TUTORIALS"
-    CAREER = "CAREER"
-    NEWS = "NEWS"
-
-
 class SEOSchema(BaseModel):
     title: str
     description: str
@@ -51,7 +42,7 @@ class BlogSchema(BaseModel):
     title: str
     banner_url: Optional[str] = None
     link_post: str
-    category: BlogCategory
+    category: str
     created_at: datetime
     modified_at: datetime
     seo: SEODataSchema
@@ -63,7 +54,7 @@ class ListBlogAdmin(BaseModel):
     title: str
     banner_url: Optional[str] = None
     link_post: str
-    category: BlogCategory
+    category: str
     state: str
     seo: SEODataSchema
     created_at: datetime
@@ -84,7 +75,7 @@ class BlogCreate(BaseModel):
     link_post: str
     seo: SEODataSchema
     content: str
-    category: BlogCategory
+    category: str
 
 
 class BlogUpdate(BaseModel):
@@ -94,7 +85,7 @@ class BlogUpdate(BaseModel):
     link_post: Optional[str] = None
     seo: Optional[SEODataSchema] = None
     content: Optional[str] = None
-    category: Optional[BlogCategory] = None
+    category: Optional[str] = None
     state: Optional[str] = None
 
 

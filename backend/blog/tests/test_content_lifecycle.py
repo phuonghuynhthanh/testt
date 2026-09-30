@@ -23,6 +23,7 @@ def post_state(**updates):
     values = {
         "id": "post-1",
         "content": "Reviewed",
+        "topic": None,
         "media_mode": "none",
         "media": [],
         "fact_check": None,
@@ -33,6 +34,7 @@ def post_state(**updates):
         "published_at": None,
         "last_error": None,
         "manually_edited": True,
+        "deleted_at": None,
         "created_at": None,
         "modified_at": datetime.now(timezone.utc),
     }
@@ -95,7 +97,7 @@ def test_reviewed_web_create_action_controls_state(monkeypatch, action, expected
         title="Latency",
         link_post="latency",
         content="Reviewed",
-        category=blog_schemas.BlogCategory.KNOWLEDGE,
+        category="KNOWLEDGE_BASE",
         seo=blog_schemas.SEODataSchema(
             title="Latency",
             description="Description",
@@ -111,6 +113,13 @@ def test_reviewed_web_create_action_controls_state(monkeypatch, action, expected
         "create",
         classmethod(
             lambda cls, **values: captured.update(values) or SimpleNamespace(**values)
+        ),
+    )
+    monkeypatch.setattr(
+        BlogServices,
+        "resolve_category",
+        classmethod(
+            lambda cls, name: SimpleNamespace(name=name, id="category-1")
         ),
     )
 

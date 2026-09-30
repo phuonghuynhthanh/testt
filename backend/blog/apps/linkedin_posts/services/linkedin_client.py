@@ -76,6 +76,31 @@ class LinkedInClient:
             raise error_for_response(response, stage, final_create=final_create)
         return response
 
+    # Find Company Page posts using LinkedIn's versioned Posts API finder.
+    async def find_organization_posts(self, organization_urn: str, limit: int = 50) -> list[dict]:
+        headers = self.headers()
+        headers["X-RestLi-Method"] = "FINDER"
+        response = await self.request(
+            "GET", f"{LINKEDIN_API}/rest/posts", stage="organization feed history",
+            headers=headers, params={"q": "author", "author": organization_urn, "sortBy": "CREATED", "count": max(1, min(limit, 50))},
+        )
+        try:
+            payload = response.json()
+        except ValueError as error:
+            raise LinkedInError(
+                "invalid_response",
+                "LinkedIn returned malformed JSON for organization feed history.",
+                response.status_code,
+            ) from error
+        elements = payload.get("elements") if isinstance(payload, dict) else None
+        if not isinstance(elements, list) or any(not isinstance(item, dict) for item in elements):
+            raise LinkedInError(
+                "invalid_response",
+                "LinkedIn returned an invalid organization feed history response.",
+                response.status_code,
+            )
+        return elements
+
     # Close only clients created by this domain service.
     async def close(self) -> None:
         if self._owns_client:

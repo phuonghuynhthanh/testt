@@ -15,6 +15,7 @@ class LinkedInPost(FastModel):
 
     id = Column(String, primary_key=True, default=lambda: str(uuid4()))
     content = Column(String, nullable=False)
+    topic = Column(String, nullable=True)
     media_mode = Column(String, nullable=False, default="none")
     media = Column(JSON, nullable=False, default=list)
     fact_check = Column(JSON, nullable=True)
@@ -25,6 +26,7 @@ class LinkedInPost(FastModel):
     published_at = Column(DateTime, nullable=True)
     last_error = Column(JSON, nullable=True)
     manually_edited = Column(Boolean, nullable=False, default=False)
+    deleted_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=CustomDateTime.now)
     modified_at = Column(
         DateTime, default=CustomDateTime.now, onupdate=CustomDateTime.now

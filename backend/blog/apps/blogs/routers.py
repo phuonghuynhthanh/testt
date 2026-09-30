@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, File, Form, Query, UploadFile, status
 
 from apps.auth.services import require_admin
 from apps.blogs import schemas
+from apps.blogs.models import Blog
 from apps.blogs.services.blog import BlogServices
 from apps.blogs.services.reference_search import ReferenceSearchService
 from apps.openai.services.gemini_ai import GeminiAiService
@@ -37,13 +38,15 @@ def get_blog_list_for_client(
     summary="Lấy danh sách bài viết cho admin",
     description="Endpoint này lấy danh sách bài viết phục vụ mục đích quản trị.",
     status_code=status.HTTP_200_OK,
-    response_model=List[schemas.ListBlogAdmin],
 )
 def get_admin_blog_list(
     state: Optional[str] = None,
+    category: Optional[str] = None,
+    page: int = Query(1, ge=1),
+    pageSize: int = Query(20, ge=1, le=100),
     _: str = Depends(require_admin),
 ):
-    return BlogServices.get_blogs_for_admin(state)
+    return BlogServices.get_blogs_for_admin(state, category, page, pageSize)
 
 
 # Return one Blog record for CMS editing.
@@ -117,6 +120,16 @@ def delete_blog(
     _: str = Depends(require_admin),
 ):
     return BlogServices.delete_blog(blog_id)
+
+
+# Restore a soft-deleted Blog without touching its preserved media.
+@router.post("/{blog_id}/restore")
+def restore_blog(blog_id: str, _: str = Depends(require_admin)):
+    blog = Blog.get(blog_id)
+    if not blog or not blog.deleted_at:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Không tìm thấy bài viết")
+    return Blog.update(blog.id, deleted_at=None)
 
 
 # Generate Blog markdown for the CMS administrator.

@@ -9,6 +9,7 @@ from sqlalchemy import create_engine, inspect, text
 from apps.blogs.schemas import BlogState
 from apps.main import app
 from apps.linkedin_posts.schemas import LinkedInPostAction, LinkedInPostStatus
+from apps.linkedin_posts.exceptions import LinkedInError
 from apps.linkedin_posts.services.posts import LinkedInPostService
 from apps.publications.migrations import apply as apply_publication_migration
 from apps.publications.schemas import DraftRequest, LinkedInCommandRequest, LinkedInMode
@@ -43,6 +44,7 @@ def post_state(**updates):
     values = {
         "id": "post-1",
         "content": "Reviewed content",
+        "topic": None,
         "media_mode": "none",
         "media": [],
         "fact_check": None,
@@ -53,6 +55,7 @@ def post_state(**updates):
         "published_at": None,
         "last_error": None,
         "manually_edited": False,
+        "deleted_at": None,
         "created_at": None,
         "modified_at": None,
     }
@@ -106,8 +109,13 @@ def test_blog_linkedin_draft_has_no_persistence(monkeypatch):
         "_save",
         classmethod(lambda cls, _: pytest.fail("preview must not persist")),
     )
+
+    # Supply an empty authoritative feed without making a provider request.
+    async def recent_history(_self):
+        return []
+
     monkeypatch.setattr(
-        LinkedInPostService, "generation_history", classmethod(lambda cls: [])
+        "apps.publications.services.LinkedInHistoryService.recent", recent_history
     )
     monkeypatch.setattr(
         "apps.publications.services.GeminiLinkedInProvider",
@@ -122,6 +130,45 @@ def test_blog_linkedin_draft_has_no_persistence(monkeypatch):
     )
 
     assert preview["content"] == "Preview"
+
+
+# Return 503 when SUMMARY cannot load authoritative LinkedIn history.
+def test_blog_summary_history_failure_is_service_unavailable(monkeypatch):
+    blog = SimpleNamespace(
+        title="Latency",
+        content="Article",
+        category="KNOWLEDGE_BASE",
+        tag="quant",
+        link_post="latency",
+    )
+
+    # Fail at the shared live-history boundary before Gemini generation.
+    async def unavailable(_self):
+        raise LinkedInError(
+            "provider_history_unavailable", "History unavailable", provider_status=403
+        )
+
+    monkeypatch.setattr(PublicationService, "_blog", classmethod(lambda cls, _: blog))
+    monkeypatch.setattr(
+        PublicationService, "_find_publication", classmethod(lambda cls, _: None)
+    )
+    monkeypatch.setattr(
+        "apps.publications.services.LinkedInHistoryService.recent", unavailable
+    )
+    monkeypatch.setattr(
+        "apps.publications.services.GeminiLinkedInProvider",
+        lambda *_: SimpleNamespace(_owns_client=False),
+    )
+
+    with pytest.raises(HTTPException) as error:
+        asyncio.run(
+            PublicationService.draft(
+                "blog-1",
+                DraftRequest(mode=LinkedInMode.SUMMARY, includeWebLink=False),
+            )
+        )
+
+    assert error.value.status_code == 503
 
 
 # Verify SAVE_DRAFT creates the standalone record and association without publishing.
@@ -299,12 +346,28 @@ def test_publication_migration_preserves_legacy_linkedin_data(tmp_path):
     assert "linkedin_record_id" in {
         column["name"] for column in inspect(engine).get_columns("post_publications")
     }
+    assert any(
+        foreign_key["referred_table"] == "categories"
+        and foreign_key["constrained_columns"] == ["category_id"]
+        for foreign_key in inspect(engine).get_foreign_keys("blogs")
+    )
     with engine.connect() as connection:
         row = connection.execute(
             text(
                 "SELECT p.linkedin_record_id, l.content, l.status, l.provider_post_id, l.fact_check FROM post_publications p JOIN linkedin_posts l ON l.id=p.linkedin_record_id"
             )
         ).one()
+        categories = set(
+            connection.execute(text("SELECT name FROM categories")).scalars().all()
+        )
     assert row[0]
     assert row[1:4] == ("Legacy reviewed content", "PUBLISHED", "urn:li:share:1")
     assert json.loads(row[4]) == {"checked": True}
+    assert categories == {
+        "INVESTMENT_INSIGHTS",
+        "FOREIGN_INVESTMENT",
+        "KNOWLEDGE_BASE",
+        "TUTORIALS",
+        "CAREER",
+        "NEWS",
+    }
