@@ -1,5 +1,7 @@
 import type {
   LinkedInContentUpdate,
+  LinkedInCommand,
+  LinkedInDraftResponse,
   LinkedInDraftRequest,
   MediaSuggestionRequest,
   OrganizationVerification,
@@ -24,7 +26,7 @@ export const updatePublication = async (
 export const generateLinkedInDraft = async (
   blogId: string,
   data: LinkedInDraftRequest,
-): Promise<Publication> =>
+): Promise<LinkedInDraftResponse> =>
   (await getAxiosClient().post(`/publications/blogs/${blogId}/linkedin/draft`, data)).data;
 
 // Save administrator-owned LinkedIn text or selected Pexels metadata.
@@ -33,6 +35,10 @@ export const saveLinkedInPublication = async (
   data: LinkedInContentUpdate,
 ): Promise<Publication> =>
   (await getAxiosClient().put(`/publications/blogs/${blogId}/linkedin`, data)).data;
+
+// Save reviewed Blog-derived LinkedIn copy or publish it immediately.
+export const commandBlogLinkedIn = async (blogId: string, data: LinkedInCommand): Promise<Publication> =>
+  (await getAxiosClient().post(`/publications/blogs/${blogId}/linkedin`, data)).data;
 
 // Ask the CMS backend for safe Pexels candidates based on the stored media plan.
 export const suggestLinkedInMedia = async (

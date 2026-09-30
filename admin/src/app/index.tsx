@@ -10,6 +10,7 @@ import BlogCreate from "../features/blogs/blog-create";
 import BlogManagement from "../features/blogs/blog-management";
 import LinkedInManagement from "../features/publications/LinkedInManagement";
 import LinkedInPost from "../features/publications/LinkedInPost";
+import CategoryManagement from "../features/categories/CategoryManagement";
 
 // Define the authenticated blog routes and the public login route.
 const App = () => {
@@ -25,8 +26,10 @@ const App = () => {
 
             <Route path={PATH.BLOG} element={<BlogManagement />} />
             <Route path={PATH.CREATE_BLOG} element={<BlogCreate />} />
+            <Route path={PATH.CATEGORIES} element={<CategoryManagement />} />
             <Route path={PATH.EDIT_BLOG} element={<BlogUpdate />} />
             <Route path={PATH.LINKEDIN} element={<LinkedInManagement />} />
+            <Route path={PATH.LINKEDIN_NEW} element={<LinkedInPost />} />
             <Route path={PATH.LINKEDIN_POST} element={<LinkedInPost />} />
           </Route>
         </Routes>

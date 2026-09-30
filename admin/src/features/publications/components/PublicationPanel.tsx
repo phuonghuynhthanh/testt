@@ -3,19 +3,20 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-toastify";
 import {
   generateLinkedInDraft,
+  commandBlogLinkedIn,
   getPublication,
   publishBlog,
   retryLinkedIn,
-  saveLinkedInPublication,
   suggestLinkedInMedia,
   updatePublication,
   verifyLinkedInOrganization,
 } from "../../../services/publication/handlePublication";
-import {
-  isManualDraftConflict,
-  publicationErrorMessage,
-} from "../../../services/publication/error";
+import { isManualDraftConflict } from "../../../services/publication/error";
+import { apiErrorMessage as publicationErrorMessage } from "../../../types/Api";
+import { formatCmsDate } from "../../../utils/date";
 import type {
+  FactualReview,
+  GeneratedLinkedInPost,
   LinkedInMediaMode,
   LinkedInMode,
   OrganizationVerification,
@@ -84,12 +85,17 @@ const PublicationPanel = ({
   const [publishLinkedin, setPublishLinkedin] = useState(false);
   const [includeWebLink, setIncludeWebLink] = useState(false);
   const [content, setContent] = useState("");
+  const [mediaMode, setMediaMode] = useState<LinkedInMediaMode>("none");
+  const [factCheck, setFactCheck] = useState<FactualReview>({ requiresHumanFactCheck: false, factCheckNotes: [] });
+  const [generation, setGeneration] = useState<GeneratedLinkedInPost>({});
   const [suggestions, setSuggestions] = useState<PexelsCandidate[]>([]);
   const [selectedMedia, setSelectedMedia] = useState<PexelsCandidate[]>([]);
   const [keywordInput, setKeywordInput] = useState("");
   const [verification, setVerification] = useState<OrganizationVerification | null>(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [draftStale, setDraftStale] = useState(false);
+  const [previewDirty, setPreviewDirty] = useState(false);
+  const [factCheckAcknowledged, setFactCheckAcknowledged] = useState(false);
   const previousBlogSaveVersion = useRef(blogSaveVersion);
 
   const publicationQuery = useQuery({
@@ -115,7 +121,13 @@ const PublicationPanel = ({
     publication && content !== (publication.linkedinContent ?? ""),
   );
   const mediaDirty = mediaSignature(selectedMedia) !== mediaSignature(savedMedia);
-  const hasUnsavedChanges = settingsDirty || contentDirty || mediaDirty;
+  const hasUnsavedChanges = settingsDirty || contentDirty || mediaDirty || previewDirty;
+
+  // Require a fresh fact-check acknowledgement when navigating to another Blog.
+  useEffect(() => {
+    setFactCheckAcknowledged(false);
+    setPreviewDirty(false);
+  }, [blogId]);
 
   // Mirror server state into editable controls after each successful mutation.
   useEffect(() => {
@@ -125,7 +137,13 @@ const PublicationPanel = ({
     setPublishLinkedin(publication.publishLinkedin);
     setIncludeWebLink(publication.linkedinIncludeWebLink);
     setContent(publication.linkedinContent || "");
+    setMediaMode(publication.linkedinMediaMode);
+    setFactCheck(publication.linkedinFactCheck ?? { requiresHumanFactCheck: false, factCheckNotes: [] });
+    setGeneration(publication.linkedinGenerated ?? {});
     setSelectedMedia(publication.linkedinMedia.filter(isPexelsCandidate));
+    if (!publication.linkedinFactCheck?.requiresHumanFactCheck) {
+      setFactCheckAcknowledged(true);
+    }
   }, [publication]);
 
   // Mark generated copy stale only after this screen successfully saves the Blog.
@@ -184,10 +202,18 @@ const PublicationPanel = ({
         includeWebLink: effectiveIncludeWebLink,
         regenerate,
       }),
-    onSuccess: async () => {
+    onSuccess: (data) => {
+      setContent(data.content);
+      setMediaMode(data.media.mode);
+      if (data.media.mode === "none") setSelectedMedia([]);
+      if (data.media.mode === "single-image") setSelectedMedia((items) => items.slice(0, 1));
+      setFactCheck(data.factualReview);
+      setGeneration(data.generated);
+      setKeywordInput(data.media.images.flatMap((image) => image.searchKeywords).join(", "));
+      setFactCheckAcknowledged(false);
       setDraftStale(false);
+      setPreviewDirty(true);
       toast.success("Đã tạo bản nháp LinkedIn để xem xét.");
-      await refreshPublication();
     },
     onError: (error, regenerate) => {
       if (!regenerate && isManualDraftConflict(error)) {
@@ -201,8 +227,10 @@ const PublicationPanel = ({
     },
   });
   const saveDraftMutation = useMutation({
-    mutationFn: () => saveLinkedInPublication(blogId, { content }),
+    // Persist the reviewed draft through the command endpoint, not the edit-only endpoint.
+    mutationFn: () => commandBlogLinkedIn(blogId, { mode, content, media: selectedMedia, includeWebLink: effectiveIncludeWebLink, factCheck, generation: { ...generation }, action: "SAVE_DRAFT" }),
     onSuccess: async () => {
+      setPreviewDirty(false);
       toast.success("Đã lưu bản nháp LinkedIn.");
       await refreshPublication();
     },
@@ -214,17 +242,11 @@ const PublicationPanel = ({
     onSuccess: (items) => setSuggestions(items),
     onError: (error) => toast.error(publicationErrorMessage(error)),
   });
-  const mediaMutation = useMutation({
-    mutationFn: () => saveLinkedInPublication(blogId, { media: selectedMedia }),
-    onSuccess: async () => {
-      toast.success("Đã lưu hình ảnh đã chọn.");
-      await refreshPublication();
-    },
-    onError: (error) => toast.error(publicationErrorMessage(error)),
-  });
   const publishMutation = useMutation({
-    mutationFn: () => publishBlog(blogId),
+    // Send PUBLISH_NOW directly for reviewed LinkedIn copy; Web-only keeps its configured-channel command.
+    mutationFn: () => publishLinkedin ? commandBlogLinkedIn(blogId, { mode, content, media: selectedMedia, includeWebLink: effectiveIncludeWebLink, factCheck, generation: { ...generation }, action: "PUBLISH_NOW" }) : publishBlog(blogId),
     onSuccess: async () => {
+      setPreviewDirty(false);
       setShowConfirmation(false);
       toast.success("Yêu cầu xuất bản hoàn tất.");
       await refreshPublication();
@@ -296,7 +318,7 @@ const PublicationPanel = ({
     const next = exists
       ? selectedMedia.filter((item) => item.providerId !== candidate.providerId)
       : [...selectedMedia, candidate];
-    const maximum = publication?.linkedinMediaMode === "single-image" ? 1 : 20;
+    const maximum = mediaMode === "single-image" ? 1 : 20;
     setSelectedMedia(
       next.slice(0, maximum).map((item, index) => ({ ...item, order: index + 1 })),
     );
@@ -336,12 +358,8 @@ const PublicationPanel = ({
   }
 
   const mediaCountValid = hasValidMediaCount(
-    publication.linkedinMediaMode,
+    mediaMode,
     selectedMedia.length,
-  );
-  const savedMediaValid = hasValidMediaCount(
-    publication.linkedinMediaMode,
-    savedMedia.length,
   );
   const altTextValid = selectedMedia.every((item) => item.altText.trim());
   const publishLabel = publishWeb && publishLinkedin
@@ -355,8 +373,13 @@ const PublicationPanel = ({
     !publishLinkedin ||
     ["NOT_SELECTED", "DRAFT", "READY"].includes(publication.linkedinStatus);
   const publishBlocked =
-    hasUnsavedChanges ||
-    (publishLinkedin && (!publication.linkedinContent?.trim() || !savedMediaValid));
+    settingsDirty ||
+    (publishLinkedin && (
+      !content.trim()
+      || !mediaCountValid
+      || !altTextValid
+      || (factCheck.requiresHumanFactCheck && !factCheckAcknowledged)
+    ));
   const organizationName = verification
     ? readProviderText(verification.organization, ["localizedName", "name", "vanityName", "id"])
     : null;
@@ -419,15 +442,15 @@ const PublicationPanel = ({
               {mode !== "CUSTOM" && <button type="button" onClick={generateDraft} disabled={settingsDirty || draftMutation.isPending || isPublished} className="rounded bg-indigo-600 px-3 py-2 text-sm text-white disabled:opacity-50">{draftMutation.isPending ? "Đang tạo…" : content ? "Tạo lại" : "Tạo bản nháp"}</button>}
             </div>
             <textarea value={content} onChange={(event) => setContent(event.target.value)} disabled={isPublished} className="mt-3 min-h-40 w-full rounded border border-gray-600 bg-primary-black p-3 text-primary-white" placeholder={mode === "CUSTOM" ? "Viết bài đăng LinkedIn…" : "Tạo bản nháp để xem xét…"} />
-            <button type="button" onClick={() => saveDraftMutation.mutate()} disabled={!content.trim() || !contentDirty || settingsDirty || saveDraftMutation.isPending || isPublished} className="mt-3 rounded bg-blue-600 px-4 py-2 text-white disabled:opacity-50">{saveDraftMutation.isPending ? "Đang lưu…" : "Lưu bản nháp LinkedIn"}</button>
+            <button type="button" onClick={() => saveDraftMutation.mutate()} disabled={!content.trim() || (!contentDirty && !mediaDirty && !previewDirty) || settingsDirty || !mediaCountValid || !altTextValid || saveDraftMutation.isPending || isPublished || (factCheck.requiresHumanFactCheck && !factCheckAcknowledged)} className="mt-3 rounded bg-blue-600 px-4 py-2 text-white disabled:opacity-50">{saveDraftMutation.isPending ? "Đang lưu…" : "Lưu bản nháp LinkedIn"}</button>
           </div>
 
-          {publication.linkedinFactCheck?.requiresHumanFactCheck && <div className="rounded border border-yellow-500 p-3 text-yellow-100"><strong>Khuyến nghị người kiểm tra tính xác thực</strong><ul className="ml-5 list-disc">{publication.linkedinFactCheck.factCheckNotes.map((note) => <li key={note}>{note}</li>)}</ul></div>}
+          {factCheck.requiresHumanFactCheck && <div className="rounded border border-yellow-500 p-3 text-yellow-100"><strong>Kiểm tra tính chính xác</strong><ul className="ml-5 list-disc">{factCheck.factCheckNotes.map((note) => <li key={note}>{note}</li>)}</ul><label className="mt-3 flex gap-2"><input type="checkbox" checked={factCheckAcknowledged} onChange={(event) => setFactCheckAcknowledged(event.target.checked)} disabled={isPublished} /> Tôi đã kiểm tra các thông tin trên.</label></div>}
 
           <div>
             <div className="flex flex-wrap items-end justify-between gap-3">
-              <div><h3 className="font-semibold text-primary-white">Hình ảnh</h3><p className="text-sm text-gray-300">Chế độ: {publication.linkedinMediaMode === "single-image" ? "1 hình ảnh" : publication.linkedinMediaMode === "multi-image" ? "Nhiều hình ảnh" : "Không có hình ảnh"}</p></div>
-              {publication.linkedinMediaMode !== "none" && <div className="flex flex-wrap gap-2">
+              <div><h3 className="font-semibold text-primary-white">Hình ảnh</h3><p className="text-sm text-gray-300">Chế độ: {mediaMode === "single-image" ? "1 hình ảnh" : mediaMode === "multi-image" ? "Nhiều hình ảnh" : "Không có hình ảnh"}</p></div>
+              {mediaMode !== "none" && <div className="flex flex-wrap gap-2">
                 <input value={keywordInput} onChange={(event) => setKeywordInput(event.target.value)} placeholder="Từ khóa (tùy chọn)..." className="rounded border border-gray-600 bg-primary-black px-3 py-2 text-sm text-primary-white" />
                 <button type="button" onClick={searchMedia} disabled={suggestionsMutation.isPending || isPublished} className="rounded bg-indigo-600 px-3 py-2 text-sm text-white disabled:opacity-50">{suggestionsMutation.isPending ? "Đang tìm…" : keywordInput.trim() ? "Tìm lại" : "Tìm gợi ý"}</button>
               </div>}
@@ -447,8 +470,7 @@ const PublicationPanel = ({
               </article>;
             })}</div>}
 
-            {publication.linkedinMediaMode !== "none" && <p className={`mt-2 text-sm ${mediaCountValid && altTextValid ? "text-green-300" : "text-yellow-200"}`}>{publication.linkedinMediaMode === "single-image" ? "Chọn chính xác 1 hình ảnh kèm văn bản thay thế (alt text)." : "Chọn từ 2–20 hình ảnh kèm văn bản thay thế (alt text)."}</p>}
-            {publication.linkedinMediaMode !== "none" && <button type="button" onClick={() => mediaMutation.mutate()} disabled={!mediaDirty || !mediaCountValid || !altTextValid || mediaMutation.isPending || isPublished} className="mt-3 rounded bg-blue-600 px-4 py-2 text-white disabled:opacity-50">{mediaMutation.isPending ? "Đang lưu…" : "Lưu hình ảnh đã chọn"}</button>}
+            {mediaMode !== "none" && <p className={`mt-2 text-sm ${mediaCountValid && altTextValid ? "text-green-300" : "text-yellow-200"}`}>{mediaMode === "single-image" ? "Chọn chính xác 1 hình ảnh kèm văn bản thay thế (alt text)." : "Chọn từ 2–20 hình ảnh kèm văn bản thay thế (alt text)."}</p>}
           </div>
         </>}
 
@@ -468,10 +490,10 @@ const PublicationPanel = ({
           <p className="mt-2 text-sm text-gray-300">{statusCopy[publication.linkedinStatus]}</p>
           {publication.linkedinError && <p className="mt-2 text-sm text-red-300">{publication.linkedinError.message}</p>}
           {publication.linkedinStatus === "REVIEW_REQUIRED" && <p className="mt-3 rounded border border-red-500 p-3 text-red-200">Kết quả xuất bản LinkedIn có thể chưa rõ ràng. Hãy kiểm tra Trang Doanh nghiệp trước khi thao tác tiếp. Tự động thử lại đã tắt để tránh trùng lặp bài đăng.</p>}
-          {isPublished && <p className="mt-3 text-green-300">LinkedIn đã xuất bản {publication.linkedinPublishedAt ? `vào lúc ${new Date(publication.linkedinPublishedAt).toLocaleString("vi-VN")}` : ""}{publication.linkedinPostId ? ` · ID bài đăng: ${publication.linkedinPostId}` : ""}</p>}
+          {isPublished && <p className="mt-3 text-green-300">LinkedIn đã xuất bản {publication.linkedinPublishedAt ? `vào lúc ${formatCmsDate(publication.linkedinPublishedAt)}` : ""}{publication.linkedinPostId ? ` · ID bài đăng: ${publication.linkedinPostId}` : ""}</p>}
           {publication.linkedinStatus === "FAILED" && publication.linkedinError?.retryable === true && <button type="button" onClick={() => retryMutation.mutate()} disabled={retryMutation.isPending} className="mt-3 rounded bg-amber-600 px-4 py-2 text-white">{retryMutation.isPending ? "Đang thử lại…" : "Thử lại LinkedIn"}</button>}
-          {hasUnsavedChanges && <p className="mt-3 text-sm text-yellow-200">Vui lòng lưu cài đặt xuất bản, bản nháp và hình ảnh trước khi xuất bản.</p>}
-          {publishLinkedin && !savedMediaValid && <p className="mt-2 text-sm text-yellow-200">Vui lòng lưu lựa chọn hình ảnh hợp lệ trước khi xuất bản.</p>}
+          {settingsDirty && <p className="mt-3 text-sm text-yellow-200">Vui lòng lưu cài đặt kênh trước khi xuất bản.</p>}
+          {publishLinkedin && (!mediaCountValid || !altTextValid) && <p className="mt-2 text-sm text-yellow-200">Vui lòng chọn hình ảnh và alt text phù hợp trước khi xuất bản.</p>}
           {canStartPublish && !(publishWeb && !publishLinkedin && websitePublished) && <button type="button" onClick={() => setShowConfirmation(true)} disabled={publishMutation.isPending || publishBlocked} className="mt-3 rounded bg-emerald-600 px-4 py-2 text-white disabled:opacity-50">{publishLabel}</button>}
         </div>
       </div>

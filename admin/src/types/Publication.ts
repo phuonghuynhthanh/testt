@@ -48,7 +48,7 @@ export interface LinkedInErrorData {
 }
 
 export interface GeneratedLinkedInPost {
-  content: string;
+  content?: string;
   style?: string;
   openingType?: string;
   audience?: string;
@@ -65,6 +65,7 @@ export interface Publication {
   linkedinMode: LinkedInMode;
   linkedinContent: string | null;
   linkedinIncludeWebLink: boolean;
+  linkedinRecordId: string | null;
   linkedinStatus: PublicationStatus;
   linkedinPostId: string | null;
   linkedinPublishedAt: string | null;
@@ -74,6 +75,15 @@ export interface Publication {
   linkedinFactCheck: FactualReview | null;
   linkedinGenerated: GeneratedLinkedInPost | null;
 }
+
+export interface LinkedInDraftResponse {
+  content: string;
+  media: { mode: LinkedInMediaMode; images: ImagePlan[] };
+  factualReview: FactualReview;
+  generated: GeneratedLinkedInPost;
+}
+
+export interface LinkedInCommand { mode: LinkedInMode; content: string; media: PexelsCandidate[]; includeWebLink: boolean; factCheck: FactualReview; generation: Record<string, unknown>; action: "SAVE_DRAFT" | "PUBLISH_NOW"; }
 
 export interface PublicationUpdate {
   publishWeb: boolean;

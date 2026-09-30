@@ -1,135 +1,22 @@
-import type {
-  IBlogData,
-  IBlogItemData,
-  IBlogUpdateData,
-} from "../../types/Blog";
 import getAxiosClient from "../../lib/axios/axiosClient";
+import type { PaginatedResponse } from "../../types/Api";
+import type { BlogState, IBlogData, IBlogItemData } from "../../types/Blog";
 
-// Create a new blog post with multipart form data.
-export const createBlogPost = async (blogData: IBlogData, fileImage: File) => {
-  try {
-    const axiosClient = getAxiosClient();
-    const formData = new FormData();
-    formData.append("image", fileImage);
-    formData.append("blog_data", JSON.stringify(blogData));
+export interface BlogListParams { page: number; pageSize: number; state?: BlogState; category?: string; }
 
-    const response = await axiosClient.post("/blog", formData);
-    return response.data;
-  } catch {
-    throw new Error("Lỗi khi tạo bài viết");
-  }
-};
-
-// Fetch all blog posts for administration.
-export const getListBlogs = async (): Promise<IBlogItemData[]> => {
-  try {
-    const axiosClient = getAxiosClient();
-    const response = await axiosClient.get<IBlogItemData[]>(
-      "/blog/admin/blogs",
-    );
-    return response.data;
-  } catch {
-    throw new Error("Không thể lấy danh sách bài viết");
-  }
-};
-
-// Fetch blog posts filtered by publication state.
-export const getListBlogsWithState = async (
-  blogState: "PENDING" | "APPROVED" | "REJECTED",
-): Promise<IBlogItemData[]> => {
-  try {
-    const axiosClient = getAxiosClient();
-    const response = await axiosClient.get<IBlogItemData[]>(
-      "/blog/admin/blogs",
-      {
-        params: { state: blogState },
-      },
-    );
-    return response.data;
-  } catch {
-    throw new Error("Không thể lấy danh sách bài viết");
-  }
-};
-
-// Fetch single blog post details by ID.
-export const getBlogDetail = async (blogId: string): Promise<IBlogData> => {
-  try {
-    const axiosClient = getAxiosClient();
-    const response = await axiosClient.get<IBlogData>(
-      `/blog/admin/${blogId}`,
-    );
-    return response.data;
-  } catch {
-    throw new Error("Không thể lấy thông tin chi tiết bài viết");
-  }
-};
-
-// Check if a blog link slug is already taken.
-export const checkDuplicateBlogLink = async (
-  blogLink: string,
-): Promise<boolean> => {
-  try {
-    const axiosClient = getAxiosClient();
-    const response = await axiosClient.get<boolean>(
-      "/blog/is-duplicate-link-post",
-      {
-        params: { link_post: blogLink },
-      },
-    );
-    return response.data;
-  } catch {
-    throw new Error("Không thể kiểm tra trùng lặp đường dẫn bài viết");
-  }
-};
-
-// Update an existing blog post and optionally replace the banner image.
-export const updateBlog = async (
-  blogData: Partial<IBlogUpdateData>,
-  fileImage?: File,
-) => {
-  try {
-    const axiosClient = getAxiosClient();
-    const formData = new FormData();
-    if (fileImage) {
-      formData.append("image", fileImage);
-    }
-    formData.append("blog_data", JSON.stringify(blogData));
-
-    const response = await axiosClient.put(
-      `/blog/${blogData.id}`,
-      formData,
-      {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      },
-    );
-    return response.data;
-  } catch {
-    throw new Error("Lỗi khi cập nhật bài viết");
-  }
-};
-
-// Delete a blog post by ID.
-export const deleteBlog = async (blogId: string) => {
-  try {
-    const axiosClient = getAxiosClient();
-    const response = await axiosClient.delete(`/blog/${blogId}`);
-    return response.data;
-  } catch (error: any) {
-    if (error.response && error.response.status === 400) {
-      throw new Error("Bài viết này hiện đang được sử dụng cho tiếp thị liên kết.");
-    }
-    throw new Error("Đã xảy ra lỗi. Vui lòng thử lại sau.");
-  }
-};
-
-export const categories = [
-  { value: "ALL", label: "Tất cả bài viết" },
-  { value: "NEWS", label: "Tin tức" },
-  { value: "INVESTMENT_INSIGHTS", label: "Góc nhìn đầu tư" },
-  { value: "FOREIGN_INVESTMENT", label: "Đầu tư nước ngoài" },
-  { value: "KNOWLEDGE_BASE", label: "Kiến thức cơ bản" },
-  { value: "TUTORIALS", label: "Hướng dẫn" },
-  { value: "CAREER", label: "Nghề nghiệp" },
-];
+// Fetch one backend-paginated Blog page; filters stay in the query key at call sites.
+export const getListBlogs = async (params: BlogListParams): Promise<PaginatedResponse<IBlogItemData>> => (await getAxiosClient().get("/blog/admin/blogs", { params })).data;
+// Fetch a Blog editor record.
+export const getBlogDetail = async (blogId: string): Promise<IBlogData> => (await getAxiosClient().get(`/blog/admin/${blogId}`)).data;
+// Create a Blog with the exact optional-image multipart contract.
+export const createBlogPost = async (data: IBlogData, image: File | null, action: "SAVE_PENDING" | "PUBLISH_NOW") => { const form = new FormData(); form.append("blog_data", JSON.stringify(data)); form.append("action", action); if (image) form.append("image", image); return (await getAxiosClient().post("/blog", form)).data as IBlogData; };
+// Update the existing Blog with an optional replacement banner.
+export const updateBlog = async (data: Partial<IBlogData> & { id?: string }, image?: File | null) => { if (!data.id) throw new Error("Thiếu ID bài viết"); const form = new FormData(); form.append("blog_data", JSON.stringify(data)); if (image) form.append("image", image); return (await getAxiosClient().put(`/blog/${data.id}`, form)).data as IBlogData; };
+// Soft-delete and restore without claiming provider-side removal.
+export const deleteBlog = async (id: string) => (await getAxiosClient().delete(`/blog/${id}`)).data;
+// Restore a recently soft-deleted Blog.
+export const restoreBlog = async (id: string) => (await getAxiosClient().post(`/blog/${id}/restore`)).data as IBlogData;
+// Check whether a Blog slug is already used.
+export const checkDuplicateBlogLink = async (link_post: string) => (await getAxiosClient().get<boolean>("/blog/is-duplicate-link-post", { params: { link_post } })).data;
+// Generate an editable, preview-only AI Blog draft.
+export const generateBlogDraft = async (title: string, category: string) => (await getAxiosClient().post<IBlogData>("/blog/ai/generate-draft", { title, category })).data;

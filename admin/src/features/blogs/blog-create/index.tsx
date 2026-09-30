@@ -1,393 +1,185 @@
-import { useState, useEffect } from "react";
-import { FaArrowAltCircleRight, FaPlay } from "react-icons/fa";
-import { MdEdit, MdCode, MdPreview } from "react-icons/md";
-
-import { IoCreateOutline } from "react-icons/io5";
-
+import { useEffect, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-toastify";
-import { useQueryClient } from "@tanstack/react-query";
-import type { BlogCategory, IBlogData } from "../../../types/Blog";
-import type { BlogPreviewMode } from "../components/HeaderActionButton";
-import { createUrl } from "../../../utils/blogUtils";
-import {
-  categories,
-  checkDuplicateBlogLink,
-  createBlogPost,
-} from "../../../services/blog/handleBlog";
-import BlogPreview from "../components/BlogPreview";
-import InputField from "../../../shared/input/InputField";
-import SelectField from "../../../shared/select/SelectField";
 import MarkdownEditor from "../../../shared/markdown/MarkdownEditor";
-import MarkdownContent from "../../../shared/markdown/MarkdownContent";
-import TextareaField from "../../../shared/input/TextareaField";
-import SeoEditor from "../components/SeoEditor";
+import Modal from "../../../shared/Popup/Modal";
+import { createUrl } from "../../../utils/blogUtils";
+import { apiErrorMessage } from "../../../types/Api";
+import type { IBlogData, SEO } from "../../../types/Blog";
+import { createBlogPost, generateBlogDraft } from "../../../services/blog/handleBlog";
+import { listCategories } from "../../../services/category/handleCategory";
 
-interface IBlogSEO {
-  tag: string;
-  title: string;
-  bannerUrl: string;
-  seoKeywords: string[];
-  seoTitle: string;
-  seoDescription: string;
-}
-
-const BlogCreate = () => {
-  const queryClient = useQueryClient();
-  const [showPreview, setShowPreview] = useState<boolean>(false);
-  const [currentStep, setCurrentStep] = useState<number>(1);
-  const [markdownContent, setMarkdownContent] = useState<string>("");
-  const [linkBlogPost, setLinkBlogPost] = useState<string>("");
-  const [bannerImage, setBannerImage] = useState<File | null>(null);
-  const [content, setContent] = useState({ title: "", body: "" });
-  const [blogTitle, setBlogTitle] = useState<string>("");
-  const [category, setCategory] = useState<BlogCategory>("INVESTMENT_INSIGHTS");
-  const [editorMode, setEditorMode] = useState<BlogPreviewMode>("edit");
-  const [isValidLinkBlogPost, setIsValidLinkBlogPost] =
-    useState<boolean>(false);
-  const [blogSeo, setBlogSeo] = useState<IBlogSEO>({
-    tag: "",
+const EMPTY_BLOG: IBlogData = {
+  tag: "",
+  title: "",
+  banner_url: "",
+  link_post: "",
+  category: "",
+  content: "",
+  seo: {
     title: "",
-    bannerUrl: "",
-    seoKeywords: [""],
-    seoTitle: "",
-    seoDescription: "",
+    description: "",
+    url: "",
+    keywords: [],
+    author: "VietQuant",
+  },
+};
+
+// Keep one editable Blog editor for manual writing and preview-only AI drafts.
+const BlogCreate = () => {
+  const client = useQueryClient();
+  const [source, setSource] = useState<"manual" | "ai">("manual");
+  const [blog, setBlog] = useState<IBlogData>(EMPTY_BLOG);
+  const [image, setImage] = useState<File | null>(null);
+  const [dirty, setDirty] = useState(false);
+  const [confirmPublish, setConfirmPublish] = useState(false);
+  const categories = useQuery({
+    queryKey: ["categories", { page: 1, pageSize: 100 }],
+    queryFn: () => listCategories(),
   });
 
-  const resetData = () => {
-    setCurrentStep(1);
-    setBlogSeo({
-      tag: "",
-      title: "",
-      bannerUrl: "",
-      seoKeywords: [""],
-      seoTitle: "",
-      seoDescription: "",
-    });
-    setMarkdownContent("");
-    setCategory("INVESTMENT_INSIGHTS");
-    setContent({ title: "", body: "" });
-    setBannerImage(null);
-    setLinkBlogPost("");
-    setIsValidLinkBlogPost(false);
+  // Update one top-level Blog field from a visible editor control.
+  const updateBlog = <K extends keyof IBlogData>(field: K, value: IBlogData[K]) => {
+    setBlog((current) => ({ ...current, [field]: value }));
+    setDirty(true);
   };
 
-  const handleClickBlogPostPreview = () => {
-    setContent({
-      title: blogTitle,
-      body: markdownContent,
-    });
-    setShowPreview(true);
+  // Update one SEO field without keeping a hidden copy of AI output.
+  const updateSeo = <K extends keyof SEO>(field: K, value: SEO[K]) => {
+    setBlog((current) => ({ ...current, seo: { ...current.seo, [field]: value } }));
+    setDirty(true);
   };
 
-  const closePreview = () => setShowPreview(false);
-
-  const handleClickNextStep = () => {
-    if (currentStep === 1) {
-      if (!isValidLinkBlogPost) {
-        toast.info("Vui lòng kiểm tra tính hợp lệ của tiêu đề.");
-        return;
-      }
-      if (!markdownContent.trim()) {
-        toast.info("Nội dung bài viết không được để trống.");
-        return;
-      }
-
-      setContent({ title: blogTitle, body: markdownContent });
-      setCurrentStep((current: number) => current + 1);
-      return;
-    }
-
-    if (currentStep === 2) {
-      handleCreateNewBlog();
-      return;
-    }
+  // Keep an untouched slug synchronized with the title while allowing manual edits.
+  const updateTitle = (title: string) => {
+    setBlog((current) => ({
+      ...current,
+      title,
+      link_post: !current.link_post || current.link_post === createUrl(current.title)
+        ? createUrl(title)
+        : current.link_post,
+      seo: {
+        ...current.seo,
+        title: !current.seo.title || current.seo.title === current.title
+          ? title
+          : current.seo.title,
+      },
+    }));
+    setDirty(true);
   };
 
-  const handleClickPreStep = () => {
-    setCurrentStep((current: number) => current - 1);
-  };
+  const draft = useMutation({
+    mutationFn: () => generateBlogDraft(blog.title, blog.category),
+    onSuccess: (data) => {
+      setBlog((current) => ({
+        ...current,
+        ...data,
+        banner_url: data.banner_url ?? current.banner_url,
+        seo: { ...current.seo, ...data.seo },
+      }));
+      setDirty(true);
+      toast.success("Đã tạo bản nháp AI — chưa được lưu.");
+    },
+    onError: (error) => toast.error(apiErrorMessage(error)),
+  });
+  const save = useMutation({
+    mutationFn: (action: "SAVE_PENDING" | "PUBLISH_NOW") => createBlogPost({
+      ...blog,
+      link_post: blog.link_post.trim() || createUrl(blog.title),
+    }, image, action),
+    onSuccess: (_, action) => {
+      toast.success(action === "PUBLISH_NOW" ? "Đã xuất bản website." : "Đã lưu chờ duyệt.");
+      setDirty(false);
+      setConfirmPublish(false);
+      client.invalidateQueries({ queryKey: ["blogs"] });
+      client.invalidateQueries({ queryKey: ["categories"] });
+    },
+    onError: (error) => toast.error(apiErrorMessage(error)),
+  });
 
-  const handleSeoDataChange = (updatedData: IBlogSEO) => {
-    setBlogSeo(updatedData);
-  };
-
-  const isValidBlogData = (): boolean => {
-    if (!bannerImage) {
-      toast.info("Vui lòng tải lên ảnh banner cho bài viết.");
-      return false;
-    }
-    if (!blogSeo.tag) {
-      toast.info("Vui lòng chọn thẻ tag cho bài viết.");
-      return false;
-    }
-    if (!blogSeo.title) {
-      toast.info("Vui lòng nhập tiêu đề cho bài viết.");
-      return false;
-    }
-
-    return true;
-  };
-
-  const handleCreateNewBlog = async () => {
-    if (!isValidBlogData()) {
-      console.log("false");
-
-      return;
-    }
-    const loadingToastId = toast.loading("Đang tạo bài viết...");
-    try {
-      const id = crypto.randomUUID();
-      const linkBlogPost = createUrl(blogSeo.title);
-      const newBlog: IBlogData = {
-        id: id,
-        tag: blogSeo.tag,
-        title: blogSeo.title,
-        banner_url: "",
-        link_post: linkBlogPost,
-        category: category,
-        state: "PENDING",
-        seo: {
-          title: blogSeo.seoTitle,
-          description: blogSeo.seoDescription,
-          url: linkBlogPost,
-          keywords: blogSeo.seoKeywords,
-          author: "Vietnam Business Brokers",
-          banner_url: "",
-        },
-        content: content.body,
-        created_at: "",
-        modified_at: "",
-      };
-
-      await createBlogPost(newBlog, bannerImage as File);
-      toast.update(loadingToastId, {
-        render: "Tạo bài viết thành công.",
-        type: "success",
-        isLoading: false,
-        autoClose: 3000,
-      });
-      queryClient.invalidateQueries({
-        queryKey: ["blogs"],
-      });
-      resetData();
-    } catch (error) {
-      toast.update(loadingToastId, {
-        render: `${error}`,
-        type: "error",
-        isLoading: false,
-        autoClose: 3000,
-      });
-    }
-  };
-
-  const handleChangeTitle = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
-  ) => {
-    setBlogTitle(e.target.value);
-    const newLink = createUrl(e.target.value);
-    setLinkBlogPost(newLink);
-    setIsValidLinkBlogPost(false);
-  };
-
-  const handleCheckDuplicateBlogLink = async () => {
-    if (!blogTitle.trim()) {
-      toast.info("Tiêu đề bài viết không được để trống.");
-      return;
-    }
-    const isDuplicate = await checkDuplicateBlogLink(linkBlogPost);
-    if (isDuplicate) {
-      toast.error(
-        "Tiêu đề này đã tồn tại. Vui lòng chọn tiêu đề khác.",
-      );
-      setIsValidLinkBlogPost(false);
-    } else {
-      toast.success("Tiêu đề khả dụng. Bạn có thể sử dụng tiêu đề này.");
-      setIsValidLinkBlogPost(true);
-    }
-  };
-
+  // Warn only when the administrator has actual local work to lose.
   useEffect(() => {
-    const handleBeforeUnload = (event: {
-      preventDefault: () => void;
-      returnValue: string;
-    }) => {
+    const before = (event: BeforeUnloadEvent) => {
+      if (!dirty) return;
       event.preventDefault();
-      event.returnValue =
-        "Tất cả thay đổi chưa lưu sẽ bị mất. Bạn có chắc chắn muốn rời đi?";
-      return "Tất cả thay đổi chưa lưu sẽ bị mất. Bạn có chắc chắn muốn rời đi?";
+      event.returnValue = "";
     };
+    window.addEventListener("beforeunload", before);
+    return () => window.removeEventListener("beforeunload", before);
+  }, [dirty]);
 
-    window.addEventListener("beforeunload", handleBeforeUnload);
-    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
-  }, []);
+  // Replace an existing draft only after explicit confirmation.
+  const regenerate = () => {
+    if (blog.content.trim() && !window.confirm("Bản nháp hiện tại sẽ bị thay thế. Tiếp tục?")) return;
+    draft.mutate();
+  };
+
+  const formValid = Boolean(blog.title.trim() && blog.category.trim() && blog.content.trim());
 
   return (
-    <div className="flex flex-col gap-4 pb-10">
-      {showPreview && (
-        <BlogPreview
-          // Pass the raw content object directly.
-          tag="NEW BIE"
-          title={content.title}
-          banner=""
-          content={content.body}
-          onClose={closePreview}
-        />
-      )}
-      {currentStep === 1 && (
-        <>
-          <div className="flex flex-col">
-            <button
-              onClick={handleClickBlogPostPreview}
-              className="text-xl h-max w-max px-6 py-2 bg-orange-500 hover:bg-orange-500/90 rounded-lg font-semibold text-white mt-8"
-            >
-              Xem trước <FaPlay className="inline ml-2" />
-            </button>
-            <div className="h-[1px] w-full bg-gray-300 my-4"></div>
-          </div>
-          <div className="h-max">
-            <div className="flex gap-2 items-end">
-              <InputField
-                label="Tiêu đề bài viết"
-                id="title"
-                name="title"
-                placeholder="Nhập tiêu đề bài viết..."
-                value={blogTitle}
-                handleChange={handleChangeTitle}
-              />
-              <button
-                onClick={handleCheckDuplicateBlogLink}
-                className="px-3 py-2 h-max bg-primary-green text-primary-black rounded-md hover:bg-blue-600 shrink-0"
-              >
-                <span>Kiểm tra tiêu đề</span>
-              </button>
-            </div>
-            <SelectField
-              label="Danh mục"
-              id="category"
-              name="category"
-              value={category}
-              options={categories.filter((cat) => cat.value !== "ALL")}
-              onChange={(e) => setCategory(e.target.value as BlogCategory)}
-            />
-            <hr className="my-10" />
-            {isValidLinkBlogPost && (
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center justify-between">
-                  <label className="text-primary-white font-semibold text-lg">
-                    Nội dung bài viết
-                  </label>
-                  {/* Segmented mode toggle */}
-                  <div className="flex items-center bg-gray-100 rounded-lg p-1 border border-gray-200 shadow-inner">
-                    <button
-                      type="button"
-                      onClick={() => setEditorMode("edit")}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-md transition-all duration-200 font-medium text-sm ${
-                        editorMode === "edit"
-                          ? "bg-white text-blue-600 shadow-sm"
-                          : "bg-transparent text-gray-600 hover:text-gray-800"
-                      }`}
-                    >
-                      <MdEdit className="w-4 h-4" />
-                      <span>Chỉnh sửa</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setEditorMode("markdown")}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-md transition-all duration-200 font-medium text-sm ${
-                        editorMode === "markdown"
-                          ? "bg-white text-blue-600 shadow-sm"
-                          : "bg-transparent text-gray-600 hover:text-gray-800"
-                      }`}
-                    >
-                      <MdCode className="w-4 h-4" />
-                      <span>Mã Markdown</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setEditorMode("preview")}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-md transition-all duration-200 font-medium text-sm ${
-                        editorMode === "preview"
-                          ? "bg-white text-blue-600 shadow-sm"
-                          : "bg-transparent text-gray-600 hover:text-gray-800"
-                      }`}
-                    >
-                      <MdPreview className="w-4 h-4" />
-                      <span>Xem trước</span>
-                    </button>
-                  </div>
-                </div>
-
-                {editorMode === "edit" && (
-                  <MarkdownEditor
-                    value={markdownContent}
-                    title={blogTitle}
-                    onChange={setMarkdownContent}
-                    height="h-96"
-                    placeholder="Bắt đầu viết bài viết bằng định dạng Markdown..."
-                  />
-                )}
-                {editorMode === "markdown" && (
-                  <TextareaField
-                    label=""
-                    id="blog-markdown-content"
-                    name="blog-markdown-content"
-                    value={markdownContent}
-                    handleChange={(e) => setMarkdownContent(e.target.value)}
-                    placeholder="Bắt đầu viết bài viết bằng định dạng Markdown..."
-                    rows={24}
-                  />
-                )}
-                {editorMode === "preview" && (
-                  <div className="font-markdown prose prose-a:no-underline max-w-none border border-gray-300 rounded-lg p-6 min-h-96 bg-primary-black">
-                    {markdownContent.trim() ? (
-                      <MarkdownContent content={markdownContent} />
-                    ) : (
-                      <p className="text-gray-400 italic">
-                        Chưa có nội dung để xem trước...
-                      </p>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </>
-      )}
-
-      {currentStep === 2 && (
-        <SeoEditor
-          onSeoDataChange={handleSeoDataChange}
-          blogTitle={content.title}
-          blogContent={content.body}
-          bannerImage={bannerImage}
-          setBannerImage={setBannerImage}
-        />
-      )}
-
-      <div className="flex justify-between items-center">
-        <button
-          className={`${
-            currentStep === 1 ? "invisible" : "visible"
-          } text-xl h-max w-max px-6 py-2.5 bg-orange-500 hover:bg-orange-500/90 rounded-lg font-semibold text-white mt-8 self-end`}
-          onClick={handleClickPreStep}
-        >
-          Quay lại
-        </button>
-        <button
-          className="h-max w-max px-6 py-2.5 bg-primary-green hover:bg-primary-green-dark rounded-lg font-semibold text-primary-black mt-8 self-end flex items-center gap-2"
-          onClick={handleClickNextStep}
-        >
-          <span className="text-xl">
-            {currentStep === 1 ? "Tiếp theo" : "Tạo bài viết"}
-          </span>
-          {currentStep === 1 ? (
-            <FaArrowAltCircleRight className="text-2xl" />
-          ) : (
-            <IoCreateOutline className="text-2xl" />
-          )}
-        </button>
+    <section className="mx-auto max-w-4xl space-y-5 text-gray-th2">
+      <div>
+        <h1 className="text-2xl font-bold text-primary-white">Viết bài</h1>
+        <label className="mr-5"><input type="radio" checked={source === "manual"} onChange={() => setSource("manual")} /> Viết thủ công</label>
+        <label><input type="radio" checked={source === "ai"} onChange={() => setSource("ai")} /> Tạo bản nháp bằng AI</label>
       </div>
-    </div>
+
+      <label className="block">Tiêu đề
+        <input value={blog.title} onChange={(event) => updateTitle(event.target.value)} className="mt-1 w-full rounded border border-gray-600 bg-primary-black p-3 text-primary-white" />
+      </label>
+      <label className="block">Danh mục
+        <input list="blog-create-categories" value={blog.category} onChange={(event) => updateBlog("category", event.target.value)} placeholder="Chọn hoặc nhập danh mục mới" className="mt-1 w-full rounded border border-gray-600 bg-primary-black p-3 text-primary-white" />
+        <datalist id="blog-create-categories">{categories.data?.items.map((item) => <option key={item.id} value={item.name} />)}</datalist>
+      </label>
+      {source === "ai" && (
+        <button disabled={!blog.title.trim() || !blog.category.trim() || draft.isPending} onClick={regenerate} className="rounded bg-indigo-600 px-4 py-2 text-white disabled:opacity-50">
+          {draft.isPending ? "Đang tạo bằng AI…" : blog.content ? "Tạo lại bằng AI" : "Tạo bản nháp AI"}
+        </button>
+      )}
+
+      <label className="block">Tag
+        <input value={blog.tag} onChange={(event) => updateBlog("tag", event.target.value)} className="mt-1 w-full rounded border border-gray-600 bg-primary-black p-3 text-primary-white" />
+      </label>
+      <label className="block">Đường dẫn bài viết
+        <input value={blog.link_post} onChange={(event) => updateBlog("link_post", event.target.value)} className="mt-1 w-full rounded border border-gray-600 bg-primary-black p-3 text-primary-white" />
+      </label>
+      <MarkdownEditor value={blog.content} title={blog.title} onChange={(value) => updateBlog("content", value)} height="h-96" placeholder="Nội dung Markdown…" />
+
+      <fieldset className="space-y-4 rounded border border-gray-700 p-4">
+        <legend className="px-2 font-semibold text-primary-white">SEO</legend>
+        <label className="block">Tiêu đề SEO
+          <input value={blog.seo.title} onChange={(event) => updateSeo("title", event.target.value)} className="mt-1 w-full rounded bg-primary-black p-3" />
+        </label>
+        <label className="block">Mô tả SEO
+          <textarea value={blog.seo.description} onChange={(event) => updateSeo("description", event.target.value)} className="mt-1 w-full rounded bg-primary-black p-3" />
+        </label>
+        <label className="block">URL SEO
+          <input value={blog.seo.url} onChange={(event) => updateSeo("url", event.target.value)} className="mt-1 w-full rounded bg-primary-black p-3" />
+        </label>
+        <label className="block">Từ khóa SEO, ngăn bằng dấu phẩy
+          <input value={blog.seo.keywords.join(", ")} onChange={(event) => updateSeo("keywords", event.target.value.split(",").map((value) => value.trim()).filter(Boolean))} className="mt-1 w-full rounded bg-primary-black p-3" />
+        </label>
+        <label className="block">Tác giả
+          <input value={blog.seo.author} onChange={(event) => updateSeo("author", event.target.value)} className="mt-1 w-full rounded bg-primary-black p-3" />
+        </label>
+      </fieldset>
+
+      <label className="block">Banner (không bắt buộc)
+        <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={(event) => { setImage(event.target.files?.[0] ?? null); setDirty(true); }} className="ml-3" />
+      </label>
+      <div className="flex flex-wrap gap-3">
+        <button disabled={!formValid || save.isPending} onClick={() => save.mutate("SAVE_PENDING")} className="rounded bg-gray-700 px-4 py-3 text-white disabled:opacity-50">{save.isPending ? "Đang lưu…" : "Lưu chờ duyệt"}</button>
+        <button disabled={!formValid || save.isPending} onClick={() => setConfirmPublish(true)} className="rounded bg-primary-green px-4 py-3 font-semibold text-primary-black disabled:opacity-50">Xuất bản Website ngay</button>
+      </div>
+
+      <Modal isOpen={confirmPublish} onClose={() => setConfirmPublish(false)}>
+        <h2 className="text-xl text-primary-white">Bạn sắp xuất bản bài viết này lên website.</h2>
+        <div className="mt-5 flex gap-3">
+          <button onClick={() => setConfirmPublish(false)} className="rounded bg-gray-700 px-4 py-2 text-white">Hủy</button>
+          <button disabled={save.isPending} onClick={() => save.mutate("PUBLISH_NOW")} className="rounded bg-primary-green px-4 py-2 text-primary-black">Xuất bản</button>
+        </div>
+      </Modal>
+    </section>
   );
 };
 

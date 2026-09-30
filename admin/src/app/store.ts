@@ -3,7 +3,9 @@ export const PATH = {
   LOGIN: "/login",
   BLOG: "/blog",
   CREATE_BLOG: "/blog/create-blog",
+  CATEGORIES: "/categories",
   EDIT_BLOG: "/blog/default/:blog_id",
   LINKEDIN: "/linkedin",
-  LINKEDIN_POST: "/linkedin/:blog_id",
+  LINKEDIN_NEW: "/linkedin/new",
+  LINKEDIN_POST: "/linkedin/posts/:post_id",
 };

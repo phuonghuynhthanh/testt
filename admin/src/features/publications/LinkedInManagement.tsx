@@ -1,76 +1,23 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { FaLinkedin } from "react-icons/fa";
-import { getListBlogs } from "../../services/blog/handleBlog";
-import LoadingPage from "../../shared/loading/LoadingPage";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { deleteLinkedInPost, getLinkedInHistory, listLinkedInPosts, restoreLinkedInPost, syncLinkedInHistory, verifyLinkedInOrganization } from "../../services/linkedin/handleLinkedIn";
+import type { LinkedInPostStatus, LinkedInSourceType } from "../../types/LinkedIn";
+import { apiErrorMessage } from "../../types/Api";
+import { toast } from "react-toastify";
+import { formatCmsDate } from "../../utils/date";
 
-// List Blogs as LinkedIn post work items without unsupported publication-list APIs.
+// Manage standalone LinkedInPost records, provider history, and explicit connection checks.
 const LinkedInManagement = () => {
-  const [search, setSearch] = useState("");
-  const { data: blogs = [], isLoading, isError } = useQuery({
-    queryKey: ["blogs"],
-    queryFn: getListBlogs,
-    retry: false,
-    refetchOnWindowFocus: false,
-  });
-
-  // Filter the existing Blog list locally to avoid additional backend requests.
-  const filteredBlogs = useMemo(
-    () =>
-      blogs.filter((blog) =>
-        blog.title.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()),
-      ),
-    [blogs, search],
-  );
-
-  if (isLoading) return <LoadingPage />;
-  if (isError) return <p className="text-red-300">Không thể tải danh sách bài viết.</p>;
-
-  return (
-    <section className="mx-auto max-w-5xl text-gray-th2">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="flex items-center gap-3 text-2xl font-bold text-primary-white">
-            <FaLinkedin className="text-[#0a66c2]" /> Quản lý xuất bản LinkedIn
-          </h1>
-          <p className="mt-1 text-sm text-gray-300">
-            Chọn một bài viết để cấu hình, xem trước và xuất bản bài đăng lên LinkedIn.
-          </p>
-        </div>
-        <input
-          type="search"
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          placeholder="Tìm kiếm bài viết..."
-          className="rounded border border-gray-600 bg-primary-black px-3 py-2 text-primary-white outline-none focus:border-blue-400"
-        />
-      </div>
-
-      <div className="mt-6 overflow-hidden rounded-lg border border-gray-700">
-        {filteredBlogs.map((blog) => (
-          <Link
-            key={blog.id}
-            to={`/linkedin/${blog.id}`}
-            className="flex items-center justify-between gap-4 border-b border-gray-700 p-4 transition hover:bg-primary-black-light last:border-b-0"
-          >
-            <div>
-              <h2 className="font-semibold text-primary-white">{blog.title}</h2>
-              <p className="mt-1 text-sm text-gray-400">
-                {blog.category} · Website: {blog.state === "APPROVED" ? "Đã duyệt" : blog.state === "PENDING" ? "Chờ duyệt" : "Từ chối"}
-              </p>
-            </div>
-            <span className="rounded bg-[#0a66c2] px-3 py-2 text-sm font-medium text-white">
-              Quản lý bài đăng
-            </span>
-          </Link>
-        ))}
-        {filteredBlogs.length === 0 && (
-          <p className="p-6 text-center text-gray-400">Không tìm thấy bài viết nào.</p>
-        )}
-      </div>
-    </section>
-  );
+  const client = useQueryClient(); const [page, setPage] = useState(1); const [status, setStatus] = useState<LinkedInPostStatus | "">(""); const [sourceType, setSourceType] = useState<LinkedInSourceType | "">(""); const [showHistory, setShowHistory] = useState(false); const [verified, setVerified] = useState<boolean | null>(null);
+  const posts = useQuery({ queryKey: ["linkedin-posts", { page, pageSize: 20, status, sourceType }], queryFn: () => listLinkedInPosts({ page, pageSize: 20, ...(status ? { status } : {}), ...(sourceType ? { sourceType } : {}) }) });
+  const history = useQuery({ queryKey: ["linkedin-history", 10], queryFn: () => getLinkedInHistory(10), enabled: showHistory, retry: false });
+  const restore = useMutation({ mutationFn: restoreLinkedInPost, onSuccess: () => { toast.success("Đã khôi phục bài LinkedIn."); client.invalidateQueries({ queryKey: ["linkedin-posts"] }); }, onError: (e) => toast.error(apiErrorMessage(e)) });
+  const remove = useMutation({ mutationFn: deleteLinkedInPost, onSuccess: (_, id) => { toast.success(<span>Đã xóa khỏi CMS. <button onClick={() => restore.mutate(id)} className="underline">Hoàn tác</button></span>); client.invalidateQueries({ queryKey: ["linkedin-posts"] }); }, onError: (e) => toast.error(apiErrorMessage(e)) });
+  const sync = useMutation({ mutationFn: syncLinkedInHistory, onSuccess: () => { toast.success("Đã đồng bộ lịch sử LinkedIn."); client.invalidateQueries({ queryKey: ["linkedin-history"] }); }, onError: (e) => toast.error(apiErrorMessage(e)) });
+  const verify = useMutation({ mutationFn: verifyLinkedInOrganization, onSuccess: (result) => setVerified(result.readyForOrganicPosting), onError: (e) => toast.error(apiErrorMessage(e)) });
+  // Confirm CMS-only deletion without implying removal from LinkedIn.
+  const confirmRemove = (id: string) => { if (window.confirm("Thao tác này chỉ xóa bản ghi khỏi CMS và không xóa bài đã xuất bản trên LinkedIn.")) remove.mutate(id); };
+  return <section className="mx-auto max-w-6xl text-gray-th2"><div className="flex flex-wrap justify-between gap-4"><div><h1 className="text-2xl font-bold text-primary-white">Quản lý LinkedIn</h1><p className="mt-1 text-sm text-gray-300">Bài đăng độc lập; bài đăng từ Blog được quản lý trong màn hình Blog.</p></div><Link to="/linkedin/new" className="rounded bg-[#0a66c2] px-4 py-2 font-semibold text-white">Tạo bài LinkedIn</Link></div><div className="mt-5 flex flex-wrap gap-3"><select value={status} onChange={(e) => { setStatus(e.target.value as LinkedInPostStatus | ""); setPage(1); }} className="rounded bg-primary-black p-2"><option value="">Tất cả trạng thái</option>{["DRAFT", "READY", "PUBLISHING", "PUBLISHED", "FAILED", "REVIEW_REQUIRED"].map((v) => <option key={v}>{v}</option>)}</select><select value={sourceType} onChange={(e) => { setSourceType(e.target.value as LinkedInSourceType | ""); setPage(1); }} className="rounded bg-primary-black p-2"><option value="">Tất cả nguồn</option>{["INDEPENDENT_AI", "BLOG_ADAPTATION", "CUSTOM"].map((v) => <option key={v}>{v}</option>)}</select><button onClick={() => verify.mutate()} className="rounded bg-gray-700 px-3 py-2">{verify.isPending ? "Đang kiểm tra…" : "Kiểm tra kết nối"}</button>{verified !== null && <span className={verified ? "text-green-300" : "text-yellow-200"}>{verified ? "Ready for organic posting" : "Chưa sẵn sàng đăng bài"}</span>}<button onClick={() => setShowHistory(!showHistory)} className="rounded bg-gray-700 px-3 py-2">Live History</button></div>{showHistory && <div className="mt-4 rounded border border-gray-700 p-4"><div className="flex justify-between"><h2 className="font-semibold text-primary-white">Lịch sử Company Page</h2><button onClick={() => sync.mutate()} className="text-blue-300">{sync.isPending ? "Đang đồng bộ…" : "Đồng bộ"}</button></div>{history.isError ? <p className="mt-3 text-yellow-200">Không thể tải lịch sử nhà cung cấp: {apiErrorMessage(history.error)}</p> : history.data?.items.map((item) => <article key={item.providerPostId} className="mt-3 border-t border-gray-700 pt-3"><strong>{item.topic}</strong><p className="text-sm text-gray-300">{item.content}</p></article>)}</div>}<div className="mt-5 overflow-x-auto rounded border border-gray-700">{posts.isLoading ? <p className="p-6">Đang tải…</p> : posts.isError ? <p className="p-6 text-red-300">{apiErrorMessage(posts.error)}</p> : <table className="w-full min-w-[650px] text-left"><thead className="bg-primary-black-light"><tr><th className="p-3">Chủ đề</th><th>Nguồn</th><th>Trạng thái</th><th>Cập nhật</th><th>Thao tác</th></tr></thead><tbody>{posts.data?.items.map((post) => <tr key={post.id} className="border-t border-gray-700"><td className="p-3">{post.topic}</td><td>{post.sourceType}</td><td><span className="rounded bg-gray-700 px-2 py-1 text-xs">{post.status}</span></td><td>{formatCmsDate(post.modifiedAt)}</td><td className="space-x-3"><Link to={`/linkedin/posts/${post.id}`} className="text-blue-300 underline">Mở</Link><button onClick={() => confirmRemove(post.id)} className="text-red-300 underline">Xóa CMS</button></td></tr>)}{posts.data?.items.length === 0 && <tr><td colSpan={5} className="p-6 text-center">Chưa có bài LinkedIn độc lập.</td></tr>}</tbody></table>}</div><div className="mt-4 flex justify-center gap-4"><button disabled={page === 1} onClick={() => setPage(page - 1)}>Trước</button><span>Trang {posts.data?.page ?? page} / {posts.data?.totalPages ?? 1}</span><button disabled={!posts.data || page >= posts.data.totalPages} onClick={() => setPage(page + 1)}>Sau</button></div></section>;
 };
-
 export default LinkedInManagement;

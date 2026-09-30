@@ -1,45 +1,24 @@
-import ListBlogs from "./components/ListBlogs";
 import { useState } from "react";
-import ListBlogsPending from "./components/ListBlogsPending";
+import { Link } from "react-router-dom";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { deleteBlog, getListBlogs, restoreBlog } from "../../../services/blog/handleBlog";
+import { listCategories } from "../../../services/category/handleCategory";
+import { apiErrorMessage } from "../../../types/Api";
+import type { BlogState } from "../../../types/Blog";
+import { toast } from "react-toastify";
+import { formatCmsDate } from "../../../utils/date";
 
+// Render the backend-paginated Blog management list and its server-side filters.
 const BlogManagement = () => {
-  const [currentTab, setCurrentTab] = useState<number>(1);
-
-  const renderTabContent = () => {
-    switch (currentTab) {
-      case 1:
-        return <ListBlogs />;
-      case 2:
-        return <ListBlogsPending />;
-
-      default:
-        return null;
-    }
-  };
-
-  return (
-    <div className="relative min-h-full w-full text-gray-th2">
-      <div className="w-full h-max flex text-center text-2xl font-semibold mb-6 text-primary-white">
-        <div
-          className={`${
-            currentTab === 1 ? "border-b-2 border-gray-th2" : "bg-transparent"
-          } flex-1 w-full py-1 hover:cursor-pointer transition-colors duration-200 ease-in-out`}
-          onClick={() => setCurrentTab(1)}
-        >
-          Tất cả bài viết
-        </div>
-        <div
-          className={`${
-            currentTab === 2 ? "border-b-2 border-gray-th2" : "bg-transparent"
-          } flex-1 w-full py-1 hover:cursor-pointer transition-colors duration-200 ease-in-out`}
-          onClick={() => setCurrentTab(2)}
-        >
-          Bài viết chờ duyệt
-        </div>
-      </div>
-      {renderTabContent()}
-    </div>
-  );
+  const client = useQueryClient(); const [page, setPage] = useState(1); const [state, setState] = useState<BlogState | undefined>(); const [category, setCategory] = useState("");
+  const blogs = useQuery({ queryKey: ["blogs", { page, pageSize: 20, state, category }], queryFn: () => getListBlogs({ page, pageSize: 20, ...(state ? { state } : {}), ...(category ? { category } : {}) }) });
+  const categories = useQuery({ queryKey: ["categories", { page: 1, pageSize: 100 }], queryFn: () => listCategories() });
+  const restore = useMutation({ mutationFn: restoreBlog, onSuccess: () => { toast.success("Đã khôi phục bài viết."); client.invalidateQueries({ queryKey: ["blogs"] }); }, onError: (e) => toast.error(apiErrorMessage(e)) });
+  const remove = useMutation({ mutationFn: deleteBlog, onSuccess: async (_, id) => { toast.success(<span>Đã xóa mềm bài viết. <button className="underline" onClick={() => restore.mutate(id)}>Hoàn tác</button></span>); await client.invalidateQueries({ queryKey: ["blogs"] }); }, onError: (e) => toast.error(apiErrorMessage(e)) });
+  // Reset pagination whenever an API filter changes.
+  const selectState = (next?: BlogState) => { setState(next); setPage(1); };
+  // Confirm the documented soft-delete behavior before removing a Blog from active lists.
+  const confirmRemove = (id: string) => { if (window.confirm("Bài viết sẽ được chuyển khỏi danh sách hoạt động và có thể được khôi phục.")) remove.mutate(id); };
+  return <section className="mx-auto max-w-6xl text-gray-th2"><div className="flex flex-wrap items-center justify-between gap-4"><div><h1 className="text-2xl font-bold text-primary-white">Bài viết</h1><div className="mt-3 flex flex-wrap gap-2">{([undefined, "PENDING", "APPROVED", "REJECTED"] as Array<BlogState | undefined>).map((item) => <button key={item ?? "ALL"} onClick={() => selectState(item)} className={`rounded px-3 py-2 text-sm ${state === item ? "bg-primary-green text-primary-black" : "bg-primary-black-light text-primary-white"}`}>{item === undefined ? "Tất cả" : item === "PENDING" ? "Chờ duyệt" : item === "APPROVED" ? "Đã xuất bản" : "Từ chối"}</button>)}</div></div><Link to="/blog/create-blog" className="rounded bg-primary-green px-4 py-2 font-semibold text-primary-black">Tạo bài viết</Link></div><div className="mt-5"><label>Danh mục <select value={category} onChange={(e) => { setCategory(e.target.value); setPage(1); }} className="ml-2 rounded border border-gray-600 bg-primary-black p-2 text-primary-white"><option value="">Tất cả</option>{categories.data?.items.map((item) => <option key={item.id} value={item.name}>{item.name}</option>)}</select></label></div><div className="mt-5 overflow-x-auto rounded border border-gray-700">{blogs.isLoading ? <p className="p-6">Đang tải…</p> : blogs.isError ? <p className="p-6 text-red-300">{apiErrorMessage(blogs.error)}</p> : <table className="w-full min-w-[650px] text-left"><thead className="bg-primary-black-light text-primary-white"><tr><th className="p-3">Tiêu đề</th><th>Danh mục</th><th>Trạng thái</th><th>Cập nhật</th><th>Thao tác</th></tr></thead><tbody>{blogs.data?.items.map((blog) => <tr key={blog.id} className="border-t border-gray-700"><td className="p-3">{blog.title}</td><td>{blog.category}</td><td><span className="rounded bg-gray-700 px-2 py-1 text-xs">{blog.state}</span></td><td>{formatCmsDate(blog.modified_at)}</td><td className="space-x-3"><Link className="text-blue-300 underline" to={`/blog/default/${blog.id}`}>Sửa</Link><button className="text-red-300 underline" onClick={() => confirmRemove(blog.id)}>Xóa</button></td></tr>)}{blogs.data?.items.length === 0 && <tr><td colSpan={5} className="p-6 text-center">Không có kết quả ở trang này.</td></tr>}</tbody></table>}</div><div className="mt-4 flex items-center justify-center gap-4"><button disabled={page <= 1} onClick={() => setPage(page - 1)} className="rounded bg-gray-700 px-3 py-2 disabled:opacity-50">Trước</button><span>Trang {blogs.data?.page ?? page} / {blogs.data?.totalPages ?? 1} · {blogs.data?.total ?? 0} bài</span><button disabled={!blogs.data || page >= blogs.data.totalPages} onClick={() => setPage(page + 1)} className="rounded bg-gray-700 px-3 py-2 disabled:opacity-50">Sau</button></div></section>;
 };
-
 export default BlogManagement;

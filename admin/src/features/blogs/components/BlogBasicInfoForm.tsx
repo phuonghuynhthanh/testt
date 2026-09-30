@@ -2,9 +2,9 @@ import type { ChangeEvent, Dispatch, SetStateAction } from "react";
 
 import InputField from "../../../shared/input/InputField";
 import InputUploadBanner from "../../../shared/input/InputUploadBanner";
-import SelectField from "../../../shared/select/SelectField";
-import { categories } from "../../../services/blog/handleBlog";
 import type { IBlogData } from "../../../types/Blog";
+import { useQuery } from "@tanstack/react-query";
+import { listCategories } from "../../../services/category/handleCategory";
 
 interface BlogBasicInfoFormProps {
   blogData: IBlogData;
@@ -22,6 +22,11 @@ const BlogBasicInfoForm = ({
   setBannerImage,
   onFieldChange,
 }: BlogBasicInfoFormProps) => {
+  const categories = useQuery({
+    queryKey: ["categories", { page: 1, pageSize: 100 }],
+    queryFn: () => listCategories(),
+  });
+
   return (
     <div className="py-6 space-y-4">
       <div className="flex justify-between items-center gap-5">
@@ -29,7 +34,7 @@ const BlogBasicInfoForm = ({
           label="Mã bài viết"
           id="id"
           name="id"
-          value={blogData.id}
+          value={blogData.id ?? ""}
           readOnly
         />
         <InputField
@@ -54,14 +59,21 @@ const BlogBasicInfoForm = ({
           handleChange={onFieldChange}
           placeholder="Nhập thẻ tag..."
         />
-        <SelectField
-          label="Danh mục"
-          id="category"
-          name="category"
-          value={blogData.category}
-          options={categories.filter((cat) => cat.value !== "ALL")}
-          onChange={onFieldChange}
-        />
+        <div className="flex flex-1 flex-col">
+          <label htmlFor="category" className="font-medium text-primary-white">Danh mục</label>
+          <input
+            list="blog-update-categories"
+            id="category"
+            name="category"
+            value={blogData.category}
+            onChange={onFieldChange}
+            placeholder="Chọn hoặc nhập danh mục mới..."
+            className="mt-1 rounded-md border border-gray-300 bg-primary-black-light p-2 text-primary-white"
+          />
+          <datalist id="blog-update-categories">
+            {categories.data?.items.map((category) => <option key={category.id} value={category.name} />)}
+          </datalist>
+        </div>
       </div>
       <InputField
         label="Tiêu đề"
