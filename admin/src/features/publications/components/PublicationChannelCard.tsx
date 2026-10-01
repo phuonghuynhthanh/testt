@@ -37,7 +37,7 @@ export const PublicationChannelCard: React.FC<PublicationChannelCardProps> = ({
   return (
     <div className="rounded-xl border border-surface-border bg-surface-card p-5 shadow-sm space-y-5">
       <div className="flex items-center justify-between border-b border-surface-border pb-3">
-        <h3 className="font-semibold text-content-primary text-sm">Kênh đăng</h3>
+        <h3 className="font-semibold text-content-primary text-sm">1. Chọn kênh đăng</h3>
         {settingsDirty && (
           <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-400">
             <FiAlertTriangle className="text-xs" />
@@ -139,7 +139,7 @@ export const PublicationChannelCard: React.FC<PublicationChannelCardProps> = ({
               <div>
                 <span className="font-medium text-content-primary block">Tóm tắt bằng AI</span>
                 <span className="text-[11px] text-content-muted">
-                  AI viết bản tóm tắt và tự kiểm tra sự thật.
+                  AI đề xuất bản tóm tắt. Bạn kiểm tra thông tin trước khi đăng.
                 </span>
               </div>
             </label>
@@ -176,7 +176,8 @@ export const PublicationChannelCard: React.FC<PublicationChannelCardProps> = ({
       )}
 
       {!hideSaveButton && (
-        <div className="flex justify-end pt-2">
+        <div className="space-y-2 border-t border-surface-border pt-3">
+          <p className="text-xs text-content-muted">Lưu lựa chọn kênh để tiếp tục soạn bài. Thao tác này chưa xuất bản.</p>
           <button
             type="button"
             onClick={onSaveSettings}
@@ -186,7 +187,7 @@ export const PublicationChannelCard: React.FC<PublicationChannelCardProps> = ({
             className="inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-teal-600 px-3.5 text-xs font-semibold text-white hover:bg-teal-700 disabled:opacity-40 transition-colors shadow-sm"
           >
             <FiCheck className={`text-sm ${isSaving ? "animate-pulse" : ""}`} />
-            <span>{isSaving ? "Đang lưu..." : "Lưu cấu hình"}</span>
+            <span>{isSaving ? "Đang lưu..." : settingsDirty ? "Lưu lựa chọn kênh" : "Đã lưu lựa chọn kênh"}</span>
           </button>
         </div>
       )}

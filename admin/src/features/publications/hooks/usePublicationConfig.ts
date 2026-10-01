@@ -352,7 +352,7 @@ export const usePublicationConfig = (
   const factCheckValid = !factCheck.requiresHumanFactCheck || factCheckAcknowledged;
   const canPublish = Boolean(
     pub &&
-      isApproved &&
+      (!publishLinkedin || isApproved) &&
       hasChannel &&
       !settingsDirty &&
       (!publishLinkedin ||

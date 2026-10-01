@@ -166,8 +166,8 @@ export const PublicationConfigWorkspace: React.FC<PublicationConfigWorkspaceProp
         />
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <div className="lg:col-span-5 space-y-6">
+      <div className="space-y-6">
+        <div className="space-y-6">
           <PublicationChannelCard
             publishWeb={publishWeb}
             publishLinkedin={publishLinkedin}
@@ -183,24 +183,15 @@ export const PublicationConfigWorkspace: React.FC<PublicationConfigWorkspaceProp
             onSaveSettings={() => saveSettingsMutation.mutate()}
           />
 
-          <PublicationPublishCard
-            isApproved={isApproved}
-            hasChannel={hasChannel}
-            settingsDirty={settingsDirty}
-            canPublish={canPublish}
-            isPublishing={publishMutation.isPending}
-            publishLabel="Xuất bản"
-            onPublishClick={() => setShowConfirmPublish(true)}
-          />
         </div>
 
-        <div className="lg:col-span-7 space-y-6">
+        <div className="space-y-6">
           {draftStale && ["SAME", "SUMMARY"].includes(pub.linkedinMode) && (
             <p className="rounded-lg border border-amber-500/30 bg-amber-950/20 p-3 text-xs text-amber-300">
               Bài viết website đã thay đổi sau khi bản nháp LinkedIn được tạo. Hãy tạo lại trước khi xuất bản.
             </p>
           )}
-          <LinkedInWorkspaceCard
+          {publishLinkedin && <LinkedInWorkspaceCard
             publishLinkedin={publishLinkedin}
             settingsDirty={settingsDirty}
             content={content}
@@ -227,14 +218,14 @@ export const PublicationConfigWorkspace: React.FC<PublicationConfigWorkspaceProp
             canSaveDraft={canSaveDraft}
             isSavingDraft={saveDraftMutation.isPending}
             isPublished={isPublished}
-          />
+          />}
 
           {publishLinkedin && (
             <div className="rounded-xl border border-surface-border bg-surface-card p-5 text-xs text-content-secondary shadow-sm space-y-3">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <h3 className="font-semibold text-content-primary text-sm">Trạng thái LinkedIn</h3>
-                  <p className="mt-1">{pub.linkedinStatus}</p>
+                  <p className="mt-1">{{ NOT_SELECTED: "Chưa chọn kênh", DRAFT: "Bản nháp", READY: "Sẵn sàng", PUBLISHING: "Đang đăng bài", PUBLISHED: "Đã đăng", FAILED: "Đăng thất bại", REVIEW_REQUIRED: "Cần kiểm tra trên LinkedIn" }[pub.linkedinStatus]}</p>
                 </div>
                 <button
                   type="button"
@@ -278,6 +269,34 @@ export const PublicationConfigWorkspace: React.FC<PublicationConfigWorkspaceProp
           )}
         </div>
       </div>
+
+          <PublicationPublishCard
+            isApproved={isApproved}
+            hasChannel={hasChannel}
+            settingsDirty={settingsDirty}
+            canPublish={canPublish}
+            isPublishing={publishMutation.isPending}
+            publishLabel="Xuất bản"
+            requiresApproval={publishLinkedin}
+            guidance={settingsDirty
+              ? "Bước tiếp theo: lưu lựa chọn kênh ở phía trên."
+              : !hasChannel
+                ? "Chọn ít nhất một kênh đăng bài."
+                : publishLinkedin && !isApproved
+                  ? "Bài viết cần được duyệt trong danh sách bài viết trước khi tiếp tục."
+                  : publishLinkedin && isPublished
+                    ? "Bài LinkedIn đã được đăng. Không cần xuất bản lại."
+                    : publishLinkedin && !content.trim()
+                      ? "Soạn hoặc tạo bản nháp LinkedIn ở phần bên dưới."
+                      : publishLinkedin && (!mediaCountValid || !altTextValid)
+                        ? "Chọn đủ ảnh và nhập mô tả cho từng ảnh LinkedIn."
+                        : publishLinkedin && factCheck.requiresHumanFactCheck && !factCheckAcknowledged
+                          ? "Xác nhận đã kiểm tra thông tin trong phần nội dung LinkedIn."
+                          : !canPublish
+                            ? "Kiểm tra trạng thái LinkedIn bên dưới để tiếp tục."
+                            : "Bấm Xuất bản để đăng công khai lên các kênh đã chọn. Một hộp xác nhận sẽ mở trước khi đăng."}
+            onPublishClick={() => setShowConfirmPublish(true)}
+          />
 
       <ConfirmDialog
         isOpen={showConfirmPublish}

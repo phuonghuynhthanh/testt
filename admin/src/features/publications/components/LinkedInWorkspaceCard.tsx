@@ -93,7 +93,7 @@ export const LinkedInWorkspaceCard: React.FC<LinkedInWorkspaceCardProps> = ({
       <div className="flex items-center justify-between border-b border-surface-border pb-3">
         <h3 className="font-semibold text-content-primary text-sm flex items-center gap-2">
           <FaLinkedin className="text-[#0a66c2]" />
-          <span>Nội dung bài đăng LinkedIn</span>
+          <span>2. Chuẩn bị bài LinkedIn</span>
         </h3>
         {showGenerateDraft && (
           <button
@@ -255,6 +255,7 @@ export const LinkedInWorkspaceCard: React.FC<LinkedInWorkspaceCardProps> = ({
       )}
 
       <div className="border-t border-surface-border pt-3">
+        <p className="mb-3 text-xs text-content-muted">Lưu bản nháp để giữ nội dung và hình ảnh. Bài chưa được đăng lên LinkedIn.</p>
         <button
           type="button"
           onClick={onSaveDraft}

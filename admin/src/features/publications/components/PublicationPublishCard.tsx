@@ -9,6 +9,8 @@ interface PublicationPublishCardProps {
   isPublishing: boolean;
   publishLabel: string;
   onPublishClick: () => void;
+  guidance: string;
+  requiresApproval: boolean;
 }
 
 // Render readiness checklist and trigger button for multi-channel publication.
@@ -20,11 +22,13 @@ export const PublicationPublishCard: React.FC<PublicationPublishCardProps> = ({
   isPublishing,
   publishLabel,
   onPublishClick,
+  guidance,
+  requiresApproval,
 }) => {
   return (
     <div className="rounded-xl border border-surface-border bg-surface-card p-5 shadow-sm space-y-4">
       <div className="border-b border-surface-border pb-3">
-        <h3 className="font-semibold text-content-primary text-sm">Xuất bản</h3>
+        <h3 className="font-semibold text-content-primary text-sm">Xuất bản bài viết</h3>
       </div>
 
       <div className="space-y-2 text-xs">
@@ -46,7 +50,7 @@ export const PublicationPublishCard: React.FC<PublicationPublishCardProps> = ({
             <FiAlertTriangle className="text-amber-400 shrink-0" />
           )}
           <span className={isApproved ? "text-content-secondary" : "text-amber-400"}>
-            {isApproved ? "Bài viết đã được duyệt." : "Bài viết chưa được duyệt."}
+            {!requiresApproval ? "Xuất bản sẽ duyệt và đăng bài lên Website." : isApproved ? "Bài viết đã được duyệt." : "Bài viết chưa được duyệt."}
           </span>
         </div>
 
@@ -75,6 +79,7 @@ export const PublicationPublishCard: React.FC<PublicationPublishCardProps> = ({
           <span>{isPublishing ? "Đang xuất bản..." : publishLabel}</span>
         </button>
       </div>
+      <p role="status" className={`text-xs leading-relaxed ${canPublish ? "text-content-muted" : "text-amber-300"}`}>{guidance}</p>
     </div>
   );
 };

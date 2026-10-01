@@ -398,7 +398,7 @@ const LinkedInPost: React.FC = () => {
 
       {/* Keep draft and publication actions accessible from every editing section. */}
       {!immutable && <BottomActionBar>
-        <span className="text-xs text-content-muted">{formValid ? "Bài đăng đã sẵn sàng" : "Đang soạn thảo bài LinkedIn"}</span>
+        <span role="status" className="max-w-md text-xs text-content-muted">{!topic.trim() ? "Nhập chủ đề bài đăng để tiếp tục." : !content.trim() ? "Soạn nội dung hoặc tạo bản nháp bằng AI." : !mediaCountValid ? "Chọn đủ số ảnh theo chế độ đã chọn." : !media.every((item) => item.altText.trim()) ? "Nhập mô tả cho từng ảnh đã chọn." : factCheckBlocked ? "Xác nhận đã kiểm tra thông tin trước khi tiếp tục." : "Lưu bản nháp để giữ nội dung; Đăng lên LinkedIn để xuất bản công khai."}</span>
         <div className="flex flex-wrap items-center gap-3">
         {!immutable && (
           <button
