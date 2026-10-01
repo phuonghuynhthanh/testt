@@ -12,7 +12,7 @@ createRoot(document.getElementById("root")!).render(
   <QueryClientProvider client={queryClient}>
     <BrowserRouter>
       <App />
-      <ToastContainer autoClose={3000} />
+      <ToastContainer autoClose={3000} theme="dark" />
     </BrowserRouter>
   </QueryClientProvider>,
 );

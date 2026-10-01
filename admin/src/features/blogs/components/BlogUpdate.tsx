@@ -24,7 +24,6 @@ import BlogPreviewDemo from "./BlogPreviewDemo";
 import BlogBasicInfoForm from "./BlogBasicInfoForm";
 import BlogSeoForm from "./BlogSeoForm";
 import { PageHeader, StatusBadge, BottomActionBar } from "../../../shared/ui";
-import PublicationConfigWorkspace from "../../publications/components/PublicationConfigWorkspace";
 
 const INIT_BLOG_DATA: IBlogData = {
   id: "",
@@ -54,7 +53,6 @@ const BlogUpdate = () => {
   const queryClient = useQueryClient();
   const { blog_id: blogId } = useParams<{ blog_id: string }>();
   const [isLoading, setIsLoading] = useState(false);
-  const [blogSaveVersion, setBlogSaveVersion] = useState(0);
   const [storedLinkBlog, setStoredLinkBlog] = useState("");
   const [content, setContent] = useState<IEditorData>({ title: "", body: "" });
   const [isOpenGenerate, setIsOpenGenerate] = useState(false);
@@ -183,7 +181,6 @@ const BlogUpdate = () => {
       queryClient.invalidateQueries({ queryKey: ["blogs"] });
       queryClient.invalidateQueries({ queryKey: ["blogs", "pending"] });
       queryClient.invalidateQueries({ queryKey: ["blogs", "approved"] });
-      setBlogSaveVersion((version) => version + 1);
       toast.success("Cập nhật bài viết thành công.");
     } catch {
       toast.error("Đã xảy ra lỗi. Vui lòng thử lại sau.");
@@ -258,7 +255,7 @@ const BlogUpdate = () => {
       )}
 
       <PageHeader
-        title="Chi tiết bài viết"
+        title="Chỉnh sửa bài viết"
         description="Chỉnh sửa thông tin cơ bản, cấu hình SEO và cập nhật nội dung bài viết"
       />
 
@@ -339,17 +336,7 @@ const BlogUpdate = () => {
         </div>
       </div>
 
-      {blogId && blogDetail && (
-        <div className="pt-8 border-t border-surface-border">
-          <PublicationConfigWorkspace
-            blogId={blogId}
-            blogState={blogData.state}
-            title="Cấu hình xuất bản & Phân phối"
-            description="Thiết lập kênh phát hành, nội dung LinkedIn và tiến trình xuất bản đa nền tảng đồng bộ với hệ thống."
-            blogSaveVersion={blogSaveVersion}
-          />
-        </div>
-      )}
+
     </div>
   );
 };

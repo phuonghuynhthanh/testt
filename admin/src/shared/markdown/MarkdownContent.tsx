@@ -7,6 +7,7 @@ import rehypeRaw from "rehype-raw";
 import rehypeKatex from "rehype-katex";
 import "katex/dist/katex.min.css";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { a11yDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { slugifyText } from "../../utils/markdownUtil";
 import { BiSolidQuoteLeft } from "react-icons/bi";
 
@@ -71,7 +72,7 @@ const MarkdownContent: React.FC<MarkdownContentProps> = ({ content }) => {
                 <figure className="my-4">
                   <img src={src} alt={alt} className="mx-auto rounded-lg" />
                   {title && (
-                    <figcaption className="text-center italic mt-2 text-sm text-gray-500">
+                    <figcaption className="text-center italic mt-2 text-sm text-content-muted">
                       {title}
                     </figcaption>
                   )}
@@ -125,7 +126,7 @@ const MarkdownContent: React.FC<MarkdownContentProps> = ({ content }) => {
               </li>
             ),
             a: ({ children, href }) => (
-              <a href={href} className="text-blue-500 hover:underline">
+              <a href={href} className="text-blue-300 underline underline-offset-2 hover:text-blue-200">
                 {children}
               </a>
             ),
@@ -135,16 +136,20 @@ const MarkdownContent: React.FC<MarkdownContentProps> = ({ content }) => {
                 <div className="px-6 break-words ">{children}</div>
               </div>
             ),
+            // Use the installed accessible dark syntax palette for every code preview.
             code({ className, children, ...rest }) {
               const match = /language-(\w+)/.exec(className || "");
               return match ? (
                 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                 // @ts-ignore
                 <SyntaxHighlighter
+                  {...rest}
+                  style={a11yDark}
                   language={match[1]}
                   PreTag="div"
                   showLineNumbers
                   wrapLongLines
+                  lineNumberStyle={{ color: "#B8C0CC" }}
                   customStyle={{
                     borderRadius: "8px",
                     padding: "1rem",
@@ -153,7 +158,6 @@ const MarkdownContent: React.FC<MarkdownContentProps> = ({ content }) => {
                     color: "#F9FAFB",
                     lineHeight: "1.5",
                   }}
-                  {...rest}
                 >
                   {String(children).trim()}
                 </SyntaxHighlighter>

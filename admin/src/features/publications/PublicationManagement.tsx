@@ -4,7 +4,6 @@ import { useQuery } from "@tanstack/react-query";
 import { FiSend, FiSearch } from "react-icons/fi";
 import { getListBlogs } from "../../services/blog/handleBlog";
 import { apiErrorMessage } from "../../types/Api";
-import type { BlogState } from "../../types/Blog";
 import {
   StatusBadge,
   PageHeader,
@@ -13,30 +12,24 @@ import {
   BlogThumbnail,
 } from "../../shared/ui";
 
-const PUBLICATION_STATE_TABS: Array<{ value: BlogState | undefined; label: string }> = [
-  { value: undefined, label: "Tất cả" },
-  { value: "APPROVED", label: "Đã duyệt" },
-  { value: "PENDING", label: "Chờ duyệt" },
-];
 
-// Manage publication overview list and direct navigation to channel distribution setup.
+// List approved website articles available for LinkedIn adaptation.
 const PublicationManagement: React.FC = () => {
   const [page, setPage] = useState(1);
-  const [state, setState] = useState<BlogState | undefined>();
   const [searchTerm, setSearchTerm] = useState("");
 
   const blogs = useQuery({
-    queryKey: ["publication-blogs", { page, pageSize: 20, state }],
+    queryKey: ["publication-blogs", { page, pageSize: 20, state: "APPROVED" }],
     queryFn: () =>
       getListBlogs({
         page,
         pageSize: 20,
-        ...(state ? { state } : {}),
+        state: "APPROVED",
       }),
   });
 
   const filteredItems = useMemo(() => {
-    const items = blogs.data?.items ?? [];
+    const items = (blogs.data?.items ?? []).filter((blog) => blog.state === "APPROVED");
     if (!searchTerm.trim()) return items;
     const lower = searchTerm.trim().toLowerCase();
     return items.filter(
@@ -49,41 +42,18 @@ const PublicationManagement: React.FC = () => {
   return (
     <section className="space-y-5">
       <PageHeader
-        title="Xuất bản"
-        description="Chọn một bài viết để cấu hình kênh, soạn nội dung LinkedIn và đăng."
+        title="Xuất bản bài viết"
+        description="Chọn bài website đã duyệt để tạo và đăng bài LinkedIn."
       />
 
       <div className="flex items-center gap-3 rounded-xl border border-teal-500/20 bg-teal-950/20 p-3.5 text-xs text-teal-300">
         <FiSend className="w-4 h-4 shrink-0 text-primary-green" />
         <span>
-          <strong>Quy trình:</strong> chọn kênh → soạn nội dung LinkedIn → kiểm tra ảnh → bấm Xuất bản. Chỉ bước cuối mới đăng thật.
+          <strong>Quy trình:</strong> chọn bài website → soạn nội dung LinkedIn → chọn ảnh và liên kết → đăng LinkedIn. Chỉ bước cuối mới đăng thật.
         </span>
       </div>
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-surface-card p-3 rounded-xl border border-surface-border">
-        <div className="inline-flex rounded-lg bg-surface-elevated p-1 border border-surface-border">
-          {PUBLICATION_STATE_TABS.map((tab) => {
-            const isActive = state === tab.value;
-            return (
-              <button
-                key={tab.label}
-                type="button"
-                onClick={() => {
-                  setState(tab.value);
-                  setPage(1);
-                }}
-                className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
-                  isActive
-                    ? "bg-surface-card text-content-primary shadow-xs border border-surface-border"
-                    : "text-content-secondary hover:text-content-primary"
-                }`}
-              >
-                {tab.label}
-              </button>
-            );
-          })}
-        </div>
-
         <div className="relative w-full sm:w-64">
           <input
             type="text"
@@ -108,7 +78,7 @@ const PublicationManagement: React.FC = () => {
         ) : filteredItems.length === 0 ? (
           <EmptyState
             title="Không tìm thấy bài viết"
-            description="Chưa có bài viết nào phù hợp để cấu hình xuất bản."
+            description="Duyệt bài trong Quản lý bài viết để bài xuất hiện tại đây và có thể tạo bài LinkedIn."
           />
         ) : (
           <>
@@ -155,12 +125,12 @@ const PublicationManagement: React.FC = () => {
                       <td className="py-3.5 px-4 text-right whitespace-nowrap">
                         <Link
                           to={`/publications/${blog.id}`}
-                          title="Mở cấu hình xuất bản"
-                          aria-label="Mở cấu hình xuất bản"
+                          title="Tạo bài LinkedIn"
+                          aria-label="Tạo bài LinkedIn"
                           className="inline-flex h-8 items-center justify-center gap-1.5 rounded-lg border border-primary-green/30 bg-primary-green/10 px-3 text-xs font-semibold text-primary-green hover:bg-primary-green/15 transition-colors shadow-xs"
                         >
                           <FiSend className="w-3.5 h-3.5 text-primary-green" />
-                          <span>Mở luồng xuất bản</span>
+                          <span>Tạo bài LinkedIn</span>
                         </Link>
                       </td>
                     </tr>

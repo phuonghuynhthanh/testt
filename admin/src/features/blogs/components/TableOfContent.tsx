@@ -84,7 +84,7 @@ const TableOfContent: React.FC<TableOfContentProps> = ({
                     }
                     ${
                       editMode
-                        ? "cursor-not-allowed opacity-60 text-content-muted"
+                        ? "cursor-not-allowed text-content-muted"
                         : "hover:bg-surface-elevated hover:text-content-primary text-content-secondary cursor-pointer"
                     }
                   `}

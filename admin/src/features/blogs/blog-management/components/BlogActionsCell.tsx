@@ -11,7 +11,7 @@ interface BlogActionsCellProps {
   isApproving?: boolean;
 }
 
-// Render row actions including quick approve, direct publish, edit, and soft delete.
+// Render website approval and editing actions with LinkedIn adaptation for approved articles.
 export const BlogActionsCell: React.FC<BlogActionsCellProps> = ({
   blogId,
   state,
@@ -35,15 +35,15 @@ export const BlogActionsCell: React.FC<BlogActionsCellProps> = ({
         </button>
       )}
 
-      <Link
+      {state === "APPROVED" && <Link
         to={`/publications/${blogId}`}
-        title="Mở cấu hình xuất bản"
-        aria-label="Mở cấu hình xuất bản"
+        title="Tạo bài LinkedIn"
+        aria-label="Tạo bài LinkedIn"
         className="inline-flex h-8 items-center justify-center gap-1.5 rounded-md border border-primary-green/30 bg-primary-green/10 px-2.5 text-xs font-semibold text-primary-green hover:bg-primary-green/15 transition-colors"
       >
         <FiSend className="w-3 h-3 text-primary-green" />
-        <span>Xuất bản</span>
-      </Link>
+        <span>Tạo bài LinkedIn</span>
+      </Link>}
 
       <Link
         to={`/blog/detail/${blogId}`}

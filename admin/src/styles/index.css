@@ -22,6 +22,23 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Keep system controls and toast messages legible against the shared dark surfaces. */
+:root {
+  color-scheme: dark;
+}
+
+.Toastify__toast-container {
+  --toastify-color-light: #1A1A1A;
+  --toastify-text-color-light: #F9FAFB;
+  --toastify-color-dark: #1A1A1A;
+  --toastify-text-color-dark: #F9FAFB;
+}
+
+.Toastify__toast-theme--light,
+.Toastify__toast-theme--dark {
+  border: 1px solid #48515E;
+}
+
 :focus-visible {
   outline: 2px solid #07e86c;
   outline-offset: 2px;
@@ -36,7 +53,16 @@ textarea {
 
 input::placeholder,
 textarea::placeholder {
-  color: #9CA3AF;
+  color: #B8C0CC;
+}
+
+/* Read-only article content must stay readable even when editing controls are disabled. */
+input:disabled[class],
+select:disabled[class],
+textarea:disabled[class] {
+  opacity: 1;
+  color: #E2E8F0;
+  -webkit-text-fill-color: #E2E8F0;
 }
 
 html {

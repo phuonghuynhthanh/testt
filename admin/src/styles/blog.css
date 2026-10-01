@@ -46,8 +46,9 @@
 }
 
 .markdown-container a {
-  color: #3d63dd;
-  text-decoration: none;
+  color: #93c5fd;
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 .markdown-container a:hover {

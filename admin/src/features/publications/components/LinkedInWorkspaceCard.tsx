@@ -10,14 +10,13 @@ import type {
 import { linkedinMediaKey, linkedinMediaUrl } from "../../../utils/linkedinMedia";
 
 interface LinkedInWorkspaceCardProps {
-  publishLinkedin: boolean;
-  settingsDirty: boolean;
   content: string;
   onContentChange: (val: string) => void;
   isGeneratingDraft: boolean;
   onGenerateDraft: () => void;
   showGenerateDraft?: boolean;
   mediaMode: LinkedInMediaMode;
+  onMediaModeChange: (mode: LinkedInMediaMode) => void;
   candidates: (LinkedInMediaAsset | PexelsCandidate)[];
   selectedMedia: LinkedInMediaAsset[];
   onToggleMedia: (candidate: LinkedInMediaAsset) => void;
@@ -32,22 +31,18 @@ interface LinkedInWorkspaceCardProps {
   factCheck: FactualReview;
   factCheckAcknowledged: boolean;
   onAcknowledgeFactCheck: (val: boolean) => void;
-  onSaveDraft: () => void;
-  canSaveDraft: boolean;
-  isSavingDraft: boolean;
   isPublished: boolean;
 }
 
-// Render the right-side LinkedIn workspace, displaying idle prompt or full draft & media editing suite.
+// Render editable LinkedIn content with generated or manually uploaded image selections.
 export const LinkedInWorkspaceCard: React.FC<LinkedInWorkspaceCardProps> = ({
-  publishLinkedin,
-  settingsDirty,
   content,
   onContentChange,
   isGeneratingDraft,
   onGenerateDraft,
   showGenerateDraft = true,
   mediaMode,
+  onMediaModeChange,
   candidates,
   selectedMedia,
   onToggleMedia,
@@ -62,32 +57,8 @@ export const LinkedInWorkspaceCard: React.FC<LinkedInWorkspaceCardProps> = ({
   factCheck,
   factCheckAcknowledged,
   onAcknowledgeFactCheck,
-  onSaveDraft,
-  canSaveDraft,
-  isSavingDraft,
   isPublished,
 }) => {
-  // Keep the editor disabled until the selected LinkedIn channel is saved.
-  if (!publishLinkedin || settingsDirty) {
-    const needsSave = publishLinkedin && settingsDirty;
-
-    return (
-      <div className="rounded-xl border border-surface-border bg-surface-card p-12 text-center shadow-sm flex flex-col items-center justify-center min-h-[320px] space-y-3">
-        <div className="size-12 rounded-full bg-surface-elevated flex items-center justify-center text-content-muted">
-          <FaLinkedin className="text-2xl opacity-40" />
-        </div>
-        <h4 className="text-sm font-semibold text-content-primary">
-          {needsSave ? "Chưa lưu kênh LinkedIn" : "LinkedIn đang tắt"}
-        </h4>
-        <p className="text-xs text-content-muted max-w-xs leading-relaxed">
-          {needsSave
-            ? "Lưu cấu hình kênh trước khi tạo hoặc chỉnh sửa nội dung LinkedIn."
-            : "Bật \"Đăng lên LinkedIn\" và lưu cấu hình để soạn nội dung."}
-        </p>
-      </div>
-    );
-  }
-
   return (
     <div className="rounded-xl border border-surface-border bg-surface-card p-5 shadow-sm space-y-5">
       <div className="flex items-center justify-between border-b border-surface-border pb-3">
@@ -108,6 +79,7 @@ export const LinkedInWorkspaceCard: React.FC<LinkedInWorkspaceCardProps> = ({
       </div>
 
       <textarea
+        aria-label="Nội dung bài đăng LinkedIn"
         value={content}
         onChange={(e) => onContentChange(e.target.value)}
         disabled={isPublished}
@@ -137,12 +109,20 @@ export const LinkedInWorkspaceCard: React.FC<LinkedInWorkspaceCardProps> = ({
         </div>
       )}
 
-      {/* Media suite */}
+      {/* Allow manual image selection independently of generated image plans. */}
+      <label className="flex flex-wrap items-center gap-3 text-xs text-content-secondary">
+        Chế độ ảnh
+        <select aria-label="Chế độ ảnh" value={mediaMode} disabled={isPublished} onChange={(event) => onMediaModeChange(event.target.value as LinkedInMediaMode)} className="rounded-lg border border-surface-border bg-surface-elevated px-3 py-2 text-content-primary">
+          <option value="none">Không kèm ảnh</option>
+          <option value="single-image">Một ảnh</option>
+          <option value="multi-image">Nhiều ảnh (2–20)</option>
+        </select>
+      </label>
       {mediaMode !== "none" && (
         <div className="space-y-3 border-t border-surface-border pt-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h4 className="text-xs font-semibold text-content-primary">Hình ảnh đính kèm</h4>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <input
                 value={keywordInput}
                 onChange={(e) => onKeywordChange(e.target.value)}
@@ -169,6 +149,7 @@ export const LinkedInWorkspaceCard: React.FC<LinkedInWorkspaceCardProps> = ({
                 <span>{isUploading ? "Đang tải..." : "Tải ảnh lên"}</span>
                 <input
                   type="file"
+                  disabled={isPublished || isUploading}
                   multiple={mediaMode === "multi-image"}
                   accept="image/jpeg,image/png,image/gif"
                   className="hidden"
@@ -182,6 +163,7 @@ export const LinkedInWorkspaceCard: React.FC<LinkedInWorkspaceCardProps> = ({
             </div>
           </div>
 
+          <p className="text-xs text-content-muted">Đã chọn {selectedMedia.length} ảnh · {mediaMode === "single-image" ? "Cần 1 ảnh" : "Cần 2–20 ảnh"}. Nhập mô tả cho ảnh trước khi lưu.</p>
           {candidates.length > 0 && (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 max-h-56 overflow-y-auto pr-1">
               {candidates.map((cand) => {
@@ -200,10 +182,11 @@ export const LinkedInWorkspaceCard: React.FC<LinkedInWorkspaceCardProps> = ({
                       className="h-20 w-full object-cover rounded"
                     />
                     <input
-                      value={cand.altText || ""}
+                      value={selectedMedia.find((item) => linkedinMediaKey(item) === key)?.altText ?? cand.altText ?? ""}
                       onChange={(e) => onUpdateAltText(key, e.target.value)}
                       disabled={isPublished}
-                      placeholder="Alt text..."
+                      aria-label="Mô tả ảnh"
+                      placeholder="Mô tả ảnh (bắt buộc)..."
                       className="w-full rounded border border-surface-border bg-surface-card px-1.5 py-0.5 text-[11px] text-content-primary focus:outline-none"
                     />
                     <div className="flex items-center gap-1">
@@ -212,7 +195,7 @@ export const LinkedInWorkspaceCard: React.FC<LinkedInWorkspaceCardProps> = ({
                           <button
                             type="button"
                             onClick={() => onMoveMedia(key, -1)}
-                            disabled={isPublished}
+                            disabled={isPublished || selectedMedia.findIndex((item) => linkedinMediaKey(item) === key) === 0}
                             title="Đưa ảnh lên trước"
                             aria-label="Đưa ảnh lên trước"
                             className="inline-flex flex-1 items-center justify-center gap-1 rounded border border-surface-border bg-surface-card py-0.5 text-center"
@@ -223,7 +206,7 @@ export const LinkedInWorkspaceCard: React.FC<LinkedInWorkspaceCardProps> = ({
                           <button
                             type="button"
                             onClick={() => onMoveMedia(key, 1)}
-                            disabled={isPublished}
+                            disabled={isPublished || selectedMedia.findIndex((item) => linkedinMediaKey(item) === key) === selectedMedia.length - 1}
                             title="Đưa ảnh xuống sau"
                             aria-label="Đưa ảnh xuống sau"
                             className="inline-flex flex-1 items-center justify-center gap-1 rounded border border-surface-border bg-surface-card py-0.5 text-center"
@@ -240,7 +223,7 @@ export const LinkedInWorkspaceCard: React.FC<LinkedInWorkspaceCardProps> = ({
                         className={`flex-1 py-0.5 rounded font-medium text-center ${
                           selected
                             ? "bg-rose-950/40 text-rose-300 border border-rose-800/40"
-                            : "bg-teal-600 text-white"
+                            : "bg-teal-700 text-white hover:bg-teal-800"
                         }`}
                       >
                         {selected ? "Bỏ" : "Chọn"}
@@ -254,17 +237,6 @@ export const LinkedInWorkspaceCard: React.FC<LinkedInWorkspaceCardProps> = ({
         </div>
       )}
 
-      <div className="border-t border-surface-border pt-3">
-        <p className="mb-3 text-xs text-content-muted">Lưu bản nháp để giữ nội dung và hình ảnh. Bài chưa được đăng lên LinkedIn.</p>
-        <button
-          type="button"
-          onClick={onSaveDraft}
-          disabled={!canSaveDraft || isSavingDraft || isPublished}
-          className="px-4 py-2 rounded-lg text-xs font-semibold bg-teal-600 hover:bg-teal-700 text-white disabled:opacity-40 transition-colors shadow-sm"
-        >
-          {isSavingDraft ? "Đang lưu..." : "Lưu bản nháp LinkedIn"}
-        </button>
-      </div>
     </div>
   );
 };

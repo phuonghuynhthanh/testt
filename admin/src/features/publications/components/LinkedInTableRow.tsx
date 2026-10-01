@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { FiEye, FiEdit2, FiTrash2, FiExternalLink } from "react-icons/fi";
 import type { LinkedInPost, LinkedInPostStatus, LinkedInSourceType } from "../../../types/LinkedIn";
 
@@ -101,17 +101,26 @@ export const LinkedInTableRow: React.FC<LinkedInTableRowProps> = ({
   isPublishing,
   isRetrying,
 }) => {
+  const navigate = useNavigate();
   const title = post.topic || post.content?.split("\n")[0] || "Bài đăng LinkedIn";
   const snippet =
     post.content?.split("\n").filter(Boolean)[1] ||
     post.content?.slice(0, 80) ||
     "";
 
+  // Open row details without intercepting independent buttons or links inside the row.
+  const handleRowClick = (event: React.MouseEvent<HTMLTableRowElement>) => {
+    if ((event.target as HTMLElement).closest("a, button, input, select, textarea")) return;
+    navigate(`/linkedin/posts/${post.id}`);
+  };
+
   return (
-    <tr className="hover:bg-surface-hover/60 transition-colors group">
+    <tr onClick={handleRowClick} className="cursor-pointer hover:bg-surface-hover/60 transition-colors group">
       <td className="py-3 px-4 max-w-sm sm:max-w-md">
         <h4 className="text-xs sm:text-sm font-semibold text-content-primary truncate group-hover:text-primary-green transition-colors">
-          {title}
+          <Link to={`/linkedin/posts/${post.id}`} title="Xem chi tiết bài đăng LinkedIn" className="focus-visible:outline focus-visible:outline-primary-green">
+            {title}
+          </Link>
         </h4>
         <p className="text-[11px] text-content-muted truncate mt-0.5 leading-relaxed">
           {snippet}

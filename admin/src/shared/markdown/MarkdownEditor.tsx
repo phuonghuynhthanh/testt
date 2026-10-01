@@ -42,6 +42,19 @@ import { MdFileUpload } from "react-icons/md";
 import { toast } from "react-toastify";
 import { uploadFileImage } from "../../services/file/handleFile";
 import "../../styles/MarkdownEditor.css";
+import { HighlightStyle, syntaxHighlighting } from "@codemirror/language";
+import { tags } from "@lezer/highlight";
+import { Prec } from "@codemirror/state";
+
+// Override the editor's built-in light syntax colors with readable dark-surface highlights.
+const CODE_HIGHLIGHT = Prec.highest(syntaxHighlighting(HighlightStyle.define([
+  { tag: tags.comment, color: "#B8C0CC" },
+  { tag: [tags.keyword, tags.operator, tags.bool, tags.number], color: "#67E8F9" },
+  { tag: [tags.string, tags.character, tags.regexp], color: "#BEF264" },
+  { tag: [tags.name, tags.propertyName], color: "#FDBA74" },
+  { tag: tags.punctuation, color: "#E2E8F0" },
+  { tag: tags.invalid, color: "#FDA4AF" },
+])));
 
 const MAX_SIZE = 2 * 1024 * 1024;
 const MATH_BLOCK_LANGUAGE = "latex-math";
@@ -132,14 +145,14 @@ const PlainCodeEditor: CodeBlockEditorDescriptor["Editor"] = ({
 
   return (
     <div className="my-6 overflow-hidden rounded-xl border border-white/10 bg-[#121212]">
-      <div className="border-b border-white/10 px-3 py-1.5 text-xs uppercase tracking-wide text-white/40">
+      <div className="border-b border-white/10 px-3 py-1.5 text-xs uppercase tracking-wide text-content-muted">
         {language || "text"}
       </div>
       <textarea
         defaultValue={code}
         spellCheck={false}
         onChange={(event) => setCode(event.target.value)}
-        className="block w-full resize-y bg-transparent p-3 font-mono text-sm leading-relaxed text-white/80 outline-none"
+        className="block w-full resize-y bg-transparent p-3 font-mono text-sm leading-relaxed text-content-primary outline-none"
         rows={Math.min(24, Math.max(3, code.split("\n").length + 1))}
       />
     </div>
@@ -407,7 +420,7 @@ const MarkdownEditor = forwardRef<MDXEditorMethods, MarkdownEditorProps>(
           }}
           readOnly={readOnly}
           placeholder={placeholder}
-          className="h-full min-h-0 flex flex-col"
+          className="dark-theme h-full min-h-0 flex flex-col"
           plugins={[
             headingsPlugin(),
             listsPlugin(),
@@ -424,6 +437,7 @@ const MarkdownEditor = forwardRef<MDXEditorMethods, MarkdownEditorProps>(
               codeBlockEditorDescriptors: [FALLBACK_CODE_BLOCK_DESCRIPTOR],
             }),
             codeMirrorPlugin({
+              codeMirrorExtensions: [CODE_HIGHLIGHT],
               codeBlockLanguages: {
                 text: "Text",
                 txt: "Text",

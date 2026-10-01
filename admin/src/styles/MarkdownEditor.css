@@ -27,6 +27,25 @@
 }
 
 /* Wrapper */
+/* Override the library's white page surface and faint select placeholders in both editor and portals. */
+.mdxeditor.dark-theme,
+.mdxeditor-popup-container {
+  --basePageBg: #1A1A1A;
+  --baseText: #B8C0CC;
+  --baseTextContrast: #F9FAFB;
+  --baseBorderHover: #B8C0CC;
+}
+
+.mdxeditor-select-content {
+  background-color: #1A1A1A;
+  color: #E2E8F0;
+}
+
+/* Keep readable editor menus above the full-screen authoring overlay. */
+.mdxeditor-popup-container {
+  z-index: 60;
+}
+
 .markdown-editor-wrapper {
   border: 1px solid var(--border-color);
   background: #121212;
@@ -312,7 +331,7 @@
 .markdown-editor-wrapper .cm-gutters {
   background: #121212;
   border-right: 0;
-  color: rgba(255, 255, 255, 0.18);
+  color: #B8C0CC;
 }
 
 .markdown-editor-wrapper .cm-activeLine,

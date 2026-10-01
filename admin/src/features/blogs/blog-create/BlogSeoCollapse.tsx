@@ -1,16 +1,23 @@
 import React, { useState } from "react";
 import { FiChevronDown, FiChevronUp } from "react-icons/fi";
 import type { SEO } from "../../../types/Blog";
+import { BsStars } from "react-icons/bs";
 
 interface BlogSeoCollapseProps {
   seo: SEO;
   onUpdateSeo: <K extends keyof SEO>(field: K, value: SEO[K]) => void;
+  onGenerateSeo: () => void;
+  generating: boolean;
+  canGenerate: boolean;
 }
 
 // Render collapsible SEO configuration fields with an interactive toggle switch.
 export const BlogSeoCollapse: React.FC<BlogSeoCollapseProps> = ({
   seo,
   onUpdateSeo,
+  onGenerateSeo,
+  generating,
+  canGenerate,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -63,7 +70,13 @@ export const BlogSeoCollapse: React.FC<BlogSeoCollapseProps> = ({
 
       {isOpen && (
         <div className="px-6 pb-6 pt-2 border-t border-surface-border/60">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="flex flex-wrap items-center gap-3 my-3">
+            <button type="button" disabled={generating || !canGenerate} onClick={onGenerateSeo} className="inline-flex items-center gap-2 rounded-lg border border-purple-500/30 bg-purple-500/10 px-3 py-2 text-xs font-semibold text-purple-300 hover:bg-purple-500/20 disabled:cursor-not-allowed disabled:opacity-50">
+              <BsStars aria-hidden="true" />{generating ? "Đang tạo SEO..." : "Tạo SEO bằng AI"}
+            </button>
+            <p role="status" className="text-xs text-content-muted">{generating ? "Đang tạo mô tả và từ khóa; nội dung bài viết được giữ nguyên." : canGenerate ? "AI tạo mô tả và từ khóa. Bạn có thể chỉnh sửa trước khi lưu." : "Nhập tiêu đề và nội dung bài viết trước khi tạo SEO."}</p>
+          </div>
+          <fieldset disabled={generating} className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
               <label className="block text-xs font-medium text-content-secondary mb-1.5">
                 Tiêu đề SEO
@@ -136,7 +149,7 @@ export const BlogSeoCollapse: React.FC<BlogSeoCollapseProps> = ({
                 className="w-full rounded-lg border border-surface-border bg-surface-elevated px-3.5 py-2 text-sm text-content-primary placeholder-content-muted focus:border-primary-green focus:outline-none focus:ring-1 focus:ring-primary-green transition"
               />
             </div>
-          </div>
+          </fieldset>
         </div>
       )}
     </div>

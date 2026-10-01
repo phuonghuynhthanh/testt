@@ -1,326 +1,163 @@
-import React from "react";
-import { ConfirmDialog } from "../../../shared/ui";
-import PublicationStepper from "./PublicationStepper";
-import PublicationChannelCard from "./PublicationChannelCard";
-import PublicationPublishCard from "./PublicationPublishCard";
+import { BottomActionBar, ConfirmDialog } from "../../../shared/ui";
 import LinkedInWorkspaceCard from "./LinkedInWorkspaceCard";
 import { usePublicationConfig } from "../hooks/usePublicationConfig";
 import { linkedinMediaKey } from "../../../utils/linkedinMedia";
-import { formatCmsDate } from "../../../utils/date";
-import type { LinkedInMediaAsset } from "../../../types/Publication";
+import type { LinkedInMediaAsset, LinkedInMediaMode, LinkedInMode } from "../../../types/Publication";
 
-interface PublicationConfigWorkspaceProps {
-  blogId: string;
-  blogState?: string;
-  showStepper?: boolean;
-  title?: string;
-  description?: string;
-  blogSaveVersion?: number;
-}
-
-// Read a useful organization name without depending on undocumented provider keys.
-const readProviderName = (value: Record<string, unknown>): string => {
-  for (const key of ["localizedName", "name", "vanityName", "id"]) {
-    if (typeof value[key] === "string" && value[key]) return String(value[key]);
-  }
-  return "Tổ chức đã cấu hình";
+const STATUS_LABELS = {
+  NOT_SELECTED: "Chưa có bản nháp", DRAFT: "Bản nháp", READY: "Sẵn sàng",
+  PUBLISHING: "Đang đăng bài", PUBLISHED: "Đã đăng", FAILED: "Đăng thất bại",
+  REVIEW_REQUIRED: "Cần kiểm tra trên LinkedIn",
 };
 
-// Render the synchronized multi-channel publication workspace with stepper and responsive columns.
-export const PublicationConfigWorkspace: React.FC<PublicationConfigWorkspaceProps> = ({
-  blogId,
-  blogState,
-  showStepper = true,
-  title,
-  description,
-  blogSaveVersion = 0,
-}) => {
+// Compose the LinkedIn editor and image picker for one approved website article.
+export const PublicationConfigWorkspace = ({ blogId }: { blogId: string }) => {
+  const editor = usePublicationConfig(blogId);
   const {
-    mode,
-    publishWeb,
-    publishLinkedin,
-    includeWebLink,
-    setIncludeWebLink,
-    content,
-    setContent,
-    mediaMode,
-    selectedMedia,
-    setSelectedMedia,
-    suggestions,
-    setSuggestions,
-    keywordInput,
-    setKeywordInput,
-    factCheck,
-    factCheckAcknowledged,
-    setFactCheckAcknowledged,
-    settingsDirty,
-    showConfirmPublish,
-    setShowConfirmPublish,
-    pendingConfirmation,
-    setPendingConfirmation,
-    draftStale,
-    verification,
-    pub,
-    isLoading,
-    isError,
-    isApproved,
-    webPublished,
-    isPublished,
-    hasChannel,
-    canPublish,
-    canSaveDraft,
-    mediaCountValid,
-    altTextValid,
-    toggleChannel,
-    changeMode,
-    generateDraft,
-    confirmPendingAction,
-    saveSettingsMutation,
-    draftMutation,
-    saveDraftMutation,
-    publishMutation,
-    searchMediaMutation,
-    uploadMutation,
-    retryMutation,
-    verifyMutation,
-  } = usePublicationConfig(blogId, blogState, blogSaveVersion);
-
-  // Toggle selection of media candidate in LinkedIn workspace.
-  const handleToggleMedia = (cand: LinkedInMediaAsset) => {
-    const k = linkedinMediaKey(cand);
-    setSelectedMedia((prev) =>
-      prev.some((i) => linkedinMediaKey(i) === k)
-        ? prev
-            .filter((i) => linkedinMediaKey(i) !== k)
-            .map((item, index) => ({ ...item, order: index + 1 }))
-        : [...prev, cand]
-            .slice(0, mediaMode === "single-image" ? 1 : 20)
-            .map((item, index) => ({ ...item, order: index + 1 }))
-    );
-  };
-
-  // Move selected media position forward or backward in display order.
-  const handleMoveMedia = (key: string, delta: number) => {
-    const idx = selectedMedia.findIndex((i) => linkedinMediaKey(i) === key);
-    if (idx < 0 || idx + delta < 0 || idx + delta >= selectedMedia.length) return;
-    const next = [...selectedMedia];
-    [next[idx], next[idx + delta]] = [next[idx + delta], next[idx]];
-    setSelectedMedia(next.map((item, index) => ({ ...item, order: index + 1 })));
-  };
-
-  // Update alt text for a specific LinkedIn media asset.
-  const handleUpdateAltText = (key: string, text: string) => {
-    setSuggestions((prev) =>
-      prev.map((item) => (linkedinMediaKey(item) === key ? { ...item, altText: text } : item))
-    );
-    setSelectedMedia((prev) =>
-      prev.map((i) => (linkedinMediaKey(i) === key ? { ...i, altText: text } : i))
-    );
-  };
-
-  // Convert comma or newline separated phrases into backend search keywords.
-  const handleSearchMedia = () => {
-    const keywords = keywordInput
-      .split(/[\n,]+/)
-      .map((keyword) => keyword.trim())
-      .filter(Boolean);
-    searchMediaMutation.mutate(keywords);
-  };
-
-  if (isLoading) {
-    return <div className="py-10 text-center text-sm text-content-muted">Đang tải cấu hình xuất bản…</div>;
-  }
-  if (isError || !pub) {
-    return <div className="py-10 text-center text-sm text-rose-400">Không thể tải cấu hình xuất bản.</div>;
-  }
-
-  const pendingMessage = pendingConfirmation?.kind === "disable-linkedin"
-    ? "Tắt LinkedIn sẽ hủy các chỉnh sửa nội dung và hình ảnh cục bộ chưa lưu."
-    : pendingConfirmation?.kind === "change-mode"
-      ? "Thay đổi chế độ sẽ thay thế bản nháp và hình ảnh LinkedIn hiện tại."
-      : "Các chỉnh sửa LinkedIn chưa lưu sẽ bị thay thế bằng bản nháp mới.";
+    mode, includeWebLink, content, mediaMode, selectedMedia, suggestions, keywordInput,
+    factCheck, factCheckAcknowledged, pub, immutable, busy, guidance,
+    canSaveDraft, canPublish, canRetry,
+  } = editor;
+  const locked = immutable || busy;
   const displayedCandidates = [
     ...selectedMedia,
-    ...suggestions.filter(
-      (candidate) =>
-        !selectedMedia.some((item) => linkedinMediaKey(item) === linkedinMediaKey(candidate)),
-    ),
+    ...suggestions.filter((candidate) =>
+      !selectedMedia.some((item) => linkedinMediaKey(item) === linkedinMediaKey(candidate))),
   ];
 
+  // Toggle selection while maintaining contiguous order and single-image replacement.
+  const toggleMedia = (candidate: LinkedInMediaAsset) => {
+    const key = linkedinMediaKey(candidate);
+    editor.setSelectedMedia((current) => (
+      current.some((item) => linkedinMediaKey(item) === key)
+        ? current.filter((item) => linkedinMediaKey(item) !== key)
+        : mediaMode === "single-image" ? [candidate] : [...current, candidate].slice(0, 20)
+    ).map((item, index) => ({ ...item, order: index + 1 })));
+    editor.setDirty(true);
+  };
+
+  // Move one image without allowing positions outside the selected list.
+  const moveMedia = (key: string, delta: number) => {
+    const index = selectedMedia.findIndex((item) => linkedinMediaKey(item) === key);
+    if (index < 0 || index + delta < 0 || index + delta >= selectedMedia.length) return;
+    const next = [...selectedMedia];
+    [next[index], next[index + delta]] = [next[index + delta], next[index]];
+    editor.setSelectedMedia(next.map((item, position) => ({ ...item, order: position + 1 })));
+    editor.setDirty(true);
+  };
+
+  // Apply image mode changes using the same selection limits as standalone LinkedIn posts.
+  const changeMediaMode = (next: LinkedInMediaMode) => {
+    editor.setMediaMode(next);
+    if (next === "none") editor.setSelectedMedia([]);
+    if (next === "single-image") editor.setSelectedMedia((current) => current.slice(0, 1));
+    editor.setDirty(true);
+  };
+
+  // Keep selected-image descriptions synchronized with search results.
+  const updateAltText = (key: string, text: string) => {
+    editor.setSelectedMedia((current) => current.map((item) =>
+      linkedinMediaKey(item) === key ? { ...item, altText: text } : item));
+    editor.setSuggestions((current) => current.map((item) =>
+      linkedinMediaKey(item) === key ? { ...item, altText: text } : item));
+    editor.setDirty(true);
+  };
+
+  if (editor.isLoading) return <p className="py-10 text-center text-content-muted">Đang tải bản nháp LinkedIn…</p>;
+  if (editor.isError || !pub) return <p className="py-10 text-center text-rose-400">Không thể tải bản nháp LinkedIn. Vui lòng tải lại trang.</p>;
+
   return (
-    <div className="space-y-6">
-      {title && (
-        <div className="border-b border-surface-border pb-4">
-          <h2 className="text-lg font-bold text-content-primary">{title}</h2>
-          {description && <p className="text-xs text-content-muted mt-0.5">{description}</p>}
+    <div className="space-y-6 pb-48 sm:pb-32">
+      <div className="rounded-xl border border-surface-border bg-surface-card p-5 space-y-4">
+        <h2 className="text-sm font-semibold text-content-primary">1. Chọn cách soạn bài LinkedIn</h2>
+        <div className="grid gap-3 sm:grid-cols-3">
+          {([
+            ["SAME", "Chuyển nguyên bài", "Chuyển bài website thành văn bản LinkedIn."],
+            ["SUMMARY", "Tóm tắt bằng AI", "Tạo bản tóm tắt để bạn kiểm tra và chỉnh sửa."],
+            ["CUSTOM", "Tự viết", "Soạn nội dung LinkedIn theo ý bạn."],
+          ] as const).map(([value, label, description]) => (
+            <label key={value} className={`flex cursor-pointer items-start gap-2 rounded-lg border p-3 text-xs ${mode === value ? "border-primary-green bg-primary-green/10" : "border-surface-border"}`}>
+              <input type="radio" name="linkedin-mode" value={value} checked={mode === value} disabled={locked}
+                onChange={() => { editor.setMode(value as LinkedInMode); editor.setDirty(true); }} />
+              <span><span className="block font-semibold text-content-primary">{label}</span><span className="mt-1 block text-content-muted">{description}</span></span>
+            </label>
+          ))}
         </div>
-      )}
-
-      {showStepper && (
-        <PublicationStepper
-          isApproved={isApproved}
-          webPublished={webPublished}
-          publishWeb={publishWeb}
-          publishLinkedin={publishLinkedin}
-          linkedinStatus={pub?.linkedinStatus || "NOT_SELECTED"}
-        />
-      )}
-
-      <div className="space-y-6">
-        <div className="space-y-6">
-          <PublicationChannelCard
-            publishWeb={publishWeb}
-            publishLinkedin={publishLinkedin}
-            mode={mode}
-            includeWebLink={includeWebLink}
-            settingsDirty={settingsDirty}
-            isSaving={saveSettingsMutation.isPending}
-            isPublished={isPublished}
-            onToggleWeb={() => toggleChannel("web")}
-            onToggleLinkedin={() => toggleChannel("linkedin")}
-            onChangeMode={changeMode}
-            onToggleWebLink={setIncludeWebLink}
-            onSaveSettings={() => saveSettingsMutation.mutate()}
-          />
-
-        </div>
-
-        <div className="space-y-6">
-          {draftStale && ["SAME", "SUMMARY"].includes(pub.linkedinMode) && (
-            <p className="rounded-lg border border-amber-500/30 bg-amber-950/20 p-3 text-xs text-amber-300">
-              Bài viết website đã thay đổi sau khi bản nháp LinkedIn được tạo. Hãy tạo lại trước khi xuất bản.
-            </p>
-          )}
-          {publishLinkedin && <LinkedInWorkspaceCard
-            publishLinkedin={publishLinkedin}
-            settingsDirty={settingsDirty}
-            content={content}
-            onContentChange={setContent}
-            isGeneratingDraft={draftMutation.isPending}
-            onGenerateDraft={generateDraft}
-            showGenerateDraft={mode !== "CUSTOM"}
-            mediaMode={mediaMode}
-            candidates={displayedCandidates}
-            selectedMedia={selectedMedia}
-            onToggleMedia={handleToggleMedia}
-            onMoveMedia={handleMoveMedia}
-            onUpdateAltText={handleUpdateAltText}
-            onUploadMedia={(files) => uploadMutation.mutate(files)}
-            isUploading={uploadMutation.isPending}
-            keywordInput={keywordInput}
-            onKeywordChange={setKeywordInput}
-            onSearchMedia={handleSearchMedia}
-            isSearchingMedia={searchMediaMutation.isPending}
-            factCheck={factCheck}
-            factCheckAcknowledged={factCheckAcknowledged}
-            onAcknowledgeFactCheck={setFactCheckAcknowledged}
-            onSaveDraft={() => saveDraftMutation.mutate()}
-            canSaveDraft={canSaveDraft}
-            isSavingDraft={saveDraftMutation.isPending}
-            isPublished={isPublished}
-          />}
-
-          {publishLinkedin && (
-            <div className="rounded-xl border border-surface-border bg-surface-card p-5 text-xs text-content-secondary shadow-sm space-y-3">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <h3 className="font-semibold text-content-primary text-sm">Trạng thái LinkedIn</h3>
-                  <p className="mt-1">{{ NOT_SELECTED: "Chưa chọn kênh", DRAFT: "Bản nháp", READY: "Sẵn sàng", PUBLISHING: "Đang đăng bài", PUBLISHED: "Đã đăng", FAILED: "Đăng thất bại", REVIEW_REQUIRED: "Cần kiểm tra trên LinkedIn" }[pub.linkedinStatus]}</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => verifyMutation.mutate()}
-                  disabled={verifyMutation.isPending}
-                  className="rounded-lg border border-surface-border bg-surface-elevated px-3 py-1.5 font-medium text-content-primary disabled:opacity-50"
-                >
-                  {verifyMutation.isPending ? "Đang xác minh…" : "Xác minh tổ chức LinkedIn"}
-                </button>
-              </div>
-              {verification && (
-                <p>
-                  {readProviderName(verification.organization)}: {verification.readyForOrganicPosting ? "Sẵn sàng đăng bài" : "Chưa sẵn sàng"}.
-                </p>
-              )}
-              {pub.linkedinError && <p className="text-rose-400">{pub.linkedinError.message}</p>}
-              {pub.linkedinStatus === "REVIEW_REQUIRED" && (
-                <p className="rounded-lg border border-amber-500/30 bg-amber-950/20 p-3 text-amber-300">
-                  Kết quả xuất bản chưa rõ ràng. Hãy kiểm tra Trang Doanh nghiệp trước khi thao tác tiếp.
-                </p>
-              )}
-              {isPublished && (
-                <p className="text-emerald-400">
-                  Đã xuất bản {pub.linkedinPublishedAt ? `vào lúc ${formatCmsDate(pub.linkedinPublishedAt)}` : ""}.
-                </p>
-              )}
-              {pub.linkedinStatus === "FAILED" && pub.linkedinError?.retryable === true && (
-                <button
-                  type="button"
-                  onClick={() => retryMutation.mutate()}
-                  disabled={retryMutation.isPending}
-                  className="rounded-lg bg-rose-600 px-3 py-1.5 font-semibold text-white disabled:opacity-50"
-                >
-                  {retryMutation.isPending ? "Đang thử lại…" : "Thử lại LinkedIn"}
-                </button>
-              )}
-              {(!mediaCountValid || !altTextValid) && (
-                <p className="text-amber-300">Vui lòng chọn đúng số lượng ảnh và bổ sung alt text trước khi lưu hoặc xuất bản.</p>
-              )}
-            </div>
-          )}
-        </div>
+        <p className="text-xs text-content-muted">Đổi cách soạn giữ nguyên nội dung hiện tại. Bạn có thể chỉnh sửa nội dung trước khi đăng.</p>
+        <label className={`flex min-h-12 items-center gap-3 rounded-lg border px-4 py-3 text-sm font-medium transition-colors focus-within:ring-2 focus-within:ring-primary-green ${locked ? "cursor-not-allowed" : "cursor-pointer hover:bg-surface-hover"} ${includeWebLink ? "border-primary-green/40 bg-primary-green/10 text-content-primary" : "border-surface-border bg-surface-elevated text-content-secondary"}`}>
+          <input type="checkbox" checked={includeWebLink} disabled={locked}
+            className="h-5 w-5 shrink-0 cursor-[inherit] accent-primary-green focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary-green"
+            onChange={(event) => { editor.setIncludeWebLink(event.target.checked); editor.setDirty(true); }} />
+          Đính kèm liên kết bài viết trên website
+        </label>
+        <p className="text-xs text-content-muted">Hệ thống đính kèm liên kết khi đăng; bạn không cần dán link vào nội dung.</p>
       </div>
 
-          <PublicationPublishCard
-            isApproved={isApproved}
-            hasChannel={hasChannel}
-            settingsDirty={settingsDirty}
-            canPublish={canPublish}
-            isPublishing={publishMutation.isPending}
-            publishLabel="Xuất bản"
-            requiresApproval={publishLinkedin}
-            guidance={settingsDirty
-              ? "Bước tiếp theo: lưu lựa chọn kênh ở phía trên."
-              : !hasChannel
-                ? "Chọn ít nhất một kênh đăng bài."
-                : publishLinkedin && !isApproved
-                  ? "Bài viết cần được duyệt trong danh sách bài viết trước khi tiếp tục."
-                  : publishLinkedin && isPublished
-                    ? "Bài LinkedIn đã được đăng. Không cần xuất bản lại."
-                    : publishLinkedin && !content.trim()
-                      ? "Soạn hoặc tạo bản nháp LinkedIn ở phần bên dưới."
-                      : publishLinkedin && (!mediaCountValid || !altTextValid)
-                        ? "Chọn đủ ảnh và nhập mô tả cho từng ảnh LinkedIn."
-                        : publishLinkedin && factCheck.requiresHumanFactCheck && !factCheckAcknowledged
-                          ? "Xác nhận đã kiểm tra thông tin trong phần nội dung LinkedIn."
-                          : !canPublish
-                            ? "Kiểm tra trạng thái LinkedIn bên dưới để tiếp tục."
-                            : "Bấm Xuất bản để đăng công khai lên các kênh đã chọn. Một hộp xác nhận sẽ mở trước khi đăng."}
-            onPublishClick={() => setShowConfirmPublish(true)}
-          />
-
-      <ConfirmDialog
-        isOpen={showConfirmPublish}
-        title="Xác nhận xuất bản bài viết"
-        message={`Kích hoạt xuất bản bài viết này tới các kênh đã chọn (${publishWeb ? "Website" : ""}${publishWeb && publishLinkedin ? " & " : ""}${publishLinkedin ? "LinkedIn" : ""})?`}
-        confirmLabel="Xuất bản ngay"
-        cancelLabel="Hủy"
-        variant="primary"
-        isLoading={publishMutation.isPending}
-        onConfirm={() => publishMutation.mutate()}
-        onCancel={() => setShowConfirmPublish(false)}
+      <LinkedInWorkspaceCard
+        content={content}
+        onContentChange={(value) => { editor.setContent(value); editor.setDirty(true); }}
+        isGeneratingDraft={editor.draftMutation.isPending}
+        onGenerateDraft={editor.generateDraft}
+        showGenerateDraft={mode !== "CUSTOM"}
+        mediaMode={mediaMode}
+        onMediaModeChange={changeMediaMode}
+        candidates={displayedCandidates}
+        selectedMedia={selectedMedia}
+        onToggleMedia={toggleMedia}
+        onMoveMedia={moveMedia}
+        onUpdateAltText={updateAltText}
+        onUploadMedia={(files) => editor.uploadMutation.mutate(files)}
+        isUploading={editor.uploadMutation.isPending}
+        keywordInput={keywordInput}
+        onKeywordChange={editor.setKeywordInput}
+        onSearchMedia={() => editor.searchMediaMutation.mutate(keywordInput.split(/[\n,]+/).map((key) => key.trim()).filter(Boolean))}
+        isSearchingMedia={editor.searchMediaMutation.isPending}
+        factCheck={factCheck}
+        factCheckAcknowledged={factCheckAcknowledged}
+        onAcknowledgeFactCheck={(value) => { editor.setFactCheckAcknowledged(value); editor.setDirty(true); }}
+        isPublished={locked}
       />
 
-      <ConfirmDialog
-        isOpen={Boolean(pendingConfirmation)}
-        title="Xác nhận thay đổi"
-        message={pendingMessage}
-        confirmLabel="Tiếp tục"
-        cancelLabel="Hủy"
-        variant="danger"
-        isLoading={draftMutation.isPending}
-        onConfirm={confirmPendingAction}
-        onCancel={() => setPendingConfirmation(null)}
-      />
+      <div className="rounded-xl border border-surface-border bg-surface-card p-5 space-y-2 text-xs">
+        <h2 className="font-semibold text-content-primary">Trạng thái LinkedIn: {STATUS_LABELS[pub.linkedinStatus]}</h2>
+        {pub.linkedinError && <p className="text-rose-400">{pub.linkedinError.message}</p>}
+        {pub.linkedinStatus === "REVIEW_REQUIRED" && <p className="text-amber-300">Kết quả đăng chưa rõ ràng. Kiểm tra Trang Doanh nghiệp LinkedIn để tránh đăng trùng.</p>}
+        {pub.linkedinPublishedAt && <p className="text-content-muted">Thời gian đăng: {pub.linkedinPublishedAt}</p>}
+      </div>
+
+      <BottomActionBar>
+        <p role="status" className="max-w-md text-xs text-content-muted">{guidance}</p>
+        <div className="flex flex-wrap gap-2">
+          {!immutable && <button type="button" disabled={!canSaveDraft} onClick={() => editor.saveDraftMutation.mutate()}
+            className="rounded-lg border border-surface-border bg-surface-elevated px-4 py-2.5 text-xs font-medium text-content-primary disabled:opacity-40">
+            {editor.saveDraftMutation.isPending ? "Đang lưu…" : "Lưu bản nháp LinkedIn"}
+          </button>}
+          {!immutable && pub.linkedinStatus !== "FAILED" && <button type="button" disabled={!canPublish} onClick={() => editor.setShowConfirmPublish(true)}
+            className="rounded-lg bg-[#0a66c2] px-4 py-2.5 text-xs font-semibold text-white disabled:opacity-40">
+            {editor.publishMutation.isPending ? "Đang đăng…" : "Đăng lên LinkedIn"}
+          </button>}
+          {pub.linkedinStatus === "FAILED" && pub.linkedinError?.retryable === true &&
+            <button type="button" disabled={!canRetry} onClick={() => editor.setShowConfirmPublish(true)}
+              className="rounded-lg bg-rose-600 px-4 py-2.5 text-xs font-semibold text-white disabled:opacity-40">
+              {editor.retryMutation.isPending ? "Đang thử lại…" : "Thử lại LinkedIn"}
+            </button>}
+        </div>
+      </BottomActionBar>
+
+      <ConfirmDialog isOpen={editor.showConfirmPublish} title="Xác nhận đăng lên LinkedIn"
+        message={`Bài sẽ được đăng công khai lên Trang Doanh nghiệp LinkedIn với ${selectedMedia.length} ảnh${includeWebLink ? " và liên kết bài website" : ", không đính kèm liên kết website"}. Nội dung website không thay đổi.`}
+        confirmLabel={pub.linkedinStatus === "FAILED" ? "Thử lại LinkedIn" : "Đăng bài ngay"}
+        cancelLabel="Hủy" variant="primary" isLoading={editor.publishMutation.isPending || editor.retryMutation.isPending}
+        onConfirm={() => {
+          if (pub.linkedinStatus === "FAILED") { editor.setShowConfirmPublish(false); editor.retryMutation.mutate(); }
+          else editor.publishMutation.mutate();
+        }}
+        onCancel={() => editor.setShowConfirmPublish(false)} />
+      <ConfirmDialog isOpen={editor.pendingRegenerate !== null} title="Tạo lại nội dung LinkedIn?"
+        message="Nội dung hiện tại sẽ bị thay thế. Kiểm tra bản nháp mới trước khi lưu hoặc đăng."
+        confirmLabel="Tạo lại" cancelLabel="Giữ nội dung" variant="danger" isLoading={editor.draftMutation.isPending}
+        onConfirm={() => { const regenerate = editor.pendingRegenerate ?? false; editor.setPendingRegenerate(null); editor.draftMutation.mutate(regenerate); }}
+        onCancel={() => editor.setPendingRegenerate(null)} />
     </div>
   );
 };

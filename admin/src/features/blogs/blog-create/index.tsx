@@ -2,19 +2,18 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { BsStars, BsFileEarmarkText } from "react-icons/bs";
-import { FiUpload, FiSend, FiSave } from "react-icons/fi";
+import { FiUpload, FiSave, FiSend } from "react-icons/fi";
 import { toast } from "react-toastify";
 import { createUrl } from "../../../utils/blogUtils";
 import { apiErrorMessage } from "../../../types/Api";
 import type { IBlogData, SEO } from "../../../types/Blog";
-import type { LinkedInMode } from "../../../types/Publication";
 import { createBlogPost, generateBlogDraft } from "../../../services/blog/handleBlog";
-import { updatePublication, publishBlog } from "../../../services/publication/handlePublication";
 import { createCategory, listCategories } from "../../../services/category/handleCategory";
 import { PageHeader, SectionHeading, ConfirmDialog, BottomActionBar } from "../../../shared/ui";
 import BlogSeoCollapse from "./BlogSeoCollapse";
-import BlogCreatePublicationSection from "./BlogCreatePublicationSection";
 import BlogContentEditorCard from "./BlogContentEditorCard";
+import CategoryCombobox from "./CategoryCombobox";
+import { getSeoData } from "../../../services/openai/handleSeoGenerate";
 
 const EMPTY_BLOG: IBlogData = {
   tag: "",
@@ -32,16 +31,6 @@ const EMPTY_BLOG: IBlogData = {
   },
 };
 
-class BlogCreationFollowupError extends Error {
-  createdId: string;
-
-  // Preserve the created Blog ID when configuration or publication fails afterward.
-  constructor(createdId: string, message: string) {
-    super(message);
-    this.name = "BlogCreationFollowupError";
-    this.createdId = createdId;
-  }
-}
 
 // Render the blog creation editor supporting manual authoring, AI draft generation, and SEO fields.
 const BlogCreate: React.FC = () => {
@@ -51,24 +40,17 @@ const BlogCreate: React.FC = () => {
   const [blog, setBlog] = useState<IBlogData>(EMPTY_BLOG);
   const [image, setImage] = useState<File | null>(null);
   const [dirty, setDirty] = useState(false);
-  const [confirmPublish, setConfirmPublish] = useState(false);
   const [confirmRegenerate, setConfirmRegenerate] = useState(false);
-  const [publishWeb, setPublishWeb] = useState(true);
-  const [publishLinkedin, setPublishLinkedin] = useState(false);
-  const [linkedinMode, setLinkedinMode] = useState<LinkedInMode>("SAME");
-  const [includeWebLink, setIncludeWebLink] = useState(false);
+  const [confirmPublish, setConfirmPublish] = useState(false);
+  const [confirmSeo, setConfirmSeo] = useState(false);
 
   const categories = useQuery({
     queryKey: ["categories", { page: 1, pageSize: 100 }],
     queryFn: () => listCategories(),
   });
-  const categoryName = blog.category.trim();
-  const categoryExists = categories.data?.items.some(
-    (item) => item.name.trim().toLocaleLowerCase("vi-VN") === categoryName.toLocaleLowerCase("vi-VN"),
-  );
-
+  // Create and select a category inline without leaving the unsaved article.
   const createCategoryMutation = useMutation({
-    mutationFn: () => createCategory(categoryName),
+    mutationFn: (name: string) => createCategory(name),
     onSuccess: async (category) => {
       updateBlog("category", category.name);
       await client.invalidateQueries({ queryKey: ["categories"] });
@@ -123,51 +105,46 @@ const BlogCreate: React.FC = () => {
     onError: (error) => toast.error(apiErrorMessage(error)),
   });
 
-  const save = useMutation({
-    mutationFn: async (action: "SAVE_PENDING" | "PUBLISH_NOW") => {
-      const created = await createBlogPost(
-        { ...blog, link_post: blog.link_post.trim() || createUrl(blog.title) },
-        image,
-        "SAVE_PENDING"
-      );
-      if (created?.id) {
-        try {
-          await updatePublication(created.id, {
-            publishWeb,
-            publishLinkedin,
-            linkedinMode,
-            linkedinIncludeWebLink: includeWebLink,
-          });
-          if (action === "PUBLISH_NOW") {
-            await publishBlog(created.id);
-          }
-        } catch (error) {
-          throw new BlogCreationFollowupError(created.id, apiErrorMessage(error));
-        }
-      }
-      return { created, action };
+  // Generate metadata only, preserving article content and manually entered SEO identity fields.
+  const generateSeo = useMutation({
+    mutationFn: () => getSeoData(blog.title.trim(), blog.content),
+    onSuccess: (data) => {
+      setBlog((current) => ({ ...current, seo: {
+        ...current.seo,
+        title: current.seo.title || current.title,
+        description: data.descript,
+        keywords: [...new Set(data.listSeoKey)],
+      } }));
+      setDirty(true);
+      setConfirmSeo(false);
+      toast.success("Đã tạo SEO bằng AI — chưa được lưu.");
     },
-    onSuccess: ({ created, action }) => {
-      toast.success(action === "PUBLISH_NOW" ? "Đã xuất bản bài viết." : "Đã lưu bài viết chờ duyệt.");
+    onError: (error) => toast.error(apiErrorMessage(error)),
+  });
+
+  // Confirm before replacing existing SEO descriptions or keywords.
+  const handleGenerateSeo = () => {
+    if (blog.seo.description.trim() || blog.seo.keywords.length) setConfirmSeo(true);
+    else generateSeo.mutate();
+  };
+
+  // Save pending content or approve and publish directly through the website creation API.
+  const save = useMutation({
+    mutationFn: (action: "SAVE_PENDING" | "PUBLISH_NOW") => createBlogPost(
+      { ...blog, state: action === "PUBLISH_NOW" ? "APPROVED" : "PENDING", link_post: blog.link_post.trim() || createUrl(blog.title) },
+      image,
+      action,
+    ),
+    onSuccess: (created, action) => {
+      toast.success(action === "PUBLISH_NOW" ? "Đã lưu và đăng bài viết lên website." : "Đã lưu bài viết chờ duyệt.");
       setDirty(false);
       setConfirmPublish(false);
       client.invalidateQueries({ queryKey: ["blogs"] });
+      client.invalidateQueries({ queryKey: ["publication-blogs"] });
       client.invalidateQueries({ queryKey: ["categories"] });
-      if (created?.id) {
-        navigate(`/blog/default/${created.id}`);
-      }
+      if (created?.id) navigate(action === "PUBLISH_NOW" ? `/blog/detail/${created.id}` : `/blog/default/${created.id}`);
     },
-    onError: (error) => {
-      setConfirmPublish(false);
-      if (error instanceof BlogCreationFollowupError) {
-        setDirty(false);
-        client.invalidateQueries({ queryKey: ["blogs"] });
-        toast.error(`Bài viết đã được lưu nhưng chưa hoàn tất cấu hình xuất bản: ${error.message}`);
-        navigate(`/blog/default/${error.createdId}`);
-        return;
-      }
-      toast.error(apiErrorMessage(error));
-    },
+    onError: (error) => toast.error(apiErrorMessage(error)),
   });
 
   useEffect(() => {
@@ -186,34 +163,6 @@ const BlogCreate: React.FC = () => {
     else draft.mutate();
   };
 
-  // Keep at least one publication channel selected while creating a Blog.
-  const handleToggleWeb = () => {
-    if (publishWeb && !publishLinkedin) return;
-    setPublishWeb((current) => !current);
-    if (publishWeb) setIncludeWebLink(false);
-    setDirty(true);
-  };
-
-  // Enable LinkedIn configuration without exposing actions that require a persisted Blog ID.
-  const handleToggleLinkedin = () => {
-    if (publishLinkedin && !publishWeb) return;
-    setPublishLinkedin((current) => !current);
-    if (publishLinkedin) setIncludeWebLink(false);
-    setDirty(true);
-  };
-
-  // Store the LinkedIn content mode as part of the unsaved creation form.
-  const handleLinkedinModeChange = (mode: LinkedInMode) => {
-    setLinkedinMode(mode);
-    setDirty(true);
-  };
-
-  // Store whether the future LinkedIn post should include the canonical Web link.
-  const handleWebLinkToggle = (checked: boolean) => {
-    setIncludeWebLink(checked);
-    setDirty(true);
-  };
-
   const formValid = Boolean(blog.title.trim() && blog.category.trim() && blog.content.trim());
 
   return (
@@ -229,41 +178,29 @@ const BlogCreate: React.FC = () => {
           <span className="font-semibold text-content-primary">
             {formValid ? "Bài viết đã sẵn sàng" : "Đang soạn thảo bài viết"}
           </span>
-          <span className="text-content-muted">·</span>
-          <span className="text-content-muted">
-            {publishWeb && publishLinkedin
-              ? "Kênh: Web & LinkedIn"
-              : publishLinkedin
-              ? "Kênh: LinkedIn"
-              : publishWeb
-              ? "Kênh: Website"
-              : "Chưa chọn kênh"}
-          </span>
+          <span className="text-content-muted">Lưu chờ duyệt hoặc đăng ngay lên website.</span>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <button
             type="button"
             title={save.isPending ? "Đang lưu" : "Lưu chờ duyệt"}
             aria-label={save.isPending ? "Đang lưu" : "Lưu chờ duyệt"}
-            disabled={!formValid || save.isPending}
+            disabled={!formValid || save.isPending || generateSeo.isPending || createCategoryMutation.isPending || draft.isPending}
             onClick={() => save.mutate("SAVE_PENDING")}
             className="inline-flex items-center gap-2 rounded-lg border border-surface-border bg-surface-elevated px-4 py-2.5 text-xs font-medium text-content-primary transition-colors hover:bg-surface-hover disabled:cursor-not-allowed disabled:opacity-40 shadow-xs"
           >
             <FiSave className={`text-sm ${save.isPending ? "animate-pulse" : ""}`} />
             <span>{save.isPending ? "Đang lưu..." : "Lưu chờ duyệt"}</span>
           </button>
-
           <button
             type="button"
-            title={publishLinkedin ? "Hãy lưu bài viết trước để hoàn thiện nội dung LinkedIn" : "Xuất bản Website ngay"}
-            aria-label={publishLinkedin ? "Lưu bài viết trước khi xuất bản LinkedIn" : "Xuất bản Website ngay"}
-            disabled={!formValid || save.isPending || !publishWeb || publishLinkedin}
+            disabled={!formValid || save.isPending || generateSeo.isPending || createCategoryMutation.isPending || draft.isPending}
             onClick={() => setConfirmPublish(true)}
-            className="inline-flex items-center gap-2 rounded-lg bg-primary-green px-4 py-2.5 text-xs font-semibold text-primary-black shadow-md transition-colors hover:bg-primary-green-dark disabled:cursor-not-allowed disabled:opacity-40"
+            className="inline-flex items-center gap-2 rounded-lg bg-primary-green px-4 py-2.5 text-xs font-semibold text-primary-black hover:bg-primary-green-dark disabled:cursor-not-allowed disabled:opacity-40"
           >
             <FiSend className="text-sm" />
-            <span>Xuất bản ngay</span>
+            <span>{save.isPending && save.variables === "PUBLISH_NOW" ? "Đang đăng..." : "Lưu và đăng"}</span>
           </button>
         </div>
       </BottomActionBar>
@@ -316,33 +253,16 @@ const BlogCreate: React.FC = () => {
             />
           </div>
 
-          <div>
-            <label className="block text-xs font-medium text-content-secondary mb-1.5">
-              Danh mục <span className="text-rose-400">*</span>
-            </label>
-            <input
-              list="blog-create-categories"
-              value={blog.category}
-              onChange={(e) => updateBlog("category", e.target.value)}
-              placeholder="Chọn hoặc nhập danh mục mới..."
-              className="w-full rounded-lg border border-surface-border bg-surface-elevated px-3.5 py-2 text-sm text-content-primary placeholder-content-muted focus:border-primary-green focus:outline-none focus:ring-1 focus:ring-primary-green transition"
-            />
-            <datalist id="blog-create-categories">
-              {categories.data?.items.map((item) => (
-                <option key={item.id} value={item.name} />
-              ))}
-            </datalist>
-            {categoryName && !categoryExists && (
-              <button
-                type="button"
-                disabled={createCategoryMutation.isPending}
-                onClick={() => createCategoryMutation.mutate()}
-                className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-primary-green/30 bg-primary-green/10 px-3 py-1.5 text-xs font-semibold text-primary-green transition-colors hover:bg-primary-green/15 disabled:opacity-50"
-              >
-                <span>{createCategoryMutation.isPending ? "Đang tạo danh mục..." : `+ Tạo danh mục “${categoryName}”`}</span>
-              </button>
-            )}
-          </div>
+          <CategoryCombobox
+            value={blog.category}
+            items={categories.data?.items ?? []}
+            loading={categories.isPending}
+            failed={categories.isError}
+            creating={createCategoryMutation.isPending}
+            onChange={(name) => updateBlog("category", name)}
+            onCreate={(name) => createCategoryMutation.mutate(name)}
+            onRetry={() => { void categories.refetch(); }}
+          />
 
           <div>
             <label className="block text-xs font-medium text-content-secondary mb-1.5">Thẻ Tag</label>
@@ -411,18 +331,24 @@ const BlogCreate: React.FC = () => {
       />
 
       {/* Section 4: Cấu hình SEO */}
-      <BlogSeoCollapse seo={blog.seo} onUpdateSeo={updateSeo} />
+      <BlogSeoCollapse
+        seo={blog.seo}
+        onUpdateSeo={updateSeo}
+        onGenerateSeo={handleGenerateSeo}
+        generating={generateSeo.isPending}
+        canGenerate={Boolean(blog.title.trim() && blog.content.trim()) && !save.isPending && !draft.isPending}
+      />
 
-      {/* Section 5: Cấu hình xuất bản & Phân phối */}
-      <BlogCreatePublicationSection
-        publishWeb={publishWeb}
-        publishLinkedin={publishLinkedin}
-        mode={linkedinMode}
-        includeWebLink={includeWebLink}
-        onToggleWeb={handleToggleWeb}
-        onToggleLinkedin={handleToggleLinkedin}
-        onChangeMode={handleLinkedinModeChange}
-        onToggleWebLink={handleWebLinkToggle}
+      <ConfirmDialog
+        isOpen={confirmSeo}
+        title="Tạo lại SEO bằng AI?"
+        message="Mô tả và từ khóa SEO hiện tại sẽ được thay thế. Nội dung bài viết, tiêu đề SEO, URL và tác giả được giữ nguyên."
+        confirmLabel="Tạo SEO"
+        cancelLabel="Hủy"
+        variant="primary"
+        isLoading={generateSeo.isPending}
+        onConfirm={() => generateSeo.mutate()}
+        onCancel={() => setConfirmSeo(false)}
       />
 
       <ConfirmDialog
@@ -439,9 +365,9 @@ const BlogCreate: React.FC = () => {
 
       <ConfirmDialog
         isOpen={confirmPublish}
-        title="Xác nhận xuất bản bài viết"
-        message="Bài viết sẽ được lưu và xuất bản công khai ngay lên Website VietQuant."
-        confirmLabel="Xuất bản ngay"
+        title="Lưu và đăng bài lên website?"
+        message="Bài viết sẽ được lưu, duyệt và hiển thị công khai trên website ngay. Thao tác này không đăng lên LinkedIn."
+        confirmLabel="Lưu và đăng"
         cancelLabel="Hủy"
         variant="primary"
         isLoading={save.isPending}

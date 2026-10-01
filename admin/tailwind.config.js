@@ -13,8 +13,8 @@ export default {
         },
         content: {
           primary: '#F9FAFB',
-          secondary: '#D1D5DB',
-          muted: '#9CA3AF',
+          secondary: '#E2E8F0',
+          muted: '#B8C0CC',
         },
         status: {
           success: {
@@ -39,13 +39,13 @@ export default {
           },
           neutral: {
             bg: 'rgba(107, 114, 128, 0.15)',
-            text: '#9CA3AF',
+            text: '#B8C0CC',
             border: 'rgba(107, 114, 128, 0.3)',
           },
         },
         gray: {
-          th1: '#9CA3AF',
-          th2: '#D1D5DB',
+          th1: '#B8C0CC',
+          th2: '#E2E8F0',
           hover: '#2A2A2A',
         },
         primary: {

@@ -6,7 +6,7 @@ import { toast } from "react-toastify";
 import { getBlogDetail, deleteBlog } from "../../../services/blog/handleBlog";
 import { formatCmsDate } from "../../../utils/date";
 import { apiErrorMessage } from "../../../types/Api";
-import { StatusBadge, ConfirmDialog } from "../../../shared/ui";
+import { StatusBadge, ConfirmDialog, BlogThumbnail } from "../../../shared/ui";
 import MarkdownContent from "../../../shared/markdown/MarkdownContent";
 
 // Render comprehensive blog post detail view for administrative review and management.
@@ -74,15 +74,15 @@ export const BlogDetailPage: React.FC = () => {
         </Link>
 
         <div className="flex flex-wrap items-center gap-2.5">
-          <Link
+          {blog.state === "APPROVED" && <Link
             to={`/publications/${blogId}`}
-            title="Mở cấu hình xuất bản"
-            aria-label="Mở cấu hình xuất bản"
+            title="Tạo bài LinkedIn"
+            aria-label="Tạo bài LinkedIn"
             className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-teal-500/30 bg-teal-950/30 px-3.5 text-xs font-semibold text-teal-300 hover:bg-teal-950/50 transition-colors"
           >
             <FiSend className="text-sm" />
-            <span>Xuất bản</span>
-          </Link>
+            <span>Tạo bài LinkedIn</span>
+          </Link>}
 
           <Link
             to={`/blog/default/${blogId}`}
@@ -142,10 +142,12 @@ export const BlogDetailPage: React.FC = () => {
 
             {blog.banner_url && (
               <div className="overflow-hidden rounded-xl border border-surface-border mt-4">
-                <img
-                  src={blog.banner_url}
-                  alt={blog.title}
-                  className="w-full max-h-[380px] object-cover"
+                <BlogThumbnail
+                  key={blog.banner_url}
+                  bannerUrl={blog.banner_url}
+                  title={blog.title}
+                  size="lg"
+                  className="max-h-[380px]"
                 />
               </div>
             )}
