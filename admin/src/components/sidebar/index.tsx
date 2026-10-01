@@ -3,6 +3,7 @@ import { NavLink } from "react-router-dom";
 import { MdArticle, MdCategory } from "react-icons/md";
 import { IoMdAddCircleOutline } from "react-icons/io";
 import { FaLinkedin } from "react-icons/fa";
+import { FiEye, FiSend } from "react-icons/fi";
 import Logout from "./components/Logout";
 
 interface SidebarProps {
@@ -26,10 +27,12 @@ const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
   const contentItems: NavItem[] = [
     { to: "/blog", label: "Quản lý bài viết", icon: <MdArticle className="text-lg shrink-0" />, end: true },
     { to: "/blog/create-blog", label: "Tạo bài viết", icon: <IoMdAddCircleOutline className="text-lg shrink-0" /> },
+    { to: "/blog/preview", label: "Xem như công khai", icon: <FiEye className="text-lg shrink-0" /> },
     { to: "/categories", label: "Danh mục", icon: <MdCategory className="text-lg shrink-0" /> },
   ];
 
   const distributionItems: NavItem[] = [
+    { to: "/publications", label: "Xuất bản bài viết", icon: <FiSend className="text-lg shrink-0" /> },
     { to: "/linkedin", label: "Quản lý LinkedIn", icon: <FaLinkedin className="text-lg shrink-0" /> },
   ];
 

@@ -1,34 +1,33 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { FiPlus, FiEdit2, FiTrash2 } from "react-icons/fi";
+import { FiPlus } from "react-icons/fi";
 import { toast } from "react-toastify";
-import { deleteBlog, getListBlogs, restoreBlog } from "../../../services/blog/handleBlog";
+import {
+  deleteBlog,
+  getListBlogs,
+  restoreBlog,
+  updateBlog,
+} from "../../../services/blog/handleBlog";
 import { listCategories } from "../../../services/category/handleCategory";
 import { apiErrorMessage } from "../../../types/Api";
 import type { BlogState } from "../../../types/Blog";
-import { formatCmsDate } from "../../../utils/date";
 import {
-  StatusBadge,
   PageHeader,
   EmptyState,
   ConfirmDialog,
   Pagination,
 } from "../../../shared/ui";
+import BlogTableToolbar from "./components/BlogTableToolbar";
+import BlogTableRow from "./components/BlogTableRow";
 
-const STATE_FILTERS: Array<{ value: BlogState | undefined; label: string }> = [
-  { value: undefined, label: "Tất cả" },
-  { value: "PENDING", label: "Chờ duyệt" },
-  { value: "APPROVED", label: "Đã duyệt" },
-  { value: "REJECTED", label: "Từ chối" },
-];
-
-// Manage the paginated list of blog articles, category filters, and soft-deletion workflows.
+// Manage article list, status filtering, search queries, quick approval, and deletion.
 const BlogManagement: React.FC = () => {
   const client = useQueryClient();
   const [page, setPage] = useState(1);
   const [state, setState] = useState<BlogState | undefined>();
   const [category, setCategory] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
 
   const blogs = useQuery({
@@ -47,6 +46,15 @@ const BlogManagement: React.FC = () => {
     queryFn: () => listCategories(),
   });
 
+  const approve = useMutation({
+    mutationFn: (blogId: string) => updateBlog({ id: blogId, state: "APPROVED" }),
+    onSuccess: () => {
+      toast.success("Đã duyệt bài viết thành công.");
+      client.invalidateQueries({ queryKey: ["blogs"] });
+    },
+    onError: (e) => toast.error(apiErrorMessage(e)),
+  });
+
   const restore = useMutation({
     mutationFn: restoreBlog,
     onSuccess: () => {
@@ -58,7 +66,7 @@ const BlogManagement: React.FC = () => {
 
   const remove = useMutation({
     mutationFn: deleteBlog,
-    onSuccess: async (_, id) => {
+    onSuccess: (_, id) => {
       toast.success(
         <span>
           Đã chuyển bài viết vào thùng rác.{" "}
@@ -72,32 +80,34 @@ const BlogManagement: React.FC = () => {
         </span>
       );
       setDeleteTargetId(null);
-      await client.invalidateQueries({ queryKey: ["blogs"] });
+      client.invalidateQueries({ queryKey: ["blogs"] });
     },
     onError: (e) => toast.error(apiErrorMessage(e)),
   });
 
-  // Switch the active state filter and reset the pagination index to the first page.
   const handleSelectState = (next?: BlogState) => {
     setState(next);
     setPage(1);
   };
 
-  // Switch the selected category filter and reset pagination.
   const handleSelectCategory = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setCategory(e.target.value);
     setPage(1);
   };
 
-  // Execute confirmed soft deletion of the target blog post.
-  const handleConfirmDelete = () => {
-    if (deleteTargetId) {
-      remove.mutate(deleteTargetId);
-    }
-  };
+  const filteredItems = useMemo(() => {
+    const items = blogs.data?.items ?? [];
+    if (!searchTerm.trim()) return items;
+    const lower = searchTerm.trim().toLowerCase();
+    return items.filter(
+      (b) =>
+        b.title.toLowerCase().includes(lower) ||
+        (b.link_post && b.link_post.toLowerCase().includes(lower))
+    );
+  }, [blogs.data?.items, searchTerm]);
 
   return (
-    <section className="space-y-6">
+    <section className="space-y-5">
       <PageHeader
         title="Quản lý bài viết"
         description="Xem, phân loại và quản trị danh sách các bài viết trên hệ thống"
@@ -106,53 +116,23 @@ const BlogManagement: React.FC = () => {
             to="/blog/create-blog"
             title="Tạo bài viết"
             aria-label="Tạo bài viết"
-            className="inline-flex size-10 items-center justify-center rounded-lg bg-primary-green text-primary-black shadow-sm transition-colors hover:bg-primary-green-dark"
+            className="inline-flex size-9 items-center justify-center rounded-lg bg-primary-green text-primary-black shadow-sm transition-colors hover:bg-primary-green-dark"
           >
             <FiPlus className="w-4 h-4" />
           </Link>
         }
       />
 
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-surface-card p-4 rounded-xl border border-surface-border">
-        <div className="flex flex-wrap items-center gap-1.5">
-          {STATE_FILTERS.map((item) => {
-            const isActive = state === item.value;
-            return (
-              <button
-                key={item.label}
-                type="button"
-                onClick={() => handleSelectState(item.value)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                  isActive
-                    ? "bg-surface-elevated text-primary-green border border-primary-green/30"
-                    : "text-content-secondary hover:text-content-primary hover:bg-surface-elevated/50"
-                }`}
-              >
-                {item.label}
-              </button>
-            );
-          })}
-        </div>
-
-        <div className="flex items-center gap-2 shrink-0">
-          <label htmlFor="cat-filter" className="text-xs text-content-muted">
-            Danh mục:
-          </label>
-          <select
-            id="cat-filter"
-            value={category}
-            onChange={handleSelectCategory}
-            className="rounded-lg border border-surface-border bg-surface-elevated px-3 py-1.5 text-xs text-content-primary focus:outline-none focus:ring-1 focus:ring-primary-green"
-          >
-            <option value="">Tất cả danh mục</option>
-            {categories.data?.items.map((item) => (
-              <option key={item.id} value={item.name}>
-                {item.name}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
+      <BlogTableToolbar
+        state={state}
+        onSelectState={handleSelectState}
+        category={category}
+        onSelectCategory={handleSelectCategory}
+        categories={categories.data?.items ?? []}
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        totalItems={blogs.data?.total ?? filteredItems.length}
+      />
 
       <div className="bg-surface-card rounded-xl border border-surface-border overflow-hidden shadow-sm">
         {blogs.isLoading ? (
@@ -163,10 +143,10 @@ const BlogManagement: React.FC = () => {
           <div className="py-12 text-center text-sm text-rose-400">
             {apiErrorMessage(blogs.error)}
           </div>
-        ) : (blogs.data?.items.length ?? 0) === 0 ? (
+        ) : filteredItems.length === 0 ? (
           <EmptyState
             title="Không tìm thấy bài viết"
-            description="Chưa có bài viết nào phù hợp với bộ lọc hiện tại. Thử chọn bộ lọc khác hoặc tạo bài viết mới."
+            description="Chưa có bài viết nào phù hợp với bộ lọc hoặc từ khóa tìm kiếm."
             action={
               <Link
                 to="/blog/create-blog"
@@ -181,10 +161,10 @@ const BlogManagement: React.FC = () => {
         ) : (
           <>
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm min-w-[640px]">
+              <table className="w-full text-left text-sm min-w-[720px]">
                 <thead className="bg-surface-elevated text-xs font-semibold uppercase tracking-wider text-content-muted border-b border-surface-border">
                   <tr>
-                    <th className="py-3 px-4">Tiêu đề bài viết</th>
+                    <th className="py-3 px-4">Bài viết</th>
                     <th className="py-3 px-4">Danh mục</th>
                     <th className="py-3 px-4">Trạng thái</th>
                     <th className="py-3 px-4">Cập nhật</th>
@@ -192,47 +172,14 @@ const BlogManagement: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-surface-border">
-                  {blogs.data?.items.map((blog) => (
-                    <tr
+                  {filteredItems.map((blog) => (
+                    <BlogTableRow
                       key={blog.id}
-                      className="hover:bg-surface-hover/60 transition-colors"
-                    >
-                      <td className="py-3.5 px-4 font-medium text-content-primary max-w-xs truncate">
-                        {blog.title}
-                      </td>
-                      <td className="py-3.5 px-4 text-content-secondary">
-                        <span className="px-2 py-0.5 rounded text-xs bg-surface-elevated border border-surface-border">
-                          {blog.category}
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-4">
-                        <StatusBadge status={blog.state} />
-                      </td>
-                      <td className="py-3.5 px-4 text-xs text-content-muted whitespace-nowrap">
-                        {formatCmsDate(blog.modified_at)}
-                      </td>
-                      <td className="py-3.5 px-4 text-right whitespace-nowrap">
-                        <div className="inline-flex items-center gap-2">
-                          <Link
-                            to={`/blog/default/${blog.id}`}
-                            title="Sửa bài viết"
-                            aria-label="Sửa bài viết"
-                            className="inline-flex size-8 items-center justify-center rounded border border-transparent text-cyan-400 transition-colors hover:border-cyan-800/40 hover:bg-cyan-950/30 hover:text-cyan-300"
-                          >
-                            <FiEdit2 className="w-3.5 h-3.5" />
-                          </Link>
-                          <button
-                            type="button"
-                            title="Xóa bài viết"
-                            aria-label="Xóa bài viết"
-                            onClick={() => setDeleteTargetId(blog.id)}
-                            className="inline-flex size-8 items-center justify-center rounded border border-transparent text-rose-400 transition-colors hover:border-rose-800/40 hover:bg-rose-950/30 hover:text-rose-300"
-                          >
-                            <FiTrash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
+                      blog={blog}
+                      onApprove={(id) => approve.mutate(id)}
+                      onDelete={(id) => setDeleteTargetId(id)}
+                      isApproving={approve.isPending}
+                    />
                   ))}
                 </tbody>
               </table>
@@ -259,7 +206,7 @@ const BlogManagement: React.FC = () => {
         cancelLabel="Hủy"
         variant="danger"
         isLoading={remove.isPending}
-        onConfirm={handleConfirmDelete}
+        onConfirm={() => deleteTargetId && remove.mutate(deleteTargetId)}
         onCancel={() => setDeleteTargetId(null)}
       />
     </section>

@@ -1,47 +1,32 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { FiPlus, FiExternalLink, FiTrash2, FiRefreshCw, FiCheckCircle, FiClock, FiEye } from "react-icons/fi";
+import { FiPlus } from "react-icons/fi";
 import { FaLinkedin } from "react-icons/fa";
 import { toast } from "react-toastify";
 import {
   deleteLinkedInPost,
   getLinkedInHistory,
   listLinkedInPosts,
+  publishLinkedInPost,
   restoreLinkedInPost,
+  retryLinkedInPost,
   syncLinkedInHistory,
   verifyLinkedInOrganization,
 } from "../../services/linkedin/handleLinkedIn";
 import type { LinkedInPostStatus, LinkedInSourceType } from "../../types/LinkedIn";
 import { apiErrorMessage } from "../../types/Api";
-import { formatCmsDate } from "../../utils/date";
-import {
-  StatusBadge,
-  PageHeader,
-  EmptyState,
-  ConfirmDialog,
-  Pagination,
-} from "../../shared/ui";
+import { PageHeader, EmptyState, ConfirmDialog } from "../../shared/ui";
+import LinkedInTableToolbar from "./components/LinkedInTableToolbar";
+import LinkedInTableRow from "./components/LinkedInTableRow";
+import LinkedInPagination from "./components/LinkedInPagination";
+import LinkedInHistoryDrawer from "./components/LinkedInHistoryDrawer";
 
-const STATUS_OPTIONS: Array<{ value: LinkedInPostStatus; label: string }> = [
-  { value: "DRAFT", label: "Bản nháp" },
-  { value: "READY", label: "Sẵn sàng" },
-  { value: "PUBLISHING", label: "Đang đăng" },
-  { value: "PUBLISHED", label: "Đã đăng" },
-  { value: "FAILED", label: "Thất bại" },
-  { value: "REVIEW_REQUIRED", label: "Cần xem xét" },
-];
-
-const SOURCE_OPTIONS: Array<{ value: LinkedInSourceType; label: string }> = [
-  { value: "INDEPENDENT_AI", label: "AI Độc lập" },
-  { value: "BLOG_ADAPTATION", label: "Chuyển từ Blog" },
-  { value: "CUSTOM", label: "Thủ công" },
-];
-
-// Manage independent LinkedIn posts, connection verification, and historical audit entries.
+// Manage standalone LinkedIn post table, channel synchronization, and direct row execution.
 const LinkedInManagement: React.FC = () => {
   const client = useQueryClient();
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
   const [status, setStatus] = useState<LinkedInPostStatus | "">("");
   const [sourceType, setSourceType] = useState<LinkedInSourceType | "">("");
   const [showHistory, setShowHistory] = useState(false);
@@ -49,13 +34,13 @@ const LinkedInManagement: React.FC = () => {
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
 
   const posts = useQuery({
-    queryKey: ["linkedin-posts", { page, pageSize: 20, status, sourceType }],
+    queryKey: ["linkedin-posts", { page, pageSize, status, sourceType }],
     queryFn: () =>
       listLinkedInPosts({
         page,
-        pageSize: 20,
+        pageSize,
         ...(status ? { status } : {}),
-        ...(sourceType ? { sourceType } : {})
+        ...(sourceType ? { sourceType } : {}),
       }),
   });
 
@@ -64,6 +49,24 @@ const LinkedInManagement: React.FC = () => {
     queryFn: () => getLinkedInHistory(10),
     enabled: showHistory,
     retry: false,
+  });
+
+  const publish = useMutation({
+    mutationFn: (id: string) => publishLinkedInPost(id),
+    onSuccess: () => {
+      toast.success("Đã kích hoạt xuất bản bài đăng LinkedIn.");
+      client.invalidateQueries({ queryKey: ["linkedin-posts"] });
+    },
+    onError: (e) => toast.error(apiErrorMessage(e)),
+  });
+
+  const retry = useMutation({
+    mutationFn: (id: string) => retryLinkedInPost(id),
+    onSuccess: () => {
+      toast.success("Đang thử lại xuất bản bài đăng LinkedIn.");
+      client.invalidateQueries({ queryKey: ["linkedin-posts"] });
+    },
+    onError: (e) => toast.error(apiErrorMessage(e)),
   });
 
   const restore = useMutation({
@@ -111,15 +114,14 @@ const LinkedInManagement: React.FC = () => {
     onError: (e) => toast.error(apiErrorMessage(e)),
   });
 
-  // Execute confirmed deletion of the target LinkedIn post record.
-  const handleConfirmDelete = () => {
-    if (deleteTargetId) {
-      remove.mutate(deleteTargetId);
-    }
+  const handleResetFilters = () => {
+    setStatus("");
+    setSourceType("");
+    setPage(1);
   };
 
   return (
-    <section className="space-y-6">
+    <section className="space-y-5">
       <PageHeader
         title="Quản lý LinkedIn"
         description="Quản lý bài đăng LinkedIn độc lập; bài chuyển từ Blog được quản lý trực tiếp trong màn hình Blog"
@@ -128,139 +130,41 @@ const LinkedInManagement: React.FC = () => {
             to="/linkedin/new"
             title="Tạo bài LinkedIn"
             aria-label="Tạo bài LinkedIn"
-            className="inline-flex size-10 items-center justify-center rounded-lg bg-[#0a66c2] text-white shadow-sm transition-colors hover:bg-[#084e96]"
+            className="inline-flex size-9 items-center justify-center rounded-lg bg-[#0a66c2] text-white shadow-sm transition-colors hover:bg-[#084e96]"
           >
             <FiPlus className="w-4 h-4" />
           </Link>
         }
       />
 
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-surface-card p-4 rounded-xl border border-surface-border">
-        <div className="flex flex-wrap items-center gap-3">
-          <select
-            value={status}
-            onChange={(e) => {
-              setStatus(e.target.value as LinkedInPostStatus | "");
-              setPage(1);
-            }}
-            className="rounded-lg border border-surface-border bg-surface-elevated px-3 py-1.5 text-xs text-content-primary focus:outline-none focus:ring-1 focus:ring-primary-green"
-          >
-            <option value="">Tất cả trạng thái</option>
-            {STATUS_OPTIONS.map((item) => (
-              <option key={item.value} value={item.value}>
-                {item.label}
-              </option>
-            ))}
-          </select>
+      <LinkedInTableToolbar
+        status={status}
+        onStatusChange={(s) => {
+          setStatus(s);
+          setPage(1);
+        }}
+        sourceType={sourceType}
+        onSourceTypeChange={(st) => {
+          setSourceType(st);
+          setPage(1);
+        }}
+        onResetFilters={handleResetFilters}
+        onVerify={() => verify.mutate()}
+        isVerifying={verify.isPending}
+        verified={verified}
+        showHistory={showHistory}
+        onToggleHistory={() => setShowHistory(!showHistory)}
+      />
 
-          <select
-            value={sourceType}
-            onChange={(e) => {
-              setSourceType(e.target.value as LinkedInSourceType | "");
-              setPage(1);
-            }}
-            className="rounded-lg border border-surface-border bg-surface-elevated px-3 py-1.5 text-xs text-content-primary focus:outline-none focus:ring-1 focus:ring-primary-green"
-          >
-            <option value="">Tất cả nguồn</option>
-            {SOURCE_OPTIONS.map((item) => (
-              <option key={item.value} value={item.value}>
-                {item.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2.5">
-          <button
-            type="button"
-            title="Kiểm tra kết nối LinkedIn"
-            aria-label="Kiểm tra kết nối LinkedIn"
-            onClick={() => verify.mutate()}
-            disabled={verify.isPending}
-            className="inline-flex size-9 items-center justify-center rounded-lg border border-surface-border bg-surface-elevated text-content-primary transition-colors hover:bg-surface-hover disabled:opacity-50"
-          >
-            <FiCheckCircle className="w-3.5 h-3.5 text-emerald-400" />
-          </button>
-
-          {verified !== null && (
-            <span
-              className={`text-xs px-2.5 py-1 rounded-full border ${
-                verified
-                  ? "bg-emerald-950/40 text-emerald-400 border-emerald-500/30"
-                  : "bg-amber-950/40 text-amber-400 border-amber-500/30"
-              }`}
-            >
-              {verified ? "Sẵn sàng đăng bài" : "Chưa sẵn sàng đăng bài"}
-            </span>
-          )}
-
-          <button
-            type="button"
-            title={showHistory ? "Ẩn lịch sử Live" : "Hiện lịch sử Live"}
-            aria-label={showHistory ? "Ẩn lịch sử Live" : "Hiện lịch sử Live"}
-            onClick={() => setShowHistory(!showHistory)}
-            className={`inline-flex size-9 items-center justify-center rounded-lg border transition-colors ${
-              showHistory
-                ? "bg-surface-elevated text-primary-green border-primary-green/40"
-                : "border-surface-border bg-surface-elevated hover:bg-surface-hover text-content-secondary"
-            }`}
-          >
-            <FiClock className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      </div>
-
-      {showHistory && (
-        <div className="bg-surface-card rounded-xl border border-surface-border p-5 space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-surface-border">
-            <h3 className="font-semibold text-content-primary text-sm flex items-center gap-2">
-              <FaLinkedin className="text-[#0a66c2]" />
-              <span>Lịch sử Company Page</span>
-            </h3>
-            <button
-              type="button"
-              title="Đồng bộ lịch sử LinkedIn"
-              aria-label="Đồng bộ lịch sử LinkedIn"
-              onClick={() => sync.mutate()}
-              disabled={sync.isPending}
-              className="inline-flex size-8 items-center justify-center rounded-md border border-surface-border bg-surface-elevated text-cyan-400 transition-colors hover:bg-surface-hover disabled:opacity-50"
-            >
-              <FiRefreshCw className={`w-3 h-3 ${sync.isPending ? "animate-spin" : ""}`} />
-            </button>
-          </div>
-
-          {history.isError ? (
-            <p className="text-xs text-amber-400 bg-amber-950/20 p-3 rounded-lg border border-amber-500/20">
-              Không thể tải lịch sử nhà cung cấp: {apiErrorMessage(history.error)}
-            </p>
-          ) : (history.data?.items.length ?? 0) === 0 ? (
-            <p className="text-xs text-content-muted py-2 text-center">
-              Chưa có dữ liệu lịch sử bài đăng nào.
-            </p>
-          ) : (
-            <div className="space-y-3">
-              {history.data?.items.map((item) => (
-                <article
-                  key={item.providerPostId}
-                  className="bg-surface-elevated/50 p-3.5 rounded-lg border border-surface-border/60 text-xs space-y-1.5"
-                >
-                  <strong className="text-content-primary text-sm font-medium block">
-                    {item.topic}
-                  </strong>
-                  <p className="text-content-secondary line-clamp-2 leading-relaxed">
-                    {item.content}
-                  </p>
-                  {item.publishedAt && (
-                    <span className="text-[11px] text-content-muted block">
-                      Đăng lúc: {formatCmsDate(item.publishedAt)}
-                    </span>
-                  )}
-                </article>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+      <LinkedInHistoryDrawer
+        showHistory={showHistory}
+        historyData={history.data}
+        isLoading={history.isLoading}
+        isError={history.isError}
+        errorMessage={apiErrorMessage(history.error)}
+        onSync={() => sync.mutate()}
+        isSyncing={sync.isPending}
+      />
 
       <div className="bg-surface-card rounded-xl border border-surface-border overflow-hidden shadow-sm">
         {posts.isLoading ? (
@@ -276,25 +180,15 @@ const LinkedInManagement: React.FC = () => {
             icon={<FaLinkedin className="w-6 h-6 text-[#0a66c2]" />}
             title="Chưa có bài LinkedIn độc lập"
             description="Tạo bài viết LinkedIn mới từ công cụ AI hoặc nhập nội dung thủ công để xuất bản."
-            action={
-              <Link
-                to="/linkedin/new"
-                title="Tạo bài LinkedIn đầu tiên"
-                aria-label="Tạo bài LinkedIn đầu tiên"
-                className="inline-flex size-9 items-center justify-center rounded-lg bg-[#0a66c2] text-white transition-colors hover:bg-[#084e96]"
-              >
-                <FiPlus className="w-4 h-4" />
-              </Link>
-            }
           />
         ) : (
           <>
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm min-w-[640px]">
+              <table className="w-full text-left text-sm min-w-[700px]">
                 <thead className="bg-surface-elevated text-xs font-semibold uppercase tracking-wider text-content-muted border-b border-surface-border">
                   <tr>
-                    <th className="py-3 px-4">Chủ đề bài viết</th>
-                    <th className="py-3 px-4">Nguồn gốc</th>
+                    <th className="py-3 px-4">Nội dung</th>
+                    <th className="py-3 px-4">Nguồn</th>
                     <th className="py-3 px-4">Trạng thái</th>
                     <th className="py-3 px-4">Cập nhật</th>
                     <th className="py-3 px-4 text-right">Thao tác</th>
@@ -302,72 +196,31 @@ const LinkedInManagement: React.FC = () => {
                 </thead>
                 <tbody className="divide-y divide-surface-border">
                   {posts.data?.items.map((post) => (
-                    <tr
+                    <LinkedInTableRow
                       key={post.id}
-                      className="hover:bg-surface-hover/60 transition-colors"
-                    >
-                      <td
-                        className="py-3.5 px-4 font-medium text-content-primary max-w-xs truncate"
-                        title={post.topic || post.content || undefined}
-                      >
-                        {post.topic?.trim() || post.content?.trim().split("\n")[0]?.slice(0, 60)?.trim() || "Bài đăng LinkedIn"}
-                      </td>
-                      <td className="py-3.5 px-4">
-                        <StatusBadge status={post.sourceType} />
-                      </td>
-                      <td className="py-3.5 px-4">
-                        <StatusBadge status={post.status} />
-                      </td>
-                      <td className="py-3.5 px-4 text-xs text-content-muted whitespace-nowrap">
-                        {formatCmsDate(post.modifiedAt)}
-                      </td>
-                      <td className="py-3.5 px-4 text-right whitespace-nowrap">
-                        <div className="inline-flex items-center gap-2">
-                          <Link
-                            to={`/linkedin/posts/${post.id}`}
-                            title="Xem chi tiết hoặc chỉnh sửa"
-                            aria-label="Xem chi tiết hoặc chỉnh sửa"
-                            className="inline-flex size-8 items-center justify-center rounded border border-transparent text-cyan-400 transition-colors hover:border-cyan-800/40 hover:bg-cyan-950/30 hover:text-cyan-300"
-                          >
-                            <FiEye className="w-3.5 h-3.5" />
-                          </Link>
-                          {post.providerPostId && (
-                            <a
-                              href={`https://www.linkedin.com/feed/update/${post.providerPostId}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              aria-label="Xem bài trực tiếp trên LinkedIn"
-                              className="inline-flex size-8 items-center justify-center rounded border border-transparent text-[#0a66c2] transition-colors hover:border-blue-800/40 hover:bg-blue-950/30 hover:text-[#398fe5]"
-                              title="Xem bài trực tiếp trên LinkedIn"
-                            >
-                              <FiExternalLink className="w-3.5 h-3.5" />
-                            </a>
-                          )}
-                          <button
-                            type="button"
-                            title="Xóa bài khỏi CMS"
-                            aria-label="Xóa bài khỏi CMS"
-                            onClick={() => setDeleteTargetId(post.id)}
-                            className="inline-flex size-8 items-center justify-center rounded border border-transparent text-rose-400 transition-colors hover:border-rose-800/40 hover:bg-rose-950/30 hover:text-rose-300"
-                          >
-                            <FiTrash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
+                      post={post}
+                      onPublish={(id) => publish.mutate(id)}
+                      onRetry={(id) => retry.mutate(id)}
+                      onDelete={(id) => setDeleteTargetId(id)}
+                      isPublishing={publish.isPending}
+                      isRetrying={retry.isPending}
+                    />
                   ))}
                 </tbody>
               </table>
             </div>
 
-            <div className="border-t border-surface-border px-4 bg-surface-card">
-              <Pagination
-                page={posts.data?.page ?? page}
-                totalPages={posts.data?.totalPages ?? 1}
-                itemUnit="bài viết"
-                onPageChange={(p) => setPage(p)}
-              />
-            </div>
+            <LinkedInPagination
+              page={posts.data?.page ?? page}
+              totalPages={posts.data?.totalPages ?? 1}
+              totalItems={posts.data?.total}
+              pageSize={pageSize}
+              onPageSizeChange={(sz) => {
+                setPageSize(sz);
+                setPage(1);
+              }}
+              onPageChange={(p) => setPage(p)}
+            />
           </>
         )}
       </div>
@@ -380,7 +233,7 @@ const LinkedInManagement: React.FC = () => {
         cancelLabel="Hủy"
         variant="danger"
         isLoading={remove.isPending}
-        onConfirm={handleConfirmDelete}
+        onConfirm={() => deleteTargetId && remove.mutate(deleteTargetId)}
         onCancel={() => setDeleteTargetId(null)}
       />
     </section>

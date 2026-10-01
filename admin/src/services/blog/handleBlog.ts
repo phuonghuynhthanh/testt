@@ -32,3 +32,9 @@ export const classifyBlogLinks = async (urls: string[]) =>
 // Extract readable article content and metadata from one source URL.
 export const fetchBlogReferenceContent = async (url: string) =>
   (await getAxiosClient().post<FetchContentResponse>("/blog/fetch-content", { url, include_metadata: true })).data;
+// Fetch public blog list as guest visitors see.
+export const getClientBlogs = async (params?: { num_of_blogs?: number; category?: string }) =>
+  (await getAxiosClient().get<import("../../types/Blog").ClientBlogListResponse>("/blog/client/blogs", { params })).data;
+// Fetch public blog detail and related articles by URL slug.
+export const getPublicBlogDetail = async (link_post: string, limit = 4) =>
+  (await getAxiosClient().get<import("../../types/Blog").PublicBlogDetail>(`/blog/link/${link_post}`, { params: { limit } })).data;

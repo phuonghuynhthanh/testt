@@ -71,3 +71,24 @@ export interface FetchContentResponse {
   success: boolean;
   error_message?: string | null;
 }
+
+export interface ClientBlogItem {
+  id: string;
+  tag: string;
+  title: string;
+  banner_url: string;
+  link_post: string;
+  category: string;
+  created_at: string;
+  modified_at: string;
+  seo?: SEO;
+}
+
+export interface ClientBlogListResponse {
+  blogs: ClientBlogItem[];
+  next_req: string | null;
+}
+
+export interface PublicBlogDetail extends IBlogData {
+  related_blogs?: ClientBlogItem[];
+}
