@@ -142,20 +142,7 @@
 
 .mdxeditor-root-contenteditable h3 {
   font-size: 16px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
   text-transform: uppercase;
-}
-
-.mdxeditor-root-contenteditable h3::before {
-  content: "";
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background-color: var(--heading-green);
-  flex-shrink: 0;
 }
 
 .mdxeditor-root-contenteditable h4 {

@@ -63,7 +63,7 @@ const MarkdownContent: React.FC<MarkdownContentProps> = ({ content }) => {
               "text-2xl md:text-3xl font-semibold mt-8 mb-4 text-primary-white my-4 sm:my-5 pb-2 sm:pb-3 border-b border-[#F1F1F1] text-left text-primary-white",
             ),
             h3: createHeadingComponent(
-              "mt-4 mb-4 text-left text-primary-white text-xl flex items-center gap-2",
+              "mt-4 mb-4 text-left text-primary-white text-xl",
             ),
             img: (props: any) => {
               const { title, alt, src } = props;

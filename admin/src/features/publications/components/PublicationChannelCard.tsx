@@ -15,6 +15,7 @@ interface PublicationChannelCardProps {
   onChangeMode: (mode: LinkedInMode) => void;
   onToggleWebLink: (checked: boolean) => void;
   onSaveSettings: () => void;
+  hideSaveButton?: boolean;
 }
 
 // Render distribution channel toggles, LinkedIn mode selection, and save configuration trigger.
@@ -31,6 +32,7 @@ export const PublicationChannelCard: React.FC<PublicationChannelCardProps> = ({
   onChangeMode,
   onToggleWebLink,
   onSaveSettings,
+  hideSaveButton = false,
 }) => {
   return (
     <div className="rounded-xl border border-surface-border bg-surface-card p-5 shadow-sm space-y-5">
@@ -173,19 +175,21 @@ export const PublicationChannelCard: React.FC<PublicationChannelCardProps> = ({
         </div>
       )}
 
-      <div className="flex justify-end pt-2">
-        <button
-          type="button"
-          onClick={onSaveSettings}
-          disabled={!settingsDirty || isSaving || isPublished}
-          title={isSaving ? "Đang lưu cấu hình" : "Lưu cấu hình"}
-          aria-label={isSaving ? "Đang lưu cấu hình" : "Lưu cấu hình"}
-          className="inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-teal-600 px-3.5 text-xs font-semibold text-white hover:bg-teal-700 disabled:opacity-40 transition-colors shadow-sm"
-        >
-          <FiCheck className={`text-sm ${isSaving ? "animate-pulse" : ""}`} />
-          <span>{isSaving ? "Đang lưu..." : "Lưu cấu hình"}</span>
-        </button>
-      </div>
+      {!hideSaveButton && (
+        <div className="flex justify-end pt-2">
+          <button
+            type="button"
+            onClick={onSaveSettings}
+            disabled={!settingsDirty || isSaving || isPublished}
+            title={isSaving ? "Đang lưu cấu hình" : "Lưu cấu hình"}
+            aria-label={isSaving ? "Đang lưu cấu hình" : "Lưu cấu hình"}
+            className="inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-teal-600 px-3.5 text-xs font-semibold text-white hover:bg-teal-700 disabled:opacity-40 transition-colors shadow-sm"
+          >
+            <FiCheck className={`text-sm ${isSaving ? "animate-pulse" : ""}`} />
+            <span>{isSaving ? "Đang lưu..." : "Lưu cấu hình"}</span>
+          </button>
+        </div>
+      )}
     </div>
   );
 };

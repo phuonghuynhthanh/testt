@@ -16,6 +16,7 @@ interface LinkedInWorkspaceCardProps {
   onContentChange: (val: string) => void;
   isGeneratingDraft: boolean;
   onGenerateDraft: () => void;
+  showGenerateDraft?: boolean;
   mediaMode: LinkedInMediaMode;
   candidates: (LinkedInMediaAsset | PexelsCandidate)[];
   selectedMedia: LinkedInMediaAsset[];
@@ -45,6 +46,7 @@ export const LinkedInWorkspaceCard: React.FC<LinkedInWorkspaceCardProps> = ({
   onContentChange,
   isGeneratingDraft,
   onGenerateDraft,
+  showGenerateDraft = true,
   mediaMode,
   candidates,
   selectedMedia,
@@ -93,14 +95,16 @@ export const LinkedInWorkspaceCard: React.FC<LinkedInWorkspaceCardProps> = ({
           <FaLinkedin className="text-[#0a66c2]" />
           <span>Nội dung bài đăng LinkedIn</span>
         </h3>
-        <button
-          type="button"
-          onClick={onGenerateDraft}
-          disabled={isGeneratingDraft || isPublished}
-          className="px-3 py-1 rounded-md text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white disabled:opacity-50 transition-colors"
-        >
-          {isGeneratingDraft ? "Đang tạo..." : content ? "Tạo lại" : "Tạo bản nháp"}
-        </button>
+        {showGenerateDraft && (
+          <button
+            type="button"
+            onClick={onGenerateDraft}
+            disabled={isGeneratingDraft || isPublished}
+            className="px-3 py-1 rounded-md text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white disabled:opacity-50 transition-colors"
+          >
+            {isGeneratingDraft ? "Đang tạo..." : content ? "Tạo lại" : "Tạo bản nháp"}
+          </button>
+        )}
       </div>
 
       <textarea
@@ -125,6 +129,7 @@ export const LinkedInWorkspaceCard: React.FC<LinkedInWorkspaceCardProps> = ({
               type="checkbox"
               checked={factCheckAcknowledged}
               onChange={(e) => onAcknowledgeFactCheck(e.target.checked)}
+              disabled={isPublished}
               className="rounded"
             />
             <span>Tôi đã kiểm tra tính chính xác của các thông tin trên.</span>
@@ -141,13 +146,14 @@ export const LinkedInWorkspaceCard: React.FC<LinkedInWorkspaceCardProps> = ({
               <input
                 value={keywordInput}
                 onChange={(e) => onKeywordChange(e.target.value)}
+                disabled={isPublished}
                 placeholder="Từ khóa Pexels..."
                 className="rounded-lg border border-surface-border bg-surface-elevated px-2.5 py-1 text-xs text-content-primary focus:outline-none focus:ring-1 focus:ring-primary-green"
               />
               <button
                 type="button"
                 onClick={onSearchMedia}
-                disabled={isSearchingMedia}
+                disabled={isSearchingMedia || isPublished}
                 className="px-2.5 py-1 rounded-md text-xs font-medium bg-surface-elevated hover:bg-surface-hover border border-surface-border text-content-primary"
               >
                 {isSearchingMedia ? "Đang tìm..." : "Tìm ảnh"}
@@ -156,7 +162,7 @@ export const LinkedInWorkspaceCard: React.FC<LinkedInWorkspaceCardProps> = ({
                 title={isUploading ? "Đang tải ảnh" : "Tải ảnh lên"}
                 aria-label={isUploading ? "Đang tải ảnh" : "Tải ảnh lên"}
                 className={`inline-flex h-7 cursor-pointer items-center gap-1.5 rounded-md border border-surface-border bg-surface-elevated px-2.5 text-xs font-medium text-content-primary hover:bg-surface-hover ${
-                  isUploading ? "pointer-events-none opacity-50" : ""
+                  isUploading || isPublished ? "pointer-events-none opacity-50" : ""
                 }`}
               >
                 <FiUpload className="text-xs" />
@@ -196,6 +202,7 @@ export const LinkedInWorkspaceCard: React.FC<LinkedInWorkspaceCardProps> = ({
                     <input
                       value={cand.altText || ""}
                       onChange={(e) => onUpdateAltText(key, e.target.value)}
+                      disabled={isPublished}
                       placeholder="Alt text..."
                       className="w-full rounded border border-surface-border bg-surface-card px-1.5 py-0.5 text-[11px] text-content-primary focus:outline-none"
                     />
@@ -205,6 +212,7 @@ export const LinkedInWorkspaceCard: React.FC<LinkedInWorkspaceCardProps> = ({
                           <button
                             type="button"
                             onClick={() => onMoveMedia(key, -1)}
+                            disabled={isPublished}
                             title="Đưa ảnh lên trước"
                             aria-label="Đưa ảnh lên trước"
                             className="inline-flex flex-1 items-center justify-center gap-1 rounded border border-surface-border bg-surface-card py-0.5 text-center"
@@ -215,6 +223,7 @@ export const LinkedInWorkspaceCard: React.FC<LinkedInWorkspaceCardProps> = ({
                           <button
                             type="button"
                             onClick={() => onMoveMedia(key, 1)}
+                            disabled={isPublished}
                             title="Đưa ảnh xuống sau"
                             aria-label="Đưa ảnh xuống sau"
                             className="inline-flex flex-1 items-center justify-center gap-1 rounded border border-surface-border bg-surface-card py-0.5 text-center"
@@ -227,6 +236,7 @@ export const LinkedInWorkspaceCard: React.FC<LinkedInWorkspaceCardProps> = ({
                       <button
                         type="button"
                         onClick={() => onToggleMedia(cand as LinkedInMediaAsset)}
+                        disabled={isPublished}
                         className={`flex-1 py-0.5 rounded font-medium text-center ${
                           selected
                             ? "bg-rose-950/40 text-rose-300 border border-rose-800/40"

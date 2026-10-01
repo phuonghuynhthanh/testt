@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { BsStars, BsFileEarmarkText } from "react-icons/bs";
 import { FiUpload, FiSend, FiSave } from "react-icons/fi";
@@ -7,10 +8,13 @@ import MarkdownEditor from "../../../shared/markdown/MarkdownEditor";
 import { createUrl } from "../../../utils/blogUtils";
 import { apiErrorMessage } from "../../../types/Api";
 import type { IBlogData, SEO } from "../../../types/Blog";
+import type { LinkedInMode } from "../../../types/Publication";
 import { createBlogPost, generateBlogDraft } from "../../../services/blog/handleBlog";
+import { updatePublication, publishBlog } from "../../../services/publication/handlePublication";
 import { createCategory, listCategories } from "../../../services/category/handleCategory";
 import { PageHeader, SectionHeading, ConfirmDialog } from "../../../shared/ui";
 import BlogSeoCollapse from "./BlogSeoCollapse";
+import BlogCreatePublicationSection from "./BlogCreatePublicationSection";
 
 const EMPTY_BLOG: IBlogData = {
   tag: "",
@@ -28,8 +32,20 @@ const EMPTY_BLOG: IBlogData = {
   },
 };
 
+class BlogCreationFollowupError extends Error {
+  createdId: string;
+
+  // Preserve the created Blog ID when configuration or publication fails afterward.
+  constructor(createdId: string, message: string) {
+    super(message);
+    this.name = "BlogCreationFollowupError";
+    this.createdId = createdId;
+  }
+}
+
 // Render the blog creation editor supporting manual authoring, AI draft generation, and SEO fields.
 const BlogCreate: React.FC = () => {
+  const navigate = useNavigate();
   const client = useQueryClient();
   const [source, setSource] = useState<"manual" | "ai">("manual");
   const [blog, setBlog] = useState<IBlogData>(EMPTY_BLOG);
@@ -37,6 +53,10 @@ const BlogCreate: React.FC = () => {
   const [dirty, setDirty] = useState(false);
   const [confirmPublish, setConfirmPublish] = useState(false);
   const [confirmRegenerate, setConfirmRegenerate] = useState(false);
+  const [publishWeb, setPublishWeb] = useState(true);
+  const [publishLinkedin, setPublishLinkedin] = useState(false);
+  const [linkedinMode, setLinkedinMode] = useState<LinkedInMode>("SAME");
+  const [includeWebLink, setIncludeWebLink] = useState(false);
 
   const categories = useQuery({
     queryKey: ["categories", { page: 1, pageSize: 100 }],
@@ -104,20 +124,50 @@ const BlogCreate: React.FC = () => {
   });
 
   const save = useMutation({
-    mutationFn: (action: "SAVE_PENDING" | "PUBLISH_NOW") =>
-      createBlogPost(
+    mutationFn: async (action: "SAVE_PENDING" | "PUBLISH_NOW") => {
+      const created = await createBlogPost(
         { ...blog, link_post: blog.link_post.trim() || createUrl(blog.title) },
         image,
-        action
-      ),
-    onSuccess: (_, action) => {
-      toast.success(action === "PUBLISH_NOW" ? "Đã xuất bản website." : "Đã lưu chờ duyệt.");
+        "SAVE_PENDING"
+      );
+      if (created?.id) {
+        try {
+          await updatePublication(created.id, {
+            publishWeb,
+            publishLinkedin,
+            linkedinMode,
+            linkedinIncludeWebLink: includeWebLink,
+          });
+          if (action === "PUBLISH_NOW") {
+            await publishBlog(created.id);
+          }
+        } catch (error) {
+          throw new BlogCreationFollowupError(created.id, apiErrorMessage(error));
+        }
+      }
+      return { created, action };
+    },
+    onSuccess: ({ created, action }) => {
+      toast.success(action === "PUBLISH_NOW" ? "Đã xuất bản bài viết." : "Đã lưu bài viết chờ duyệt.");
       setDirty(false);
       setConfirmPublish(false);
       client.invalidateQueries({ queryKey: ["blogs"] });
       client.invalidateQueries({ queryKey: ["categories"] });
+      if (created?.id) {
+        navigate(`/blog/edit/${created.id}`);
+      }
     },
-    onError: (error) => toast.error(apiErrorMessage(error)),
+    onError: (error) => {
+      setConfirmPublish(false);
+      if (error instanceof BlogCreationFollowupError) {
+        setDirty(false);
+        client.invalidateQueries({ queryKey: ["blogs"] });
+        toast.error(`Bài viết đã được lưu nhưng chưa hoàn tất cấu hình xuất bản: ${error.message}`);
+        navigate(`/blog/edit/${error.createdId}`);
+        return;
+      }
+      toast.error(apiErrorMessage(error));
+    },
   });
 
   useEffect(() => {
@@ -134,6 +184,34 @@ const BlogCreate: React.FC = () => {
   const handleRegenerateClick = () => {
     if (blog.content.trim()) setConfirmRegenerate(true);
     else draft.mutate();
+  };
+
+  // Keep at least one publication channel selected while creating a Blog.
+  const handleToggleWeb = () => {
+    if (publishWeb && !publishLinkedin) return;
+    setPublishWeb((current) => !current);
+    if (publishWeb) setIncludeWebLink(false);
+    setDirty(true);
+  };
+
+  // Enable LinkedIn configuration without exposing actions that require a persisted Blog ID.
+  const handleToggleLinkedin = () => {
+    if (publishLinkedin && !publishWeb) return;
+    setPublishLinkedin((current) => !current);
+    if (publishLinkedin) setIncludeWebLink(false);
+    setDirty(true);
+  };
+
+  // Store the LinkedIn content mode as part of the unsaved creation form.
+  const handleLinkedinModeChange = (mode: LinkedInMode) => {
+    setLinkedinMode(mode);
+    setDirty(true);
+  };
+
+  // Store whether the future LinkedIn post should include the canonical Web link.
+  const handleWebLinkToggle = (checked: boolean) => {
+    setIncludeWebLink(checked);
+    setDirty(true);
   };
 
   const formValid = Boolean(blog.title.trim() && blog.category.trim() && blog.content.trim());
@@ -274,6 +352,17 @@ const BlogCreate: React.FC = () => {
 
       <BlogSeoCollapse seo={blog.seo} onUpdateSeo={updateSeo} />
 
+      <BlogCreatePublicationSection
+        publishWeb={publishWeb}
+        publishLinkedin={publishLinkedin}
+        mode={linkedinMode}
+        includeWebLink={includeWebLink}
+        onToggleWeb={handleToggleWeb}
+        onToggleLinkedin={handleToggleLinkedin}
+        onChangeMode={handleLinkedinModeChange}
+        onToggleWebLink={handleWebLinkToggle}
+      />
+
       <div className="bg-surface-card p-6 rounded-xl border border-surface-border space-y-3">
         <SectionHeading title="Ảnh bìa bài viết" description="Tải lên tệp ảnh (JPEG, PNG, WebP) - Tùy chọn" />
         <div className="flex items-center gap-3">
@@ -318,9 +407,9 @@ const BlogCreate: React.FC = () => {
 
         <button
           type="button"
-          title="Xuất bản Website ngay"
-          aria-label="Xuất bản Website ngay"
-          disabled={!formValid || save.isPending}
+          title={publishLinkedin ? "Hãy lưu bài viết trước để hoàn thiện nội dung LinkedIn" : "Xuất bản Website ngay"}
+          aria-label={publishLinkedin ? "Lưu bài viết trước khi xuất bản LinkedIn" : "Xuất bản Website ngay"}
+          disabled={!formValid || save.isPending || !publishWeb || publishLinkedin}
           onClick={() => setConfirmPublish(true)}
           className="inline-flex items-center gap-2 rounded-lg bg-primary-green px-4 py-2.5 text-xs font-semibold text-primary-black shadow-md transition-colors hover:bg-primary-green-dark disabled:cursor-not-allowed disabled:opacity-40"
         >
@@ -344,7 +433,7 @@ const BlogCreate: React.FC = () => {
       <ConfirmDialog
         isOpen={confirmPublish}
         title="Xác nhận xuất bản bài viết"
-        message="Bài viết sẽ được xuất bản công khai ngay lập tức lên website VietQuant."
+        message="Bài viết sẽ được lưu và xuất bản công khai ngay lên Website VietQuant."
         confirmLabel="Xuất bản ngay"
         cancelLabel="Hủy"
         variant="primary"

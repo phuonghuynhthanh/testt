@@ -24,7 +24,7 @@ import BlogPreviewDemo from "./BlogPreviewDemo";
 import BlogBasicInfoForm from "./BlogBasicInfoForm";
 import BlogSeoForm from "./BlogSeoForm";
 import { PageHeader } from "../../../shared/ui";
-import PublicationPanel from "../../publications/components/PublicationPanel";
+import PublicationConfigWorkspace from "../../publications/components/PublicationConfigWorkspace";
 
 const INIT_BLOG_DATA: IBlogData = {
   id: "",
@@ -321,11 +321,15 @@ const BlogUpdate = () => {
       </div>
 
       {blogId && blogDetail && (
-        <PublicationPanel
-          blogId={blogId}
-          blogSaveVersion={blogSaveVersion}
-          blogState={blogData.state}
-        />
+        <div className="pt-8 border-t border-surface-border">
+          <PublicationConfigWorkspace
+            blogId={blogId}
+            blogState={blogData.state}
+            title="Cấu hình xuất bản & Phân phối"
+            description="Thiết lập kênh phát hành, nội dung LinkedIn và tiến trình xuất bản đa nền tảng đồng bộ với hệ thống."
+            blogSaveVersion={blogSaveVersion}
+          />
+        </div>
       )}
     </div>
   );
