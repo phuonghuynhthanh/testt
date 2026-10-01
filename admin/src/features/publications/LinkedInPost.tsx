@@ -12,6 +12,7 @@ import {
   proposeLinkedInTopics,
   publishLinkedInPost,
   retryLinkedInPost,
+  retryLinkedInLinkComment,
   searchLinkedInMedia,
   suggestPostMedia,
   updateLinkedInPost,
@@ -19,7 +20,8 @@ import {
 } from "../../services/linkedin/handleLinkedIn";
 import { apiErrorMessage } from "../../types/Api";
 import type { LinkedInAudience, LinkedInSourceType } from "../../types/LinkedIn";
-import type { FactualReview, GeneratedLinkedInPost, LinkedInMediaAsset, LinkedInMediaMode } from "../../types/Publication";
+import type { FactualReview, GeneratedLinkedInPost, LinkedInLinkPlacement, LinkedInMediaAsset, LinkedInMediaMode } from "../../types/Publication";
+import { AIImagePanel } from "../../shared/media/AIImagePanel";
 import { PageHeader, SectionHeading, ConfirmDialog, BottomActionBar } from "../../shared/ui";
 import { linkedinMediaKey, linkedinMediaUrl } from "../../utils/linkedinMedia";
 
@@ -38,7 +40,8 @@ const LinkedInPost: React.FC = () => {
   const [authorMode, setAuthorMode] = useState<"manual" | "ai">("manual");
   const [topic, setTopic] = useState("");
   const [context, setContext] = useState("");
-  const [audience, setAudience] = useState<LinkedInAudience>("mixed");
+  const [audience, setAudience] = useState<LinkedInAudience>(null);
+  const [linkPlacement, setLinkPlacement] = useState<LinkedInLinkPlacement>("NONE");
   const [content, setContent] = useState("");
   const [mediaMode, setMediaMode] = useState<LinkedInMediaMode>("none");
   const [media, setMedia] = useState<LinkedInMediaAsset[]>([]);
@@ -51,6 +54,7 @@ const LinkedInPost: React.FC = () => {
   const [topics, setTopics] = useState<string[]>([]);
   const [confirm, setConfirm] = useState(false);
   const [confirmAiOverwrite, setConfirmAiOverwrite] = useState(false);
+  const targetAudience = audience?.trim() || null;
 
   const detail = useQuery({ queryKey: ["linkedin-post", id], queryFn: () => getLinkedInPost(id!), enabled: Boolean(id) });
 
@@ -62,6 +66,7 @@ const LinkedInPost: React.FC = () => {
     setMedia(detail.data.media ?? []);
     setCandidates(detail.data.media ?? []);
     setSourceType(detail.data.sourceType ?? "CUSTOM");
+    setLinkPlacement(detail.data.linkPlacement ?? "NONE");
     setAuthorMode(detail.data.sourceType === "INDEPENDENT_AI" ? "ai" : "manual");
     const loaded = normalizeFactCheck(detail.data.factCheck);
     setFactCheck(loaded);
@@ -80,7 +85,7 @@ const LinkedInPost: React.FC = () => {
     client.invalidateQueries({ queryKey: ["linkedin-history"] });
   };
 
-  const payload = () => ({ topic: (topic || "").trim(), content: (content || "").trim(), mediaMode, media, factCheck, generation, sourceType });
+  const payload = () => ({ topic: (topic || "").trim(), content: (content || "").trim(), mediaMode, media, factCheck, generation, sourceType, linkPlacement });
 
   const save = useMutation({
     mutationFn: () => id ? updateLinkedInPost(id, payload()) : createLinkedInPost({ ...payload(), action: "SAVE_DRAFT" }),
@@ -89,7 +94,7 @@ const LinkedInPost: React.FC = () => {
   });
 
   const draft = useMutation({
-    mutationFn: () => generateLinkedInDraft({ topic, context, targetAudience: audience, requestedMediaMode: mediaMode }),
+    mutationFn: () => generateLinkedInDraft({ topic, context, targetAudience, requestedMediaMode: mediaMode }),
     onSuccess: (data) => {
       setContent(data.content); setMediaMode(data.media.mode); setSourceType("INDEPENDENT_AI");
       setFactCheck(data.factualReview); setGeneration(data.generated);
@@ -102,7 +107,7 @@ const LinkedInPost: React.FC = () => {
   });
 
   const propose = useMutation({
-    mutationFn: () => proposeLinkedInTopics({ count: 3, recentLimit: 20, targetAudience: "mixed" }),
+    mutationFn: () => proposeLinkedInTopics({ count: 3, recentLimit: 20, targetAudience }),
     onSuccess: (d) => setTopics(d.topics),
     onError: (e) => toast.error(apiErrorMessage(e)),
   });
@@ -149,6 +154,13 @@ const LinkedInPost: React.FC = () => {
   const retry = useMutation({
     mutationFn: () => retryLinkedInPost(id!),
     onSuccess: () => { toast.success("Đã gửi yêu cầu thử lại."); invalidate(); },
+    onError: (e) => toast.error(apiErrorMessage(e)),
+  });
+
+  // Retry a failed first comment without re-publishing the main post.
+  const retryComment = useMutation({
+    mutationFn: () => retryLinkedInLinkComment(id!),
+    onSuccess: () => { toast.success("Đã gửi yêu cầu thử lại bình luận liên kết."); invalidate(); },
     onError: (e) => toast.error(apiErrorMessage(e)),
   });
 
@@ -224,6 +236,13 @@ const LinkedInPost: React.FC = () => {
       {detail.data?.lastError && (
         <div className="p-4 rounded-xl bg-rose-950/30 border border-rose-500/30 text-rose-300 text-xs">{detail.data.lastError}</div>
       )}
+      {detail.data?.status === "PUBLISHED" && detail.data.linkCommentStatus !== "NOT_REQUESTED" && (
+        <div className={`rounded-xl border p-4 text-xs ${detail.data.linkCommentStatus === "FAILED" ? "border-rose-500/30 text-rose-300" : "border-surface-border text-content-muted"}`}>
+          Bình luận liên kết: {detail.data.linkCommentStatus}.
+          {detail.data.linkCommentStatus === "FAILED" && id && <button type="button" onClick={() => retryComment.mutate()} disabled={retryComment.isPending} className="ml-3 underline">{retryComment.isPending ? "Đang thử lại…" : "Thử lại bình luận"}</button>}
+          {detail.data.linkCommentStatus === "REVIEW_REQUIRED" && <span className="ml-2">Hãy kiểm tra LinkedIn; hệ thống không tự thử lại để tránh bình luận trùng.</span>}
+        </div>
+      )}
 
       {!immutable && (
         <div className="flex w-fit gap-1 rounded-xl border border-surface-border bg-surface-card p-1">
@@ -272,9 +291,8 @@ const LinkedInPost: React.FC = () => {
             </div>
             <div>
               <label className="mb-1.5 block text-xs font-medium text-content-secondary">Đối tượng độc giả</label>
-              <select value={audience} onChange={(e) => setAudience(e.target.value as LinkedInAudience)} className="w-full rounded-lg border border-surface-border bg-surface-elevated px-3.5 py-2 text-sm text-content-primary focus:outline-none focus:ring-1 focus:ring-purple-400">
-                <option value="mixed">Hỗn hợp</option><option value="math">Toán học</option><option value="competitive-programming">Lập trình thi đấu</option><option value="software-engineering">Kỹ sư phần mềm</option><option value="machine-learning">Machine Learning</option><option value="systems">Hệ thống</option>
-              </select>
+              <div className="flex flex-wrap gap-2"><button type="button" onClick={() => setAudience(null)} className={`rounded px-2 py-1 text-xs ${audience === null ? "bg-purple-500/30 text-purple-100" : "bg-surface-elevated text-content-muted"}`}>Để AI tự chọn</button>{["math", "competitive-programming", "software-engineering", "machine-learning", "systems"].map((preset) => <button key={preset} type="button" onClick={() => setAudience(preset)} className={`rounded px-2 py-1 text-xs ${audience === preset ? "bg-purple-500/30 text-purple-100" : "bg-surface-elevated text-content-muted"}`}>{preset}</button>)}</div>
+              <input value={audience ?? ""} onChange={(event) => setAudience(event.target.value)} maxLength={300} placeholder="Hoặc nhập đối tượng riêng" className="mt-2 w-full rounded-lg border border-surface-border bg-surface-elevated px-3 py-2 text-xs text-content-primary" />
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -315,6 +333,7 @@ const LinkedInPost: React.FC = () => {
           <label className="block text-xs font-medium text-content-secondary mb-1.5">Nội dung bài viết <span className="text-rose-400">*</span></label>
           <textarea disabled={immutable} rows={7} value={content} onChange={(e) => setContent(e.target.value)} placeholder="Soạn nội dung bài đăng LinkedIn..." className="w-full rounded-lg border border-surface-border bg-surface-elevated px-3.5 py-2.5 text-sm text-content-primary placeholder-content-muted focus:border-primary-green focus:outline-none focus:ring-1 focus:ring-primary-green transition resize-y disabled:opacity-50" />
         </div>
+        <div><label className="mb-1.5 block text-xs font-medium text-content-secondary">Vị trí liên kết website</label><div className="flex flex-wrap gap-2">{(["NONE", "IN_POST", "FIRST_COMMENT"] as const).map((placement) => <button key={placement} type="button" disabled={immutable} onClick={() => setLinkPlacement(placement)} className={`rounded-lg border px-3 py-2 text-xs ${linkPlacement === placement ? "border-primary-green bg-primary-green/10 text-content-primary" : "border-surface-border text-content-muted"}`}>{placement === "NONE" ? "Không đính kèm" : placement === "IN_POST" ? "Trong bài đăng" : "Bình luận đầu tiên"}</button>)}</div><p className="mt-2 text-xs text-content-muted">Liên kết đích được hệ thống xác định khi xuất bản, không chỉnh sửa trong nội dung đã duyệt.</p></div>
       </div>
 
       <div className="bg-surface-card p-6 rounded-xl border border-surface-border space-y-4">
@@ -351,6 +370,7 @@ const LinkedInPost: React.FC = () => {
               </label>
             </div>
             <p className="text-xs text-content-muted">Đã chọn: <strong className="text-content-primary">{media.length}</strong> ảnh {mediaMode === "multi-image" ? "(cần 2–20 ảnh)" : "(cần 1 ảnh)"}</p>
+            <AIImagePanel purpose="LINKEDIN" context={`${topic}\n${content}`} onUse={(generated) => { const item = { ...generated.media, order: media.length + 1 }; setCandidates((current) => [item, ...current]); }} />
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {candidates.map((item) => {
                 const key = linkedinMediaKey(item);

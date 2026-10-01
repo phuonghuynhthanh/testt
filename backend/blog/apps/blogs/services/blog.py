@@ -3,8 +3,9 @@ from datetime import timedelta
 from typing import Optional
 from fastapi import HTTPException, UploadFile, status
 from slugify import slugify
-from sqlalchemy import desc, func, select
+from sqlalchemy import desc, func, or_, select
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
 
 from apps.blogs import schemas
 from apps.blogs.models import Blog
@@ -19,6 +20,8 @@ from config.database import DatabaseManager
 
 
 class BlogServices:
+    SLUG_INSERT_ATTEMPTS = 8
+
     # Normalize a display name into the durable category lookup key.
     @staticmethod
     def _category_slug(name: str) -> str:
@@ -71,6 +74,7 @@ class BlogServices:
     def _create_seo_data(
         seo_input: schemas.SEODataSchema,
         banner_url: Optional[str],
+        link_post: str,
         is_update: bool = False,
         existing_published_time: str = None,
     ) -> dict:
@@ -80,12 +84,36 @@ class BlogServices:
             "title": seo_input.title,
             "description": seo_input.description,
             "banner_url": banner_url,
-            "url": seo_input.url,
+            "url": canonical_blog_url(link_post),
             "keywords": seo_input.keywords,
             "author": seo_input.author,
             "published_time": existing_published_time if is_update else current_time,
             "modified_time": current_time,
         }
+
+    # Return the first available durable slug, including soft-deleted records.
+    @staticmethod
+    def _next_slug(session: Session, title: str) -> str:
+        base = slugify(title, lowercase=True, separator="-") or "blog"
+        values = {
+            value
+            for value in session.scalars(
+                select(Blog.link_post).where(
+                    or_(Blog.link_post == base, Blog.link_post.like(f"{base}-%"))
+                )
+            )
+        }
+        used = {1} if base in values else set()
+        prefix = f"{base}-"
+        for value in values:
+            if value.startswith(prefix) and value[len(prefix):].isdigit():
+                suffix = int(value[len(prefix):])
+                if suffix >= 2:
+                    used.add(suffix)
+        suffix = 1
+        while suffix in used:
+            suffix += 1
+        return base if suffix == 1 else f"{base}-{suffix}"
 
     # Create reviewed Blog content with an explicit save or publish action.
     @classmethod
@@ -103,41 +131,50 @@ class BlogServices:
         banner_url = blog_data.banner_url or ""
         uploaded_banner_url = None
         try:
-            ex_link = Blog.filter(Blog.link_post == blog_data.link_post).first()
-            if ex_link:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"Bài viết với liên kết '{blog_data.link_post}' đã tồn tại",
-                )
+            with Session(DatabaseManager.engine) as session:
+                initial_slug = cls._next_slug(session, blog_data.title)
             if image:
                 banner_url = StorageService.upload_image(
-                    image, folder=blog_data.link_post
+                    image, folder=initial_slug
                 )
                 uploaded_banner_url = banner_url
-
-            seo_data = cls._create_seo_data(blog_data.seo, banner_url)
             category = cls.resolve_category(str(blog_data.category))
-            blog = Blog.create(
-                tag=blog_data.tag,
-                title=blog_data.title,
-                banner_url=banner_url,
-                link_post=blog_data.link_post,
-                content=blog_data.content,
-                state=(
-                    schemas.BlogState.APPROVED
-                    if action is schemas.BlogCreateAction.PUBLISH_NOW
-                    else schemas.BlogState.PENDING
-                ),
-                category=category.name,
-                category_id=category.id,
-                seo=seo_data,
+            for _ in range(cls.SLUG_INSERT_ATTEMPTS):
+                with Session(DatabaseManager.engine) as session:
+                    slug = cls._next_slug(session, blog_data.title)
+                    try:
+                        blog = Blog(
+                            tag=blog_data.tag,
+                            title=blog_data.title,
+                            banner_url=banner_url,
+                            link_post=slug,
+                            content=blog_data.content,
+                            state=(
+                                schemas.BlogState.APPROVED
+                                if action is schemas.BlogCreateAction.PUBLISH_NOW
+                                else schemas.BlogState.PENDING
+                            ),
+                            category=category.name,
+                            category_id=category.id,
+                            seo=cls._create_seo_data(blog_data.seo, banner_url, slug),
+                        )
+                        session.add(blog)
+                        session.commit()
+                        session.refresh(blog)
+                        session.expunge(blog)
+                        return blog
+                    except IntegrityError:
+                        session.rollback()
+                        if session.scalar(select(Blog.id).where(Blog.link_post == slug)):
+                            continue
+                        raise
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Không thể cấp đường dẫn bài viết duy nhất. Hãy thử lại.",
             )
         except IntegrityError:
             cls.delete_image_url(uploaded_banner_url)
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Bài viết đã tồn tại",
-            )
+            raise
         except HTTPException:
             cls.delete_image_url(uploaded_banner_url)
             raise
@@ -147,9 +184,6 @@ class BlogServices:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Tạo bài viết thất bại",
             )
-
-        return blog
-
     @classmethod
     def update_blog(
         cls,
@@ -167,16 +201,6 @@ class BlogServices:
                 blog = session.query(Blog).filter(
                     (Blog.id == id) & Blog.deleted_at.is_(None)
                 ).first()
-                ex_link = (
-                    session.query(Blog.link_post)
-                    .filter((Blog.link_post == data.link_post) & (Blog.id != id))
-                    .first()
-                )
-                if ex_link:
-                    raise HTTPException(
-                        status_code=status.HTTP_400_BAD_REQUEST,
-                        detail=f"Bài viết với liên kết '{data.link_post}' đã tồn tại",
-                    )
 
             if not blog:
                 raise HTTPException(
@@ -188,7 +212,6 @@ class BlogServices:
 
             field_mappings = {
                 "title": data.title,
-                "link_post": data.link_post,
                 "content": data.content,
                 "tag": data.tag,
                 "state": data.state,
@@ -203,7 +226,7 @@ class BlogServices:
                 update_data.update(category=category.name, category_id=category.id)
             new_banner_url = blog.banner_url
             if image is not None:
-                folder_for_new_banner = data.link_post or blog.link_post
+                folder_for_new_banner = blog.link_post
                 new_banner_url = StorageService.upload_image(
                     image, folder=folder_for_new_banner
                 )
@@ -218,9 +241,17 @@ class BlogServices:
                 seo_data = cls._create_seo_data(
                     data.seo,
                     new_banner_url,
+                    blog.link_post,
                     is_update=True,
                     existing_published_time=existing_published_time,
                 )
+                update_data["seo"] = seo_data
+            else:
+                # Repair legacy SEO URLs whenever an otherwise normal update is saved.
+                seo_data = dict(blog.seo or {})
+                seo_data["url"] = canonical_blog_url(blog.link_post)
+                seo_data["banner_url"] = new_banner_url
+                seo_data["modified_time"] = DateTime.now()
                 update_data["seo"] = seo_data
 
             updated_blog = Blog.update(id, **update_data)

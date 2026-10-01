@@ -17,6 +17,7 @@ from sqlalchemy import (
 from slugify import slugify
 
 from apps.core.date_time import DateTime
+from apps.core.urls import canonical_blog_url
 
 LEGACY_CATEGORY_NAMES = {
     "INVESTMENT_INSIGHTS",
@@ -64,8 +65,14 @@ def apply(engine) -> None:
         Column("fact_check", JSON),
         Column("generation", JSON),
         Column("source_type", String, nullable=False),
+        Column("link_placement", String, nullable=False, default="NONE"),
         Column("status", String, nullable=False),
         Column("provider_post_id", String),
+        Column("published_link_url", String),
+        Column("link_comment_status", String, nullable=False, default="NOT_REQUESTED"),
+        Column("provider_comment_id", String),
+        Column("link_comment_error", JSON),
+        Column("link_comment_published_at", SQLDateTime),
         Column("published_at", SQLDateTime),
         Column("last_error", JSON),
         Column("manually_edited", Boolean, nullable=False, default=False),
@@ -88,6 +95,23 @@ def apply(engine) -> None:
     inspector = inspect(engine)
     with engine.begin() as connection:
         linkedin_columns = {column["name"] for column in inspector.get_columns("linkedin_posts")}
+        publication_columns = {column["name"] for column in inspector.get_columns("post_publications")}
+        publication_placement_added = "linkedin_link_placement" not in publication_columns
+        post_placement_added = "link_placement" not in linkedin_columns
+        if publication_placement_added:
+            connection.execute(text("ALTER TABLE post_publications ADD COLUMN linkedin_link_placement VARCHAR NOT NULL DEFAULT 'NONE'"))
+        if post_placement_added:
+            connection.execute(text("ALTER TABLE linkedin_posts ADD COLUMN link_placement VARCHAR NOT NULL DEFAULT 'NONE'"))
+        if "published_link_url" not in linkedin_columns:
+            connection.execute(text("ALTER TABLE linkedin_posts ADD COLUMN published_link_url VARCHAR"))
+        if "link_comment_status" not in linkedin_columns:
+            connection.execute(text("ALTER TABLE linkedin_posts ADD COLUMN link_comment_status VARCHAR NOT NULL DEFAULT 'NOT_REQUESTED'"))
+        if "provider_comment_id" not in linkedin_columns:
+            connection.execute(text("ALTER TABLE linkedin_posts ADD COLUMN provider_comment_id VARCHAR"))
+        if "link_comment_error" not in linkedin_columns:
+            connection.execute(text("ALTER TABLE linkedin_posts ADD COLUMN link_comment_error JSON"))
+        if "link_comment_published_at" not in linkedin_columns:
+            connection.execute(text("ALTER TABLE linkedin_posts ADD COLUMN link_comment_published_at TIMESTAMP"))
         if "topic" not in linkedin_columns:
             connection.execute(text("ALTER TABLE linkedin_posts ADD COLUMN topic VARCHAR"))
         if "deleted_at" not in linkedin_columns:
@@ -101,6 +125,34 @@ def apply(engine) -> None:
                     "ALTER TABLE blogs ADD COLUMN category_id VARCHAR REFERENCES categories(id)"
                 )
             )
+
+    # Backfill the authoritative placement once while preserving future choices.
+    if publication_placement_added or post_placement_added:
+        metadata = MetaData()
+        publications = Table("post_publications", metadata, autoload_with=engine)
+        linkedin_posts = Table("linkedin_posts", metadata, autoload_with=engine)
+        with engine.begin() as connection:
+            if publication_placement_added:
+                connection.execute(
+                    publications.update().values(
+                        linkedin_link_placement=text(
+                            "CASE WHEN linkedin_include_web_link THEN 'IN_POST' ELSE 'NONE' END"
+                        )
+                    )
+                )
+            if post_placement_added:
+                rows = connection.execute(
+                    select(
+                        publications.c.linkedin_record_id,
+                        publications.c.linkedin_link_placement,
+                    ).where(publications.c.linkedin_record_id.is_not(None))
+                ).all()
+                for record_id, placement in rows:
+                    connection.execute(
+                        linkedin_posts.update()
+                        .where(linkedin_posts.c.id == record_id)
+                        .values(link_placement=placement or "NONE")
+                    )
 
     # Backfill all historical values and seed every category from the removed enum.
     metadata = MetaData()
@@ -138,6 +190,7 @@ def apply(engine) -> None:
                         "publish_web": True,
                         "publish_linkedin": False,
                         "linkedin_mode": "SAME",
+                        "linkedin_link_placement": "NONE",
                         "linkedin_include_web_link": False,
                         "linkedin_status": "NOT_SELECTED",
                         "linkedin_manually_edited": False,
@@ -179,6 +232,10 @@ def apply(engine) -> None:
                     fact_check=row.get("linkedin_fact_check"),
                     generation=row.get("linkedin_generation"),
                     source_type="BLOG_ADAPTATION",
+                    link_placement=(
+                        "IN_POST" if row.get("linkedin_include_web_link") else "NONE"
+                    ),
+                    link_comment_status="NOT_REQUESTED",
                     status=(
                         row.get("linkedin_status")
                         if row.get("linkedin_status")
@@ -205,6 +262,24 @@ def apply(engine) -> None:
                 .where(publications.c.id == row["id"])
                 .values(linkedin_record_id=record_id)
             )
+
+        # Normalize canonical URLs only on legacy Blog schemas that own SEO data.
+        if "link_post" in blogs.c and "seo" in blogs.c:
+            for blog_id, link_post, seo in connection.execute(
+                select(blogs.c.id, blogs.c.link_post, blogs.c.seo)
+            ).all():
+                if not isinstance(seo, dict):
+                    continue
+                try:
+                    canonical_url = canonical_blog_url(link_post)
+                except ValueError:
+                    continue
+                if seo.get("url") != canonical_url:
+                    connection.execute(
+                        blogs.update()
+                        .where(blogs.c.id == blog_id)
+                        .values(seo={**seo, "url": canonical_url})
+                    )
 
     # Retrofit the real foreign key on PostgreSQL databases upgraded by an earlier draft.
     inspector = inspect(engine)

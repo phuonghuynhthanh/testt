@@ -2,7 +2,7 @@ from datetime import datetime
 from enum import Enum
 from typing import List, Literal, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class BlogState(str, Enum):
@@ -34,6 +34,29 @@ class SEODataSchema(BaseModel):
     url: str
     keywords: List[str]
     author: Optional[str] = None
+
+
+class SEOInputSchema(BaseModel):
+    """Accept administrator-editable SEO fields only."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    title: str
+    description: str
+    keywords: List[str]
+    author: Optional[str] = None
+
+    # Ignore only the retired client-owned canonical URL during migration.
+    @model_validator(mode="before")
+    @classmethod
+    def discard_legacy_url(cls, value):
+        # Allow internal callers that still pass the read-model SEO schema.
+        if isinstance(value, BaseModel):
+            value = value.model_dump()
+        if isinstance(value, dict):
+            value = dict(value)
+            value.pop("url", None)
+        return value
 
 
 class BlogSchema(BaseModel):
@@ -69,24 +92,44 @@ class ContentSchema(BaseModel):
 
 
 class BlogCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     tag: str
     title: str
     banner_url: Optional[str] = None
-    link_post: str
-    seo: SEODataSchema
+    seo: SEOInputSchema
     content: str
     category: str
 
+    # Ignore only the retired client-owned slug during migration.
+    @model_validator(mode="before")
+    @classmethod
+    def discard_legacy_slug(cls, value):
+        if isinstance(value, dict):
+            value = dict(value)
+            value.pop("link_post", None)
+        return value
+
 
 class BlogUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     tag: Optional[str] = None
     title: Optional[str] = None
     banner_url: Optional[str] = None
-    link_post: Optional[str] = None
-    seo: Optional[SEODataSchema] = None
+    seo: Optional[SEOInputSchema] = None
     content: Optional[str] = None
     category: Optional[str] = None
     state: Optional[str] = None
+
+    # Ignore only the retired client-owned slug during migration.
+    @model_validator(mode="before")
+    @classmethod
+    def discard_legacy_slug(cls, value):
+        if isinstance(value, dict):
+            value = dict(value)
+            value.pop("link_post", None)
+        return value
 
 
 class BlogForClient(BaseModel):

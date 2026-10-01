@@ -4,7 +4,7 @@ from enum import Enum
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 class StrictModel(BaseModel):
@@ -45,6 +45,39 @@ class LinkedInPostStatus(str, Enum):
     PUBLISHED = "PUBLISHED"
     FAILED = "FAILED"
     REVIEW_REQUIRED = "REVIEW_REQUIRED"
+
+
+class LinkedInLinkPlacement(str, Enum):
+    """Describe where the backend-owned target URL is emitted."""
+
+    NONE = "NONE"
+    IN_POST = "IN_POST"
+    FIRST_COMMENT = "FIRST_COMMENT"
+
+
+class LinkedInCommentStatus(str, Enum):
+    """Track the independent first-comment side effect."""
+
+    NOT_REQUESTED = "NOT_REQUESTED"
+    PENDING = "PENDING"
+    PUBLISHED = "PUBLISHED"
+    FAILED = "FAILED"
+    REVIEW_REQUIRED = "REVIEW_REQUIRED"
+
+
+# Translate one retired boolean field into the authoritative placement field.
+def translate_legacy_link_flag(value, target_key: str, *legacy_keys: str):
+    if not isinstance(value, dict):
+        return value
+    value = dict(value)
+    legacy_key = next((key for key in legacy_keys if key in value), None)
+    if not legacy_key:
+        return value
+    expected = "IN_POST" if bool(value.pop(legacy_key)) else "NONE"
+    if target_key in value and value[target_key] != expected:
+        raise ValueError(f"{legacy_key} conflicts with {target_key}")
+    value.setdefault(target_key, expected)
+    return value
 
 
 class LinkedInSourceType(str, Enum):
@@ -254,6 +287,7 @@ class UploadedMedia(StrictModel):
     """Reference an administrator upload stored under the LinkedIn prefix."""
 
     provider: Literal["upload"] = "upload"
+    origin: Literal["manual", "cloudflare-ai"] = "manual"
     objectKey: str = Field(pattern=r"^linkedin/[^/]+$")
     fileName: str = Field(min_length=1, max_length=255)
     altText: str = Field(min_length=1, max_length=4086)
@@ -294,8 +328,14 @@ class IndependentDraftRequest(StrictModel):
 
     topic: str = Field(min_length=1)
     context: str = ""
-    targetAudience: str = "mixed"
+    targetAudience: str | None = Field(default=None, max_length=300)
     requestedMediaMode: MediaMode = MediaMode.NONE
+
+    # Normalize an empty hybrid audience control to backend inference.
+    @field_validator("targetAudience")
+    @classmethod
+    def normalize_target_audience(cls, value: str | None) -> str | None:
+        return value.strip() or None if value is not None else None
 
 
 class TopicProposalRequest(StrictModel):
@@ -303,8 +343,14 @@ class TopicProposalRequest(StrictModel):
 
     count: int = Field(default=3, ge=1, le=10)
     recentLimit: int = Field(default=20, ge=5, le=50)
-    targetAudience: str = "mixed"
+    targetAudience: str | None = Field(default=None, max_length=300)
     guideline: str = ""
+
+    # Normalize an empty hybrid audience control to backend inference.
+    @field_validator("targetAudience")
+    @classmethod
+    def normalize_target_audience(cls, value: str | None) -> str | None:
+        return value.strip() or None if value is not None else None
 
 
 class LinkedInPostCreate(StrictModel):
@@ -317,7 +363,16 @@ class LinkedInPostCreate(StrictModel):
     factCheck: dict | None = None
     generation: dict | None = None
     sourceType: LinkedInSourceType = LinkedInSourceType.CUSTOM
+    linkPlacement: LinkedInLinkPlacement = LinkedInLinkPlacement.NONE
     action: LinkedInPostAction = LinkedInPostAction.SAVE_DRAFT
+
+    # Translate the retired boolean without accepting conflicting client intent.
+    @model_validator(mode="before")
+    @classmethod
+    def translate_legacy_link_flag(cls, value):
+        return translate_legacy_link_flag(
+            value, "linkPlacement", "includeWebLink", "linkedinIncludeWebLink"
+        )
 
 
 class LinkedInPostUpdate(StrictModel):
@@ -330,6 +385,15 @@ class LinkedInPostUpdate(StrictModel):
     factCheck: dict | None = None
     generation: dict | None = None
     sourceType: LinkedInSourceType | None = None
+    linkPlacement: LinkedInLinkPlacement | None = None
+
+    # Translate legacy placement booleans before strict update validation.
+    @model_validator(mode="before")
+    @classmethod
+    def translate_legacy_link_flag(cls, value):
+        return translate_legacy_link_flag(
+            value, "linkPlacement", "includeWebLink", "linkedinIncludeWebLink"
+        )
 
 
 # Strip Markdown-only syntax while preserving paragraphs for SAME mode.

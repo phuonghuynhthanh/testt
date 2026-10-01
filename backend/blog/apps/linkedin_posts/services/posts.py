@@ -11,6 +11,8 @@ from apps.linkedin_posts.exceptions import LinkedInError
 from apps.linkedin_posts.models import LinkedInPost
 from apps.linkedin_posts.schemas import (
     IndependentDraftRequest,
+    LinkedInCommentStatus,
+    LinkedInLinkPlacement,
     LinkedInPostAction,
     LinkedInPostCreate,
     LinkedInPostStatus,
@@ -19,6 +21,7 @@ from apps.linkedin_posts.schemas import (
     PexelsCandidate,
     UploadedMedia,
 )
+from apps.core.urls import canonical_site_url
 from apps.linkedin_posts.services.image import validate_image_bytes
 from apps.linkedin_posts.services.generator import LinkedInDraftGenerator
 from apps.linkedin_posts.services.history import LinkedInHistoryService
@@ -46,8 +49,14 @@ class LinkedInPostService:
             "factCheck": post.fact_check,
             "generation": post.generation,
             "sourceType": post.source_type,
+            "linkPlacement": getattr(post, "link_placement", LinkedInLinkPlacement.NONE.value),
             "status": post.status,
             "providerPostId": post.provider_post_id,
+            "publishedLinkUrl": getattr(post, "published_link_url", None),
+            "linkCommentStatus": getattr(post, "link_comment_status", LinkedInCommentStatus.NOT_REQUESTED.value),
+            "providerCommentId": getattr(post, "provider_comment_id", None),
+            "linkCommentError": getattr(post, "link_comment_error", None),
+            "linkCommentPublishedAt": getattr(post, "link_comment_published_at", None),
             "publishedAt": post.published_at,
             "lastError": post.last_error,
             "manuallyEdited": post.manually_edited,
@@ -66,7 +75,7 @@ class LinkedInPostService:
             raise HTTPException(
                 status_code=404, detail="Không tìm thấy bài đăng LinkedIn"
             )
-        return post
+        return LinkedInPostService._comment_state(post)
 
     # Return all local history without any provider call.
     @classmethod
@@ -145,12 +154,18 @@ class LinkedInPostService:
             "fact_check": data.factCheck,
             "generation": data.generation,
             "source_type": data.sourceType.value,
+            "link_placement": data.linkPlacement.value,
             "status": (
                 LinkedInPostStatus.READY.value
                 if ready
                 else LinkedInPostStatus.DRAFT.value
             ),
             "last_error": None,
+            "published_link_url": None,
+            "link_comment_status": LinkedInCommentStatus.NOT_REQUESTED.value,
+            "provider_comment_id": None,
+            "link_comment_error": None,
+            "link_comment_published_at": None,
             "manually_edited": data.sourceType.value == "CUSTOM",
         }
         if not post_id:
@@ -236,7 +251,17 @@ class LinkedInPostService:
                         if hasattr(values.get("sourceType", post.source_type), "value")
                         else values.get("sourceType", post.source_type)
                     ),
+                    "link_placement": (
+                        values.get("linkPlacement", getattr(post, "link_placement", LinkedInLinkPlacement.NONE.value)).value
+                        if hasattr(values.get("linkPlacement", getattr(post, "link_placement", LinkedInLinkPlacement.NONE.value)), "value")
+                        else values.get("linkPlacement", getattr(post, "link_placement", LinkedInLinkPlacement.NONE.value))
+                    ),
                     "status": LinkedInPostStatus.READY.value,
+                    "published_link_url": None,
+                    "link_comment_status": LinkedInCommentStatus.NOT_REQUESTED.value,
+                    "provider_comment_id": None,
+                    "link_comment_error": None,
+                    "link_comment_published_at": None,
                     "manually_edited": True,
                 },
             )
@@ -313,6 +338,91 @@ class LinkedInPostService:
             )
         return result.rowcount == 1
 
+    # Resolve the only backend-owned target URL for a placement-enabled post.
+    @staticmethod
+    def _link_target(post: LinkedInPost, link_url: str | None) -> str | None:
+        placement = LinkedInLinkPlacement(
+            getattr(post, "link_placement", LinkedInLinkPlacement.NONE.value)
+        )
+        if placement is LinkedInLinkPlacement.NONE:
+            return None
+        if link_url:
+            return link_url.rstrip("/")
+        try:
+            return canonical_site_url()
+        except ValueError as error:
+            raise HTTPException(status_code=422, detail="DOMAIN_URL is required for LinkedIn links") from error
+
+    # Build deterministic link copy without modifying the stored reviewed content.
+    @staticmethod
+    def _link_text(post: LinkedInPost, target_url: str) -> str:
+        label = "Đọc bài đầy đủ:" if post.source_type == "BLOG_ADAPTATION" else "Tìm hiểu thêm về VietQuant:"
+        return f"{label}\n{target_url}"
+
+    # Append the server-owned URL once to the in-memory provider payload.
+    @classmethod
+    def _publish_content(cls, post: LinkedInPost, target_url: str | None) -> str:
+        placement = LinkedInLinkPlacement(
+            getattr(post, "link_placement", LinkedInLinkPlacement.NONE.value)
+        )
+        if placement is not LinkedInLinkPlacement.IN_POST or not target_url:
+            return post.content
+        if target_url in post.content:
+            return post.content
+        return f"{post.content.strip()}\n\n{cls._link_text(post, target_url)}"
+
+    # Atomically reserve a confirmed failed comment for one safe retry.
+    @staticmethod
+    def _claim_comment(post_id: str) -> bool:
+        with DatabaseManager.engine.begin() as connection:
+            result = connection.execute(
+                update(LinkedInPost)
+                .where(
+                    LinkedInPost.id == post_id,
+                    LinkedInPost.status == LinkedInPostStatus.PUBLISHED.value,
+                    LinkedInPost.link_placement == LinkedInLinkPlacement.FIRST_COMMENT.value,
+                    LinkedInPost.link_comment_status == LinkedInCommentStatus.FAILED.value,
+                )
+                .values(
+                    link_comment_status=LinkedInCommentStatus.PENDING.value,
+                    link_comment_error=None,
+                    modified_at=datetime.now(timezone.utc),
+                )
+            )
+        return result.rowcount == 1
+
+    # Persist a comment result without changing the already-published main post.
+    @classmethod
+    async def _create_link_comment(cls, post: LinkedInPost, publisher: OrganizationPublisher) -> LinkedInPost:
+        try:
+            result = await publisher.create_organization_comment(
+                post.provider_post_id,
+                cls._link_text(post, post.published_link_url),
+            )
+            return LinkedInPost.update(
+                post.id,
+                link_comment_status=LinkedInCommentStatus.PUBLISHED.value,
+                provider_comment_id=result["comment_id"],
+                link_comment_error=None,
+                link_comment_published_at=datetime.now(timezone.utc),
+            )
+        except LinkedInError as error:
+            return LinkedInPost.update(
+                post.id,
+                link_comment_status=(
+                    LinkedInCommentStatus.REVIEW_REQUIRED.value
+                    if error.duplicate_risk
+                    else LinkedInCommentStatus.FAILED.value
+                ),
+                link_comment_error=error.as_dict(),
+            )
+        except Exception:
+            return LinkedInPost.update(
+                post.id,
+                link_comment_status=LinkedInCommentStatus.REVIEW_REQUIRED.value,
+                link_comment_error={"code": "ambiguous_comment", "duplicateRisk": True},
+            )
+
     # Move only genuinely stale interrupted work to manual review.
     @classmethod
     def _publishing_state(cls, post: LinkedInPost) -> dict:
@@ -327,10 +437,26 @@ class LinkedInPostService:
             )
         return cls.serialize(post)
 
+    # Move an abandoned comment reservation to manual review to avoid duplicates.
+    @classmethod
+    def _comment_state(cls, post: LinkedInPost) -> LinkedInPost:
+        if getattr(post, "link_comment_status", None) != LinkedInCommentStatus.PENDING.value:
+            return post
+        modified = post.modified_at
+        if modified and modified.tzinfo is None:
+            modified = modified.replace(tzinfo=timezone.utc)
+        if modified and datetime.now(timezone.utc) - modified >= timedelta(minutes=5):
+            return LinkedInPost.update(
+                post.id,
+                link_comment_status=LinkedInCommentStatus.REVIEW_REQUIRED.value,
+                link_comment_error={"code": "ambiguous_comment", "duplicateRisk": True},
+            )
+        return post
+
     # Publish exactly the stored reviewed content after atomically committing PUBLISHING.
     @classmethod
     async def publish(
-        cls, post_id: str, *, retry: bool = False, content_override: str | None = None
+        cls, post_id: str, *, retry: bool = False, link_url: str | None = None
     ) -> dict:
         post = cls.get(post_id)
         if post.status == LinkedInPostStatus.PUBLISHED.value or post.provider_post_id:
@@ -351,6 +477,7 @@ class LinkedInPostService:
                 status_code=409,
                 detail="Use the retry command for a failed LinkedIn post",
             )
+        target_url = cls._link_target(post, link_url)
         cls._validate_media(post.media_mode, post.media or [])
         if not cls._claim_publish(post):
             current = cls.get(post.id)
@@ -371,23 +498,48 @@ class LinkedInPostService:
         )
         try:
             images = await cls._images(post)
-            content = content_override or post.content
+            content = cls._publish_content(post, target_url)
+            needs_comment = (
+                LinkedInLinkPlacement(
+                    getattr(post, "link_placement", LinkedInLinkPlacement.NONE.value)
+                )
+                is LinkedInLinkPlacement.FIRST_COMMENT
+            )
             result = await (
-                publisher.publish_text(content)
+                publisher.publish_text(content, needs_comment)
                 if not images
                 else (
-                    publisher.publish_single_image(content, *images[0])
+                    publisher.publish_single_image(content, *images[0], needs_comment=needs_comment)
                     if len(images) == 1
-                    else publisher.publish_multi_image(content, images)
+                    else publisher.publish_multi_image(content, images, needs_comment=needs_comment)
+                )
+            )
+            provider_post_id = result.get("post_id")
+            comment_status = (
+                LinkedInCommentStatus.PENDING.value
+                if needs_comment and provider_post_id
+                else (
+                    LinkedInCommentStatus.REVIEW_REQUIRED.value
+                    if needs_comment
+                    else LinkedInCommentStatus.NOT_REQUESTED.value
                 )
             )
             post = LinkedInPost.update(
                 post.id,
                 status=LinkedInPostStatus.PUBLISHED.value,
-                provider_post_id=result.get("post_id"),
+                provider_post_id=provider_post_id,
+                published_link_url=target_url,
+                link_comment_status=comment_status,
+                link_comment_error=(
+                    {"code": "missing_provider_post_id", "duplicateRisk": True}
+                    if needs_comment and not provider_post_id
+                    else None
+                ),
                 published_at=datetime.now(timezone.utc),
                 last_error=None,
             )
+            if needs_comment and provider_post_id:
+                post = await cls._create_link_comment(post, publisher)
         except LinkedInError as error:
             post = LinkedInPost.update(
                 post.id,
@@ -404,6 +556,36 @@ class LinkedInPostService:
                 status=LinkedInPostStatus.REVIEW_REQUIRED.value,
                 last_error={"code": "ambiguous_publish", "duplicateRisk": True},
             )
+        finally:
+            await publisher.linkedin.close()
+        return cls.serialize(post)
+
+    # Retry only a locally confirmed failed first-comment request.
+    @classmethod
+    async def retry_link_comment(cls, post_id: str) -> dict:
+        post = cls.get(post_id)
+        if post.status != LinkedInPostStatus.PUBLISHED.value:
+            raise HTTPException(status_code=409, detail="Main LinkedIn post is not published")
+        if LinkedInLinkPlacement(post.link_placement) is not LinkedInLinkPlacement.FIRST_COMMENT:
+            raise HTTPException(status_code=409, detail="This post does not use a first-comment link")
+        if post.link_comment_status != LinkedInCommentStatus.FAILED.value:
+            raise HTTPException(status_code=409, detail="Only failed link comments can be retried")
+        if not post.provider_post_id or not post.published_link_url:
+            raise HTTPException(status_code=409, detail="The published post cannot be safely targeted")
+        if not cls._claim_comment(post.id):
+            return cls.serialize(cls.get(post.id))
+        post = cls.get(post.id)
+        publisher = OrganizationPublisher(
+            OrganizationVerifier(
+                settings.LINKEDIN_ACCESS_TOKEN,
+                settings.LINKEDIN_CLIENT_ID,
+                settings.LINKEDIN_CLIENT_SECRET,
+                settings.LINKEDIN_ORGANIZATION_URN,
+                settings.LINKEDIN_VERSION,
+            )
+        )
+        try:
+            post = await cls._create_link_comment(post, publisher)
         finally:
             await publisher.linkedin.close()
         return cls.serialize(post)

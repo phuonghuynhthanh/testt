@@ -9,6 +9,7 @@ from apps.linkedin_posts.exceptions import LinkedInError
 from apps.linkedin_posts.models import LinkedInPost
 from apps.linkedin_posts.schemas import (
     LinkedInArticleSource,
+    LinkedInLinkPlacement,
     LinkedInMode as ProviderMode,
     LinkedInPostAction,
     LinkedInPostCreate,
@@ -16,10 +17,7 @@ from apps.linkedin_posts.schemas import (
     LinkedInSourceType,
     MediaMode,
 )
-from apps.linkedin_posts.services.generator import (
-    LinkedInDraftGenerator,
-    append_canonical_link,
-)
+from apps.linkedin_posts.services.generator import LinkedInDraftGenerator
 from apps.linkedin_posts.services.gemini import GeminiLinkedInProvider
 from apps.linkedin_posts.services.pexels import PexelsService
 from apps.linkedin_posts.services.posts import LinkedInPostService
@@ -60,6 +58,11 @@ def _media_mode(media: list[dict]) -> MediaMode:
     )
 
 
+# Read new placement fields safely while legacy in-memory fixtures remain usable.
+def _placement(value, fallback: str = LinkedInLinkPlacement.NONE.value) -> str:
+    return getattr(value, "link_placement", getattr(value, "linkedin_link_placement", fallback))
+
+
 # Keep the compatibility response shape while reading LinkedIn state from its owner.
 def _serialize(publication: BlogPublication, post: LinkedInPost | None = None) -> dict:
     legacy_mode, legacy_media = _legacy_media(publication)
@@ -70,7 +73,7 @@ def _serialize(publication: BlogPublication, post: LinkedInPost | None = None) -
         "publishLinkedin": publication.publish_linkedin,
         "linkedinMode": publication.linkedin_mode,
         "linkedinContent": post.content if post else publication.linkedin_content,
-        "linkedinIncludeWebLink": publication.linkedin_include_web_link,
+        "linkedinLinkPlacement": _placement(post or publication),
         "linkedinRecordId": post.id if post else publication.linkedin_record_id,
         "linkedinStatus": post.status if post else publication.linkedin_status,
         "linkedinPostId": (
@@ -88,6 +91,10 @@ def _serialize(publication: BlogPublication, post: LinkedInPost | None = None) -
         "linkedinGenerated": (
             post.generation if post else publication.linkedin_generation
         ),
+        "linkedinPublishedLinkUrl": getattr(post, "published_link_url", None),
+        "linkedinCommentStatus": getattr(post, "link_comment_status", "NOT_REQUESTED"),
+        "linkedinCommentError": getattr(post, "link_comment_error", None),
+        "linkedinCommentPublishedAt": getattr(post, "link_comment_published_at", None),
     }
 
 
@@ -129,6 +136,7 @@ class PublicationService:
             blog_id=blog_id,
             publish_web=True,
             publish_linkedin=False,
+            linkedin_link_placement=LinkedInLinkPlacement.NONE.value,
             linkedin_include_web_link=False,
             linkedin_status=PublicationStatus.NOT_SELECTED.value,
         )
@@ -180,20 +188,23 @@ class PublicationService:
         publication.publish_web = data.publishWeb
         publication.publish_linkedin = data.publishLinkedin
         publication.linkedin_mode = data.linkedinMode.value
-        publication.linkedin_include_web_link = bool(data.linkedinIncludeWebLink)
+        publication.linkedin_link_placement = data.linkedinLinkPlacement.value
+        publication.linkedin_include_web_link = (
+            data.linkedinLinkPlacement is LinkedInLinkPlacement.IN_POST
+        )
         return _serialize(cls._save(publication), post)
 
     # Build a neutral Blog source with cross-domain LinkedIn generation history.
     @classmethod
     async def _source(
-        cls, blog: Blog, mode: ProviderMode, include_link: bool
+        cls, blog: Blog, mode: ProviderMode
     ) -> LinkedInArticleSource:
         return LinkedInArticleSource(
             title=blog.title,
             content=blog.content,
             category=str(blog.category),
             tags=[blog.tag] if blog.tag else [],
-            canonicalUrl=canonical_blog_url(blog.link_post) if include_link else None,
+            canonicalUrl=None,
             mode=mode,
             recentPosts=(await LinkedInHistoryService().recent()) if mode is ProviderMode.SUMMARY else [],
         )
@@ -203,7 +214,7 @@ class PublicationService:
     async def draft(cls, blog_id: str, data: DraftRequest) -> dict:
         blog = cls._blog(blog_id)
         publication = cls._find_publication(blog_id)
-        if data.includeWebLink and publication and not publication.publish_web:
+        if data.linkPlacement is not LinkedInLinkPlacement.NONE and publication and not publication.publish_web:
             raise HTTPException(
                 status_code=422,
                 detail="Liên kết website cho LinkedIn yêu cầu phải xuất bản lên Website",
@@ -218,7 +229,7 @@ class PublicationService:
         )
         try:
             result = await LinkedInDraftGenerator(provider).draft(
-                await cls._source(blog, ProviderMode(data.mode.value), data.includeWebLink)
+                await cls._source(blog, ProviderMode(data.mode.value))
             )
             return {
                 "content": result.content,
@@ -259,6 +270,7 @@ class PublicationService:
             factCheck=data.factCheck,
             generation=data.generation,
             sourceType=LinkedInSourceType.BLOG_ADAPTATION,
+            linkPlacement=data.linkPlacement,
             action=LinkedInPostAction.SAVE_DRAFT,
         )
         post = LinkedInPostService.save_reviewed(
@@ -266,9 +278,12 @@ class PublicationService:
         )
         publication.publish_linkedin = True
         publication.linkedin_mode = data.mode.value
-        publication.linkedin_include_web_link = data.includeWebLink
+        publication.linkedin_link_placement = data.linkPlacement.value
+        publication.linkedin_include_web_link = (
+            data.linkPlacement is LinkedInLinkPlacement.IN_POST
+        )
         publication.linkedin_record_id = post.id
-        if data.includeWebLink:
+        if data.linkPlacement is not LinkedInLinkPlacement.NONE:
             publication.publish_web = True
         cls._save(publication)
         if data.action is LinkedInPostAction.PUBLISH_NOW:
@@ -301,12 +316,19 @@ class PublicationService:
             factCheck=post.fact_check if post else None,
             generation=None,
             sourceType=LinkedInSourceType.CUSTOM,
+            linkPlacement=LinkedInLinkPlacement(
+                _placement(post or publication)
+            ),
         )
         post = LinkedInPostService.save_reviewed(
             reviewed, post.id if post else None, ready=True
         )
         publication.publish_linkedin = True
         publication.linkedin_mode = ProviderMode.CUSTOM.value
+        publication.linkedin_link_placement = _placement(post)
+        publication.linkedin_include_web_link = (
+            _placement(post) == LinkedInLinkPlacement.IN_POST.value
+        )
         publication.linkedin_record_id = post.id
         return _serialize(cls._save(publication), post)
 
@@ -342,7 +364,8 @@ class PublicationService:
         retry: bool = False
     ) -> dict:
         LinkedInPostService._validate_media(post.media_mode, post.media or [])
-        if publication.linkedin_include_web_link and not publication.publish_web:
+        placement = LinkedInLinkPlacement(_placement(post))
+        if placement is not LinkedInLinkPlacement.NONE and not publication.publish_web:
             raise HTTPException(
                 status_code=422,
                 detail="Liên kết website cho LinkedIn yêu cầu phải xuất bản lên Website",
@@ -350,13 +373,14 @@ class PublicationService:
         if publication.publish_web and blog.state != BlogState.APPROVED:
             blog.state = BlogState.APPROVED
             cls._save(blog)
-        content = (
-            append_canonical_link(post.content, canonical_blog_url(blog.link_post))
-            if publication.linkedin_include_web_link
-            else post.content
-        )
         return await LinkedInPostService.publish(
-            post.id, retry=retry, content_override=content
+            post.id,
+            retry=retry,
+            link_url=(
+                canonical_blog_url(blog.link_post)
+                if placement is not LinkedInLinkPlacement.NONE
+                else None
+            ),
         )
 
     # Publish configured channels without regenerating or reselecting reviewed content.

@@ -2,7 +2,7 @@
 
 Tài liệu đặc tả toàn bộ API endpoints của hệ thống Blog & CMS Quant-VN dành cho đội ngũ phát triển Frontend (Admin CMS & Client Website).
 
-> **Contract version:** 1.1.0<br>
+> **Contract version:** 2.0.0<br>
 > **Backend baseline:** commit bàn giao chứa tài liệu này<br>
 > **Nguồn kiểm chứng:** FastAPI OpenAPI tại `GET /openapi.json` (Swagger UI: `GET /docs`)<br>
 > **Quy tắc thay đổi:** Mọi thay đổi request, response, status code hoặc enum phải cập nhật tài liệu này và OpenAPI trong cùng pull request.
@@ -72,6 +72,30 @@ Các API danh sách quản trị sử dụng cấu trúc phân trang chuẩn:
   }
 }
 ```
+
+### 1.6 CMS 2.0 authoritative fields and migrations
+- `link_post` and `seo.url` are response-only Blog fields. `POST /blog` and `PUT /blog/{id}` accept only `tag`, `title`, `banner_url`, `category`, `content`, `state` (update), and editable SEO fields `title`, `description`, `keywords`, `author`. Legacy `link_post` and `seo.url` are silently ignored; other unknown fields return 422.
+- The API creates a slug from the title (`blog`, `blog-2`, …), reserves soft-deleted slugs, retries a uniqueness race, and always returns `seo.url = DOMAIN_URL + /blog/{slug}`. `/blog/is-duplicate-link-post` remains deprecated compatibility-only.
+- `LinkedInLinkPlacement` is `NONE | IN_POST | FIRST_COMMENT`. Legacy `includeWebLink` / `linkedinIncludeWebLink` map to `IN_POST` only when no placement is supplied; conflicting values return 422. New responses omit legacy booleans.
+- `LinkedInCommentStatus` is `NOT_REQUESTED | PENDING | PUBLISHED | FAILED | REVIEW_REQUIRED`. A comment failure never changes a published main post. Only `PUBLISHED + FIRST_COMMENT + FAILED` can use the comment retry endpoint.
+
+### 1.7 AI image generation
+`POST /media/ai/generate` is Admin-only and stores a reviewable Cloudflare-generated object without attaching it to a Blog or LinkedIn post.
+
+```json
+{
+  "purpose": "BLOG_BANNER | LINKEDIN",
+  "prompt": "optional, max 2000",
+  "context": "required when prompt is blank, max 1000",
+  "negativePrompt": "optional, max 1000",
+  "aspectRatio": "16:9 | 1:1 | 4:5 | 4:3",
+  "size": "1K",
+  "quality": "FAST | BALANCED | HIGH",
+  "altText": "optional"
+}
+```
+
+The response is `{ media, width, height, aspectRatio, size, quality }`; `media` follows `UploadedMedia` and has `origin: "cloudflare-ai"`. Provider failures use safe domain codes such as `ai_image_quota_exceeded`, `ai_image_rate_limited`, `ai_image_capacity`, `ai_image_model_unavailable`, `ai_image_timeout`, `ai_image_invalid_response`, and `ai_image_provider_error`; no automatic provider retry or object deletion occurs.
 
 ---
 
@@ -747,7 +771,7 @@ true
   "publishLinkedin": true,
   "linkedinMode": "SUMMARY",
   "linkedinContent": "Bài viết tóm tắt chuyên sâu cho LinkedIn... #VietQuant",
-  "linkedinIncludeWebLink": true,
+  "linkedinLinkPlacement": "FIRST_COMMENT",
   "linkedinRecordId": "post-789a-0123-bcde-456789abcdef",
   "linkedinStatus": "READY",
   "linkedinPostId": null,
@@ -776,6 +800,7 @@ true
   }
 }
 ```
+- `linkedinPublishedLinkUrl`, `linkedinCommentStatus`, `linkedinCommentError`, and `linkedinCommentPublishedAt` report the independent link/comment outcome.
 - **Enum `linkedinStatus`**: `NOT_SELECTED` | `DRAFT` | `READY` | `PUBLISHING` | `PUBLISHED` | `FAILED` | `REVIEW_REQUIRED`
 - **Enum `linkedinMode`**: `SAME` | `SUMMARY` | `CUSTOM`
 - **Enum `linkedinMediaMode`**: `none` | `single-image` | `multi-image`
@@ -791,12 +816,12 @@ true
   "publishWeb": true,
   "publishLinkedin": true,
   "linkedinMode": "SUMMARY",
-  "linkedinIncludeWebLink": true
+  "linkedinLinkPlacement": "IN_POST"
 }
 ```
 > *Quy tắc ràng buộc*:
 > - Phải chọn ít nhất một kênh (`publishWeb: true` hoặc `publishLinkedin: true`).
-> - Nếu `linkedinIncludeWebLink: true`, bắt buộc cả `publishWeb` và `publishLinkedin` đều phải là `true`.
+> - `linkedinLinkPlacement` accepts `NONE`, `IN_POST`, or `FIRST_COMMENT`; any non-`NONE` value requires both Web and LinkedIn.
 - **Response (200 OK)**: Trả về đối tượng publication đã serialize.
 
 #### 28. AI tạo bản nháp bài LinkedIn từ Blog (Draft LinkedIn Post from Blog)
@@ -808,14 +833,14 @@ true
 ```json
 {
   "mode": "SUMMARY",
-  "includeWebLink": true,
+  "linkPlacement": "FIRST_COMMENT",
   "regenerate": true
 }
 ```
 - **Response (200 OK)**:
 ```json
 {
-  "content": "Tại sao hầu hết các mô hình backtest đều thất bại ngoài thực tế?..\n\nĐọc bài viết đầy đủ tại: https://quantvn.com/blog/link-post #VietQuant",
+  "content": "Tại sao hầu hết các mô hình backtest đều thất bại ngoài thực tế?..",
   "media": {
     "mode": "single-image",
     "images": [
@@ -874,7 +899,7 @@ true
       "order": 1
     }
   ],
-  "includeWebLink": true,
+  "linkPlacement": "IN_POST",
   "factCheck": {
     "requiresHumanFactCheck": false,
     "factCheckNotes": []
@@ -1296,6 +1321,7 @@ true
     "r_liteprofile",
     "w_member_social",
     "w_organization_social",
+    "w_organization_social_feed",
     "r_organization_social"
   ],
   "permissions": {

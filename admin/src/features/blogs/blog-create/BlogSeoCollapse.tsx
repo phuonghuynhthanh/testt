@@ -103,18 +103,7 @@ export const BlogSeoCollapse: React.FC<BlogSeoCollapseProps> = ({
               />
             </div>
 
-            <div className="md:col-span-2">
-              <label className="block text-xs font-medium text-content-secondary mb-1.5">
-                URL SEO
-              </label>
-              <input
-                type="text"
-                value={seo.url}
-                onChange={(e) => onUpdateSeo("url", e.target.value)}
-                placeholder="https://vietquant.vn/duong-dan-bai-viet"
-                className="w-full rounded-lg border border-surface-border bg-surface-elevated px-3.5 py-2 text-sm text-content-primary placeholder-content-muted focus:border-primary-green focus:outline-none focus:ring-1 focus:ring-primary-green transition"
-              />
-            </div>
+            <p className="md:col-span-2 rounded-lg border border-surface-border bg-surface-elevated px-3.5 py-2 text-xs text-content-muted">URL SEO được hệ thống tạo từ đường dẫn bài viết khi lưu.</p>
 
             <div>
               <label className="block text-xs font-medium text-content-secondary mb-1.5">

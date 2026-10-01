@@ -5,6 +5,7 @@ from types import SimpleNamespace
 
 import pytest
 from fastapi import HTTPException, UploadFile
+from sqlalchemy.exc import IntegrityError
 from starlette.datastructures import Headers
 
 from apps.core.storage import StorageService
@@ -250,13 +251,35 @@ def test_upload_hides_minio_errors(storage, monkeypatch):
 # Verify create rollback removes only the image uploaded by the failed request.
 def test_blog_create_rolls_back_uploaded_banner(monkeypatch):
     deleted = []
+
+    # Make the slug query succeed while the write transaction deterministically fails.
+    class FailingSession:
+        def __init__(self, *_args, **_kwargs):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+        def scalars(self, *_args):
+            return []
+
+        def add(self, *_args):
+            pass
+
+        def commit(self):
+            raise RuntimeError("database failed")
+
+        def rollback(self):
+            pass
+
+    monkeypatch.setattr("apps.blogs.services.blog.Session", FailingSession)
     monkeypatch.setattr(
-        "apps.blogs.services.blog.Blog.filter",
-        lambda *_args: SimpleNamespace(first=lambda: None),
-    )
-    monkeypatch.setattr(
-        "apps.blogs.services.blog.Blog.create",
-        lambda **_kwargs: (_ for _ in ()).throw(RuntimeError("database failed")),
+        BlogServices,
+        "resolve_category",
+        classmethod(lambda cls, _: SimpleNamespace(name="Quant", id="category-1")),
     )
     monkeypatch.setattr(
         StorageService,
@@ -269,6 +292,60 @@ def test_blog_create_rolls_back_uploaded_banner(monkeypatch):
         BlogServices.create_blog(blog_data(), image=image())
 
     assert deleted == ["quant-trading/new.png"]
+
+
+# Preserve unrelated integrity failures after cleaning up the request-owned banner.
+def test_blog_create_propagates_unrelated_integrity_failure(monkeypatch):
+    deleted = []
+
+    class FailingSession:
+        # Accept the engine argument used by fresh create sessions.
+        def __init__(self, *_args, **_kwargs):
+            pass
+
+        # Enter the deterministic fake transaction.
+        def __enter__(self):
+            return self
+
+        # Leave exception propagation unchanged.
+        def __exit__(self, *_args):
+            return False
+
+        # Return no existing slug during allocation.
+        def scalars(self, *_args):
+            return []
+
+        # Accept the pending Blog row.
+        def add(self, *_args):
+            pass
+
+        # Raise a non-slug database constraint failure.
+        def commit(self):
+            raise IntegrityError("insert", {}, RuntimeError("foreign key"))
+
+        # Permit the service rollback path.
+        def rollback(self):
+            pass
+
+        # Confirm the failed slug was not concurrently inserted.
+        def scalar(self, *_args):
+            return None
+
+    monkeypatch.setattr("apps.blogs.services.blog.Session", FailingSession)
+    monkeypatch.setattr(
+        BlogServices,
+        "resolve_category",
+        classmethod(lambda cls, _: SimpleNamespace(name="Quant", id="missing-category")),
+    )
+    monkeypatch.setattr(
+        StorageService, "upload_image", lambda *_args, **_kwargs: "quant/new.png"
+    )
+    monkeypatch.setattr(StorageService, "delete_image", deleted.append)
+
+    with pytest.raises(IntegrityError):
+        BlogServices.create_blog(blog_data(), image=image())
+
+    assert deleted == ["quant/new.png"]
 
 
 # Verify create failure never deletes a pre-existing banner supplied by the caller.

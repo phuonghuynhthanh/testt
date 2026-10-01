@@ -31,7 +31,7 @@ def _generation_prompt(source: LinkedInArticleSource, **overrides: str) -> str:
     replacements = {
         "topic": source.title,
         "context": "Adapt the trusted Blog article supplied above while preserving its central insight.",
-        "targetAudience": "mixed",
+        "targetAudience": "Infer the most suitable audience from topic, context, VietQuant guidance, and recent feed history.",
         "preferredConnection": "",
         "visualHint": "",
         "sourceNotes": "[]",
@@ -200,7 +200,6 @@ class LinkedInDraftGenerator:
                 "invalid_input",
                 "Blog content is too long for SAME mode; use SUMMARY instead.",
             )
-        content = append_canonical_link(content, source.canonicalUrl)
         if not any(tag.casefold() == "#vietquant" for tag in content.split()):
             content = f"{content}\n\n#VietQuant"
         return DraftResult(
@@ -219,7 +218,7 @@ class LinkedInDraftGenerator:
             content=source.content,
             category=source.category,
             tags=", ".join(source.tags),
-            canonical_url=source.canonicalUrl or "(no web link)",
+            canonical_url="(link placement occurs only at publish time)",
             mode=source.mode.value,
         )
         last_error = None
@@ -246,7 +245,7 @@ class LinkedInDraftGenerator:
                     }
                 )
                 return DraftResult(
-                    content=render_generated_post(post, source.canonicalUrl),
+                    content=render_generated_post(post),
                     media=post.media,
                     factualReview=FactualReview(
                         requiresHumanFactCheck=bool(notes), factCheckNotes=notes
@@ -280,7 +279,7 @@ class LinkedInDraftGenerator:
         self,
         topic: str,
         context: str,
-        audience: str,
+        audience: str | None,
         media_mode: str,
         recent_posts: list[dict],
     ) -> DraftResult:
@@ -294,7 +293,7 @@ class LinkedInDraftGenerator:
         prompt = _generation_prompt(
             source,
             context=context or "Create an original LinkedIn post about this topic.",
-            targetAudience=audience,
+            targetAudience=audience or "Infer the most suitable audience from topic, context, VietQuant guidance, and recent feed history.",
             requestedMediaMode=media_mode,
         )
         last_error = None

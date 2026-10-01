@@ -11,7 +11,7 @@ from starlette.datastructures import Headers
 from apps.core.storage import StorageService
 from apps.linkedin_posts.exceptions import LinkedInError
 from apps.linkedin_posts.routers import upload_media
-from apps.linkedin_posts.schemas import Connection, FactualReview, GeneratedPost, ImagePlan, LinkedInArticleSource, LinkedInMode, LinkedInPostCreate, LinkedInPostStatus, LinkedInPostUpdate, LinkedInSourceType, MediaMode, MediaPlan, OrganizationVerification, PexelsCandidate, UploadedMedia, ValidatedImage
+from apps.linkedin_posts.schemas import Connection, FactualReview, GeneratedPost, ImagePlan, IndependentDraftRequest, LinkedInArticleSource, LinkedInMode, LinkedInPostCreate, LinkedInPostStatus, LinkedInPostUpdate, LinkedInSourceType, MediaMode, MediaPlan, OrganizationVerification, PexelsCandidate, TopicProposalRequest, UploadedMedia, ValidatedImage
 from apps.linkedin_posts.services.generator import LinkedInDraftGenerator, _generation_prompt, render_generated_post
 from apps.linkedin_posts.services.image import validate_image_bytes
 from apps.linkedin_posts.services.linkedin_client import LinkedInClient, error_for_response, retry_after_milliseconds
@@ -34,7 +34,7 @@ class FakeVerifier:
             organization={"urn": self.organization_urn, "name": "VietQuant"},
             roles=[{"role": "ADMINISTRATOR", "state": "APPROVED"}],
             scopes=["rw_organization_admin", "w_organization_social"],
-            permissions={"organizationRead": True, "organizationWrite": True, "imageUpload": True},
+            permissions={"organizationRead": True, "organizationWrite": True, "imageUpload": True, "commentCreate": True},
             readyForOrganicPosting=True,
         )
 
@@ -67,6 +67,8 @@ def test_text_publish_payload_and_id():
         captured["json"] = json.loads(request.content)
         return httpx.Response(201, headers={"x-restli-id": "urn:li:share:1"}, request=request)
 
+    # Own and close the injected LinkedIn client around the post call.
+    # Own and close the injected LinkedIn client around the comment call.
     async def run():
         client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
         linkedin = LinkedInClient("token", "202601", client)
@@ -79,6 +81,32 @@ def test_text_publish_payload_and_id():
     assert captured["json"]["author"] == "urn:li:organization:123"
     assert captured["json"]["commentary"] == "Hello \\[world\\] #VietQuant"
     assert captured["json"]["distribution"]["feedDistribution"] == "MAIN_FEED"
+
+
+# Encode the post URN in the Social Actions path and accept any successful response status.
+@pytest.mark.parametrize("status", [200, 201])
+def test_organization_comment_payload_and_id(status):
+    captured = {}
+
+    # Record the outgoing comment request.
+    def handler(request):
+        captured["url"] = str(request.url)
+        captured["json"] = json.loads(request.content)
+        return httpx.Response(status, headers={"x-restli-id": "comment-1"}, request=request)
+
+    async def run():
+        client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+        linkedin = LinkedInClient("token", "202601", client)
+        try:
+            return await OrganizationPublisher(FakeVerifier(linkedin)).create_organization_comment(
+                "urn:li:share:123", "Đọc bài đầy đủ:\nhttps://quant.vn/blog/latency"
+            )
+        finally:
+            await client.aclose()
+
+    assert asyncio.run(run()) == {"comment_id": "comment-1"}
+    assert "urn%3Ali%3Ashare%3A123/comments" in captured["url"]
+    assert captured["json"]["actor"] == "urn:li:organization:123"
 
 
 # Verify ambiguous final-create server failures are never marked safe to retry.
@@ -121,7 +149,19 @@ def test_publication_targets_require_valid_web_link_policy():
         PublicationUpdate(publishWeb=False, publishLinkedin=False)
     with pytest.raises(ValueError):
         PublicationUpdate(publishWeb=False, publishLinkedin=True, linkedinIncludeWebLink=True)
-    assert PublicationUpdate(publishWeb=True, publishLinkedin=True).linkedinIncludeWebLink is True
+    assert PublicationUpdate(publishWeb=True, publishLinkedin=True).linkedinLinkPlacement.value == "NONE"
+
+
+# Normalize preset, custom, and blank audience values for both AI endpoints.
+@pytest.mark.parametrize("schema", [IndependentDraftRequest, TopicProposalRequest])
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [("systems", "systems"), ("  quant researchers  ", "quant researchers"), ("   ", None)],
+)
+def test_audience_normalization(schema, value, expected):
+    required = {"topic": "Latency"} if schema is IndependentDraftRequest else {}
+
+    assert schema(**required, targetAudience=value).targetAudience == expected
 
 
 # Verify the unmodified source template is populated before it reaches Gemini.
@@ -209,7 +249,7 @@ def test_organization_verification_happy_path():
         if request.url.path == "/v2/userinfo":
             return httpx.Response(200, json={"sub": "member"}, request=request)
         if request.url.path == "/oauth/v2/introspectToken":
-            return httpx.Response(200, json={"active": True, "client_id": "client", "scope": "rw_organization_admin w_organization_social"}, request=request)
+            return httpx.Response(200, json={"active": True, "client_id": "client", "scope": "rw_organization_admin w_organization_social w_organization_social_feed"}, request=request)
         if request.url.path == "/rest/organizationAcls":
             return httpx.Response(200, json={"elements": [{"organization": "urn:li:organization:123", "role": "ADMINISTRATOR", "state": "APPROVED", "roleAssignee": "urn:li:person:member"}]}, request=request)
         return httpx.Response(200, json={"id": 123, "localizedName": "VietQuant"}, request=request)
@@ -224,6 +264,7 @@ def test_organization_verification_happy_path():
     result = asyncio.run(run())
     assert result.readyForOrganicPosting is True
     assert result.permissions["imageUpload"] is True
+    assert result.permissions["commentCreate"] is True
 
 
 # Preserve exact multi-image ordering from upload initialization through post creation.
@@ -309,6 +350,7 @@ def test_linkedin_upload_contract(monkeypatch):
         "fileName": "market-chart.gif",
         "altText": "market chart",
         "order": 1,
+        "origin": "manual",
     }
     webp = UploadFile(filename="chart.webp", file=BytesIO(b"webp"), headers=Headers({"content-type": "image/webp"}))
     with pytest.raises(HTTPException) as error:

@@ -11,6 +11,8 @@ from apps.blogs.services.blog import BlogServices
 from apps.linkedin_posts.exceptions import LinkedInError
 from apps.linkedin_posts.models import LinkedInPost
 from apps.linkedin_posts.schemas import (
+    LinkedInCommentStatus,
+    LinkedInLinkPlacement,
     LinkedInPostAction,
     LinkedInPostCreate,
     LinkedInPostStatus,
@@ -29,8 +31,14 @@ def post_state(**updates):
         "fact_check": None,
         "generation": None,
         "source_type": "CUSTOM",
+        "link_placement": LinkedInLinkPlacement.NONE.value,
         "status": LinkedInPostStatus.DRAFT.value,
         "provider_post_id": None,
+        "published_link_url": None,
+        "link_comment_status": LinkedInCommentStatus.NOT_REQUESTED.value,
+        "provider_comment_id": None,
+        "link_comment_error": None,
+        "link_comment_published_at": None,
         "published_at": None,
         "last_error": None,
         "manually_edited": True,
@@ -105,16 +113,37 @@ def test_reviewed_web_create_action_controls_state(monkeypatch, action, expected
             keywords=[],
         ),
     )
-    monkeypatch.setattr(
-        Blog, "filter", classmethod(lambda cls, _: SimpleNamespace(first=lambda: None))
-    )
-    monkeypatch.setattr(
-        Blog,
-        "create",
-        classmethod(
-            lambda cls, **values: captured.update(values) or SimpleNamespace(**values)
-        ),
-    )
+    # Provide fresh query/write sessions without relying on a configured test engine.
+    class RecordingSession:
+        def __init__(self, *_args, **_kwargs):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+        def scalars(self, *_args):
+            return []
+
+        def add(self, value):
+            captured.update(
+                state=value.state,
+                link_post=value.link_post,
+                seo=value.seo,
+            )
+
+        def commit(self):
+            pass
+
+        def refresh(self, *_args):
+            pass
+
+        def expunge(self, *_args):
+            pass
+
+    monkeypatch.setattr("apps.blogs.services.blog.Session", RecordingSession)
     monkeypatch.setattr(
         BlogServices,
         "resolve_category",
@@ -192,7 +221,7 @@ def publish_with_error(monkeypatch, provider_error):
             return None
 
         # Raise the requested safe or ambiguous provider outcome.
-        async def publish_text(self, _):
+        async def publish_text(self, _, needs_comment=False):
             raise provider_error
 
     monkeypatch.setattr(
@@ -292,3 +321,92 @@ def test_independent_publish_now_saves_before_publish(monkeypatch):
     asyncio.run(LinkedInPostService.create(request))
 
     assert events == ["validate", "save", "publish"]
+
+
+# Run FIRST_COMMENT through successful and failed independent comment outcomes.
+@pytest.mark.parametrize(
+    ("comment_error", "expected"),
+    [
+        (None, LinkedInCommentStatus.PUBLISHED.value),
+        (LinkedInError("rate_limited", "retry later"), LinkedInCommentStatus.FAILED.value),
+        (RuntimeError("connection lost"), LinkedInCommentStatus.REVIEW_REQUIRED.value),
+    ],
+)
+def test_first_comment_preserves_published_main_post(monkeypatch, comment_error, expected):
+    initial = post_state(
+        status=LinkedInPostStatus.READY.value,
+        link_placement=LinkedInLinkPlacement.FIRST_COMMENT.value,
+    )
+    publishing = post_state(
+        status=LinkedInPostStatus.PUBLISHING.value,
+        link_placement=LinkedInLinkPlacement.FIRST_COMMENT.value,
+    )
+    states = iter([initial, publishing])
+
+    # Apply persistence updates to the claimed in-memory record.
+    def update(cls, _post_id, **values):
+        for key, value in values.items():
+            setattr(publishing, key, value)
+        return publishing
+
+    class Publisher:
+        # Expose the closeable provider boundary expected by the service.
+        def __init__(self, _verifier):
+            self.linkedin = SimpleNamespace(close=self.close)
+
+        # Close the fake client without a provider side effect.
+        async def close(self):
+            return None
+
+        # Confirm the main post before the separate comment call.
+        async def publish_text(self, _content, needs_comment=False):
+            assert needs_comment is True
+            return {"post_id": "urn:li:share:1"}
+
+        # Return or raise the requested comment outcome.
+        async def create_organization_comment(self, _post_id, _text):
+            if comment_error:
+                raise comment_error
+            return {"comment_id": "comment-1"}
+
+    monkeypatch.setattr("config.settings.DOMAIN_URL", "https://quant.vn")
+    monkeypatch.setattr(LinkedInPostService, "get", classmethod(lambda cls, _: next(states)))
+    monkeypatch.setattr(LinkedInPostService, "_claim_publish", staticmethod(lambda _: True))
+    monkeypatch.setattr(
+        LinkedInPostService, "_images", staticmethod(lambda _: asyncio.sleep(0, result=[]))
+    )
+    monkeypatch.setattr(LinkedInPost, "update", classmethod(update))
+    monkeypatch.setattr("apps.linkedin_posts.services.posts.OrganizationVerifier", lambda *_: object())
+    monkeypatch.setattr("apps.linkedin_posts.services.posts.OrganizationPublisher", Publisher)
+
+    result = asyncio.run(LinkedInPostService.publish("post-1"))
+
+    assert result["status"] == LinkedInPostStatus.PUBLISHED.value
+    assert result["linkCommentStatus"] == expected
+    assert result["publishedLinkUrl"] == "https://quant.vn"
+
+
+# Allow comment retry only from the explicit FAILED state.
+@pytest.mark.parametrize(
+    "comment_status",
+    [
+        LinkedInCommentStatus.NOT_REQUESTED.value,
+        LinkedInCommentStatus.PENDING.value,
+        LinkedInCommentStatus.PUBLISHED.value,
+        LinkedInCommentStatus.REVIEW_REQUIRED.value,
+    ],
+)
+def test_link_comment_retry_rejects_non_failed_states(monkeypatch, comment_status):
+    post = post_state(
+        status=LinkedInPostStatus.PUBLISHED.value,
+        link_placement=LinkedInLinkPlacement.FIRST_COMMENT.value,
+        link_comment_status=comment_status,
+        provider_post_id="urn:li:share:1",
+        published_link_url="https://quant.vn",
+    )
+    monkeypatch.setattr(LinkedInPostService, "get", classmethod(lambda cls, _: post))
+
+    with pytest.raises(HTTPException) as error:
+        asyncio.run(LinkedInPostService.retry_link_comment("post-1"))
+
+    assert error.value.status_code == 409

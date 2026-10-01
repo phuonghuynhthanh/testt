@@ -17,6 +17,7 @@ EXPECTED_CMS_ROUTES = {
     ("POST", "/blog/classify-links"),
     ("POST", "/blog/fetch-content"),
     ("POST", "/media/image"),
+    ("POST", "/media/ai/generate"),
     ("POST", "/openai/seo-keywords"),
     ("POST", "/openai/seo-description"),
 }

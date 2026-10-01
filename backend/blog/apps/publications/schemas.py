@@ -3,7 +3,13 @@
 from enum import Enum
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from apps.linkedin_posts.schemas import LinkedInPostAction, PexelsCandidate, UploadedMedia
+from apps.linkedin_posts.schemas import (
+    LinkedInLinkPlacement,
+    LinkedInPostAction,
+    PexelsCandidate,
+    UploadedMedia,
+    translate_legacy_link_flag as _translate_legacy_link_flag,
+)
 
 
 class PublicationStatus(str, Enum):
@@ -33,16 +39,22 @@ class PublicationUpdate(BaseModel):
     publishWeb: bool = True
     publishLinkedin: bool = False
     linkedinMode: LinkedInMode = LinkedInMode.SAME
-    linkedinIncludeWebLink: bool | None = None
+    linkedinLinkPlacement: LinkedInLinkPlacement = LinkedInLinkPlacement.NONE
 
-    # Reject impossible channels and default Web+LinkedIn to a canonical link.
+    # Translate the retired boolean before strict field validation.
+    @model_validator(mode="before")
+    @classmethod
+    def translate_legacy_link_flag(cls, value):
+        return _translate_legacy_link_flag(
+            value, "linkedinLinkPlacement", "linkedinIncludeWebLink"
+        )
+
+    # Reject impossible channel and server-owned-link combinations.
     @model_validator(mode="after")
     def validate_targets(self):
         if not self.publishWeb and not self.publishLinkedin:
             raise ValueError("at least one publication channel must be selected")
-        if self.linkedinIncludeWebLink is None:
-            self.linkedinIncludeWebLink = self.publishWeb and self.publishLinkedin
-        if self.linkedinIncludeWebLink and not (
+        if self.linkedinLinkPlacement is not LinkedInLinkPlacement.NONE and not (
             self.publishWeb and self.publishLinkedin
         ):
             raise ValueError("a LinkedIn web link requires WEB + LINKEDIN")
@@ -54,8 +66,16 @@ class DraftRequest(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
     mode: LinkedInMode
-    includeWebLink: bool = True
+    linkPlacement: LinkedInLinkPlacement = LinkedInLinkPlacement.NONE
     regenerate: bool = False
+
+    # Translate the retired boolean before strict field validation.
+    @model_validator(mode="before")
+    @classmethod
+    def translate_legacy_link_flag(cls, value):
+        return _translate_legacy_link_flag(
+            value, "linkPlacement", "includeWebLink"
+        )
 
 
 class LinkedInContentUpdate(BaseModel):
@@ -86,10 +106,18 @@ class LinkedInCommandRequest(BaseModel):
     mode: LinkedInMode
     content: str = Field(min_length=1)
     media: list[PexelsCandidate | UploadedMedia] = Field(default_factory=list, max_length=20)
-    includeWebLink: bool = True
+    linkPlacement: LinkedInLinkPlacement = LinkedInLinkPlacement.NONE
     factCheck: dict | None = None
     generation: dict | None = None
     action: LinkedInPostAction = LinkedInPostAction.SAVE_DRAFT
+
+    # Translate the retired boolean before strict field validation.
+    @model_validator(mode="before")
+    @classmethod
+    def translate_legacy_link_flag(cls, value):
+        return _translate_legacy_link_flag(
+            value, "linkPlacement", "includeWebLink"
+        )
 
     # Preserve exact selected-image ordering before saving reviewed media.
     @model_validator(mode="after")

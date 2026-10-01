@@ -4,7 +4,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { BsStars, BsFileEarmarkText } from "react-icons/bs";
 import { FiUpload, FiSave, FiSend } from "react-icons/fi";
 import { toast } from "react-toastify";
-import { createUrl } from "../../../utils/blogUtils";
 import { apiErrorMessage } from "../../../types/Api";
 import type { IBlogData, SEO } from "../../../types/Blog";
 import { createBlogPost, generateBlogDraft } from "../../../services/blog/handleBlog";
@@ -14,6 +13,7 @@ import BlogSeoCollapse from "./BlogSeoCollapse";
 import BlogContentEditorCard from "./BlogContentEditorCard";
 import CategoryCombobox from "./CategoryCombobox";
 import { getSeoData } from "../../../services/openai/handleSeoGenerate";
+import { AIImagePanel } from "../../../shared/media/AIImagePanel";
 
 const EMPTY_BLOG: IBlogData = {
   tag: "",
@@ -71,14 +71,11 @@ const BlogCreate: React.FC = () => {
     setDirty(true);
   };
 
-  // Synchronize title changes with post slug and SEO title.
+  // Synchronize only the editable SEO title; the server allocates the slug.
   const updateTitle = (title: string) => {
     setBlog((current) => ({
       ...current,
       title,
-      link_post: !current.link_post || current.link_post === createUrl(current.title)
-        ? createUrl(title)
-        : current.link_post,
       seo: {
         ...current.seo,
         title: !current.seo.title || current.seo.title === current.title
@@ -130,11 +127,11 @@ const BlogCreate: React.FC = () => {
 
   // Save pending content or approve and publish directly through the website creation API.
   const save = useMutation({
-    mutationFn: (action: "SAVE_PENDING" | "PUBLISH_NOW") => createBlogPost(
-      { ...blog, state: action === "PUBLISH_NOW" ? "APPROVED" : "PENDING", link_post: blog.link_post.trim() || createUrl(blog.title) },
-      image,
-      action,
-    ),
+    mutationFn: (action: "SAVE_PENDING" | "PUBLISH_NOW") => createBlogPost({
+      tag: blog.tag, title: blog.title, banner_url: blog.banner_url, category: blog.category,
+      content: blog.content,
+      seo: { title: blog.seo.title, description: blog.seo.description, keywords: blog.seo.keywords, author: blog.seo.author },
+    }, image, action),
     onSuccess: (created, action) => {
       toast.success(action === "PUBLISH_NOW" ? "Đã lưu và đăng bài viết lên website." : "Đã lưu bài viết chờ duyệt.");
       setDirty(false);
@@ -275,16 +272,7 @@ const BlogCreate: React.FC = () => {
             />
           </div>
 
-          <div className="md:col-span-2">
-            <label className="block text-xs font-medium text-content-secondary mb-1.5">Đường dẫn bài viết (Slug)</label>
-            <input
-              type="text"
-              value={blog.link_post}
-              onChange={(e) => updateBlog("link_post", e.target.value)}
-              placeholder="duong-dan-bai-viet"
-              className="w-full rounded-lg border border-surface-border bg-surface-elevated px-3.5 py-2 text-sm text-content-primary placeholder-content-muted focus:border-primary-green focus:outline-none focus:ring-1 focus:ring-primary-green transition"
-            />
-          </div>
+          <p className="md:col-span-2 rounded-lg border border-surface-border bg-surface-elevated px-3.5 py-2 text-xs text-content-muted">Đường dẫn sẽ được tạo tự động khi lưu bài.</p>
         </div>
 
       </div>
@@ -317,6 +305,8 @@ const BlogCreate: React.FC = () => {
             </button>
           )}
         </div>
+        <AIImagePanel purpose="BLOG_BANNER" context={`${blog.title}\n${blog.content}`}
+          onUse={(generated) => { setImage(null); updateBlog("banner_url", generated.media.objectKey); }} />
       </div>
 
       {/* Section 3: Nội dung bài viết với các chế độ Soạn thảo / Markdown / Xem trước */}

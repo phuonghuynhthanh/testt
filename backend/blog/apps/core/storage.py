@@ -1,5 +1,6 @@
 import logging
 import uuid
+from io import BytesIO
 from datetime import timedelta
 from urllib.parse import urlparse
 
@@ -116,6 +117,43 @@ class StorageService:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Tải hình ảnh lên thất bại",
+            )
+        return object_key
+
+    # Store provider-validated bytes without reopening an HTTP upload boundary.
+    @classmethod
+    def store_image_bytes(cls, value: bytes, media_type: str, folder: str) -> str:
+        extension = cls._allowed_types.get(media_type)
+        if extension is None:
+            raise HTTPException(
+                status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+                detail="Chỉ hỗ trợ định dạng ảnh JPEG, PNG, WebP và GIF",
+            )
+        if len(value) > settings.MEDIA_MAX_UPLOAD_MB * 1024 * 1024:
+            raise HTTPException(
+                status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                detail="Kích thước hình ảnh vượt quá giới hạn cho phép",
+            )
+        safe_folder = cls._sanitize_relative_path(folder)
+        if not safe_folder:
+            raise HTTPException(status_code=422, detail="Thư mục hình ảnh không hợp lệ")
+        object_key = f"{safe_folder}/{uuid.uuid4()}{extension}"
+        try:
+            cls.initialize()
+            cls._get_client().put_object(
+                settings.MINIO_BUCKET,
+                object_key,
+                BytesIO(value),
+                len(value),
+                content_type=media_type,
+            )
+        except HTTPException:
+            raise
+        except Exception:
+            logger.exception("MinIO AI image storage failed for key %s", object_key)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Lưu hình ảnh AI thất bại",
             )
         return object_key
 

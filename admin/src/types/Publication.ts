@@ -10,6 +10,8 @@ export type PublicationStatus =
   | "REVIEW_REQUIRED";
 
 export type LinkedInMediaMode = "none" | "single-image" | "multi-image";
+export type LinkedInLinkPlacement = "NONE" | "IN_POST" | "FIRST_COMMENT";
+export type LinkedInCommentStatus = "NOT_REQUESTED" | "PENDING" | "PUBLISHED" | "FAILED" | "REVIEW_REQUIRED";
 
 export interface PexelsCandidate {
   provider: "pexels";
@@ -28,6 +30,7 @@ export interface UploadedMedia {
   fileName: string;
   altText: string;
   order: number;
+  origin?: "manual" | "cloudflare-ai";
 }
 
 export type LinkedInMediaAsset = PexelsCandidate | UploadedMedia;
@@ -74,7 +77,7 @@ export interface Publication {
   publishLinkedin: boolean;
   linkedinMode: LinkedInMode;
   linkedinContent: string | null;
-  linkedinIncludeWebLink: boolean;
+  linkedinLinkPlacement: LinkedInLinkPlacement;
   linkedinRecordId: string | null;
   linkedinStatus: PublicationStatus;
   linkedinPostId: string | null;
@@ -84,6 +87,10 @@ export interface Publication {
   linkedinMedia: Array<LinkedInMediaAsset | ImagePlan>;
   linkedinFactCheck: FactualReview | null;
   linkedinGenerated: GeneratedLinkedInPost | null;
+  linkedinPublishedLinkUrl: string | null;
+  linkedinCommentStatus: LinkedInCommentStatus;
+  linkedinCommentError: LinkedInErrorData | null;
+  linkedinCommentPublishedAt: string | null;
 }
 
 export interface LinkedInDraftResponse {
@@ -93,18 +100,18 @@ export interface LinkedInDraftResponse {
   generated: GeneratedLinkedInPost;
 }
 
-export interface LinkedInCommand { mode: LinkedInMode; content: string; media: LinkedInMediaAsset[]; includeWebLink: boolean; factCheck: FactualReview; generation: Record<string, unknown>; action: "SAVE_DRAFT" | "PUBLISH_NOW"; }
+export interface LinkedInCommand { mode: LinkedInMode; content: string; media: LinkedInMediaAsset[]; linkPlacement: LinkedInLinkPlacement; factCheck: FactualReview; generation: Record<string, unknown>; action: "SAVE_DRAFT" | "PUBLISH_NOW"; }
 
 export interface PublicationUpdate {
   publishWeb: boolean;
   publishLinkedin: boolean;
   linkedinMode: LinkedInMode;
-  linkedinIncludeWebLink?: boolean;
+  linkedinLinkPlacement: LinkedInLinkPlacement;
 }
 
 export interface LinkedInDraftRequest {
   mode: Exclude<LinkedInMode, "CUSTOM">;
-  includeWebLink: boolean;
+  linkPlacement: LinkedInLinkPlacement;
   regenerate: boolean;
 }
 

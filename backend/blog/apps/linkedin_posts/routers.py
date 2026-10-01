@@ -115,7 +115,8 @@ async def propose_topics(data: TopicProposalRequest, _: str = Depends(require_ad
         # Retry only structured-output duplication and stop after the fixed attempt budget.
         for _attempt in range(TOPIC_PROPOSAL_ATTEMPTS):
             remaining = data.count - len(topics)
-            prompt = "Đề xuất các chủ đề LinkedIn mới. Trả JSON object {topics: string[]}. Không lặp topic gần đây hoặc trong batch.\n" + json.dumps({"count": remaining, "targetAudience": data.targetAudience, "guideline": data.guideline, "recentPosts": [item.model_dump(mode="json") for item in history], "alreadySelected": topics}, ensure_ascii=False)
+            audience = data.targetAudience or "Infer the most suitable audience from topic, VietQuant guidance, and recent feed history."
+            prompt = "Đề xuất các chủ đề LinkedIn mới. Trả JSON object {topics: string[]}. Không lặp topic gần đây hoặc trong batch.\n" + json.dumps({"count": remaining, "targetAudience": audience, "guideline": data.guideline, "recentPosts": [item.model_dump(mode="json") for item in history], "alreadySelected": topics}, ensure_ascii=False)
             payload = await provider._request(system_prompt, prompt, {"type": "object", "properties": {"topics": {"type": "array", "minItems": remaining, "maxItems": remaining, "items": {"type": "string"}}}, "required": ["topics"]}, "propose topics")
             values = payload.get("topics", []) if isinstance(payload, dict) else []
             for value in values if isinstance(values, list) else []:
@@ -148,6 +149,12 @@ async def publish_post(post_id: str, _: str = Depends(require_admin)):
 @router.post("/posts/{post_id}/retry")
 async def retry_post(post_id: str, _: str = Depends(require_admin)):
     return await LinkedInPostService.publish(post_id, retry=True)
+
+
+# Retry only a confirmed failed first-comment request.
+@router.post("/posts/{post_id}/link-comment/retry")
+async def retry_link_comment(post_id: str, _: str = Depends(require_admin)):
+    return await LinkedInPostService.retry_link_comment(post_id)
 
 
 # Suggest reviewable media for a saved post without replacing selected assets.

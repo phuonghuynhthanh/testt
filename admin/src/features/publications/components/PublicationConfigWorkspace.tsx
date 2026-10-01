@@ -3,6 +3,7 @@ import LinkedInWorkspaceCard from "./LinkedInWorkspaceCard";
 import { usePublicationConfig } from "../hooks/usePublicationConfig";
 import { linkedinMediaKey } from "../../../utils/linkedinMedia";
 import type { LinkedInMediaAsset, LinkedInMediaMode, LinkedInMode } from "../../../types/Publication";
+import { AIImagePanel } from "../../../shared/media/AIImagePanel";
 
 const STATUS_LABELS = {
   NOT_SELECTED: "Chưa có bản nháp", DRAFT: "Bản nháp", READY: "Sẵn sàng",
@@ -14,9 +15,9 @@ const STATUS_LABELS = {
 export const PublicationConfigWorkspace = ({ blogId }: { blogId: string }) => {
   const editor = usePublicationConfig(blogId);
   const {
-    mode, includeWebLink, content, mediaMode, selectedMedia, suggestions, keywordInput,
+    mode, linkPlacement, content, mediaMode, selectedMedia, suggestions, keywordInput,
     factCheck, factCheckAcknowledged, pub, immutable, busy, guidance,
-    canSaveDraft, canPublish, canRetry,
+    canSaveDraft, canPublish, canRetry, canRetryComment,
   } = editor;
   const locked = immutable || busy;
   const displayedCandidates = [
@@ -84,13 +85,8 @@ export const PublicationConfigWorkspace = ({ blogId }: { blogId: string }) => {
           ))}
         </div>
         <p className="text-xs text-content-muted">Đổi cách soạn giữ nguyên nội dung hiện tại. Bạn có thể chỉnh sửa nội dung trước khi đăng.</p>
-        <label className={`flex min-h-12 items-center gap-3 rounded-lg border px-4 py-3 text-sm font-medium transition-colors focus-within:ring-2 focus-within:ring-primary-green ${locked ? "cursor-not-allowed" : "cursor-pointer hover:bg-surface-hover"} ${includeWebLink ? "border-primary-green/40 bg-primary-green/10 text-content-primary" : "border-surface-border bg-surface-elevated text-content-secondary"}`}>
-          <input type="checkbox" checked={includeWebLink} disabled={locked}
-            className="h-5 w-5 shrink-0 cursor-[inherit] accent-primary-green focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary-green"
-            onChange={(event) => { editor.setIncludeWebLink(event.target.checked); editor.setDirty(true); }} />
-          Đính kèm liên kết bài viết trên website
-        </label>
-        <p className="text-xs text-content-muted">Hệ thống đính kèm liên kết khi đăng; bạn không cần dán link vào nội dung.</p>
+        <div className="flex flex-wrap gap-2">{(["NONE", "IN_POST", "FIRST_COMMENT"] as const).map((placement) => <button key={placement} type="button" disabled={locked} onClick={() => { editor.setLinkPlacement(placement); editor.setDirty(true); }} className={`rounded-lg border px-3 py-2 text-xs ${linkPlacement === placement ? "border-primary-green bg-primary-green/10 text-content-primary" : "border-surface-border text-content-muted"}`}>{placement === "NONE" ? "Không liên kết" : placement === "IN_POST" ? "Trong bài đăng" : "Bình luận đầu tiên"}</button>)}</div>
+        <p className="text-xs text-content-muted">Hệ thống xác định URL bài website khi đăng; nội dung đã duyệt luôn không chứa URL.</p>
       </div>
 
       <LinkedInWorkspaceCard
@@ -117,12 +113,25 @@ export const PublicationConfigWorkspace = ({ blogId }: { blogId: string }) => {
         onAcknowledgeFactCheck={(value) => { editor.setFactCheckAcknowledged(value); editor.setDirty(true); }}
         isPublished={locked}
       />
+      {!locked && <AIImagePanel purpose="LINKEDIN" context={content} onUse={(generated) => {
+        editor.setSuggestions((current) => [generated.media, ...current]);
+        editor.setDirty(true);
+      }} />}
 
       <div className="rounded-xl border border-surface-border bg-surface-card p-5 space-y-2 text-xs">
         <h2 className="font-semibold text-content-primary">Trạng thái LinkedIn: {STATUS_LABELS[pub.linkedinStatus]}</h2>
         {pub.linkedinError && <p className="text-rose-400">{pub.linkedinError.message}</p>}
         {pub.linkedinStatus === "REVIEW_REQUIRED" && <p className="text-amber-300">Kết quả đăng chưa rõ ràng. Kiểm tra Trang Doanh nghiệp LinkedIn để tránh đăng trùng.</p>}
         {pub.linkedinPublishedAt && <p className="text-content-muted">Thời gian đăng: {pub.linkedinPublishedAt}</p>}
+        {pub.linkedinCommentStatus !== "NOT_REQUESTED" && <div className="border-t border-surface-border pt-2">
+          <p className="font-semibold text-content-primary">Bình luận liên kết: {pub.linkedinCommentStatus}</p>
+          {pub.linkedinCommentError && <p className="text-rose-400">{pub.linkedinCommentError.message}</p>}
+          {pub.linkedinCommentStatus === "REVIEW_REQUIRED" && <p className="text-amber-300">Hãy kiểm tra LinkedIn; hệ thống không tự thử lại để tránh bình luận trùng.</p>}
+          {canRetryComment && <button type="button" onClick={() => editor.retryCommentMutation.mutate()}
+            className="mt-2 underline" disabled={editor.retryCommentMutation.isPending}>
+            {editor.retryCommentMutation.isPending ? "Đang thử lại…" : "Thử lại bình luận"}
+          </button>}
+        </div>}
       </div>
 
       <BottomActionBar>
@@ -145,7 +154,7 @@ export const PublicationConfigWorkspace = ({ blogId }: { blogId: string }) => {
       </BottomActionBar>
 
       <ConfirmDialog isOpen={editor.showConfirmPublish} title="Xác nhận đăng lên LinkedIn"
-        message={`Bài sẽ được đăng công khai lên Trang Doanh nghiệp LinkedIn với ${selectedMedia.length} ảnh${includeWebLink ? " và liên kết bài website" : ", không đính kèm liên kết website"}. Nội dung website không thay đổi.`}
+        message={`Bài sẽ được đăng công khai lên Trang Doanh nghiệp LinkedIn với ${selectedMedia.length} ảnh${linkPlacement === "NONE" ? ", không đính kèm liên kết website" : " và liên kết do hệ thống thêm khi xuất bản"}. Nội dung website không thay đổi.`}
         confirmLabel={pub.linkedinStatus === "FAILED" ? "Thử lại LinkedIn" : "Đăng bài ngay"}
         cancelLabel="Hủy" variant="primary" isLoading={editor.publishMutation.isPending || editor.retryMutation.isPending}
         onConfirm={() => {

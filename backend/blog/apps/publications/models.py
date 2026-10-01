@@ -25,6 +25,7 @@ class BlogPublication(FastModel):
     publish_linkedin = Column(Boolean, nullable=False, default=False)
     linkedin_mode = Column(String, nullable=False, default="SAME")
     linkedin_content = Column(String, nullable=True)
+    linkedin_link_placement = Column(String, nullable=False, default="NONE", server_default="NONE")
     linkedin_include_web_link = Column(Boolean, nullable=False, default=False)
     linkedin_record_id = Column(
         String, ForeignKey("linkedin_posts.id"), nullable=True, unique=True

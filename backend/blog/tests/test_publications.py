@@ -26,6 +26,7 @@ def publication_state(**updates):
         "linkedin_mode": "SUMMARY",
         "linkedin_content": None,
         "linkedin_include_web_link": False,
+        "linkedin_link_placement": "NONE",
         "linkedin_record_id": "post-1",
         "linkedin_status": "NOT_SELECTED",
         "linkedin_post_id": None,
@@ -50,6 +51,12 @@ def post_state(**updates):
         "fact_check": None,
         "generation": None,
         "source_type": "BLOG_ADAPTATION",
+        "link_placement": "NONE",
+        "published_link_url": None,
+        "link_comment_status": "NOT_REQUESTED",
+        "provider_comment_id": None,
+        "link_comment_error": None,
+        "link_comment_published_at": None,
         "status": LinkedInPostStatus.READY.value,
         "provider_post_id": None,
         "published_at": None,
@@ -175,7 +182,7 @@ def test_blog_summary_history_failure_is_service_unavailable(monkeypatch):
 def test_blog_linkedin_save_draft_links_standalone_record(monkeypatch):
     blog = SimpleNamespace(id="blog-1")
     publication = publication_state(linkedin_record_id=None)
-    post = post_state()
+    post = post_state(link_placement="IN_POST")
     saved = []
     published = []
     monkeypatch.setattr(PublicationService, "_blog", classmethod(lambda cls, _: blog))
@@ -220,14 +227,14 @@ def test_blog_linkedin_save_draft_links_standalone_record(monkeypatch):
 def test_blog_linkedin_publish_now_is_web_first(monkeypatch):
     blog = SimpleNamespace(id="blog-1", link_post="latency", state=BlogState.PENDING)
     publication = publication_state(linkedin_include_web_link=True)
-    post = post_state()
+    post = post_state(link_placement="IN_POST")
     events = []
     captured = {}
 
     # Record the provider call after the Web state commit.
-    async def publish(cls, post_id, *, retry=False, content_override=None):
+    async def publish(cls, post_id, *, retry=False, link_url=None):
         events.append("linkedin")
-        captured["content"] = content_override
+        captured["link_url"] = link_url
         assert blog.state == BlogState.APPROVED
         return LinkedInPostService.serialize(post)
 
@@ -245,7 +252,7 @@ def test_blog_linkedin_publish_now_is_web_first(monkeypatch):
     asyncio.run(PublicationService._publish_linked(blog, publication, post))
 
     assert events == ["web", "linkedin"]
-    assert captured["content"].count("https://cms.example/blog/latency") == 1
+    assert captured["link_url"] == "https://cms.example/blog/latency"
     assert post.content == "Reviewed content"
 
 

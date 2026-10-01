@@ -57,6 +57,13 @@ LINKEDIN_ORGANIZATION_URN = os.getenv("LINKEDIN_ORGANIZATION_URN", "")
 LINKEDIN_VERSION = os.getenv("LINKEDIN_VERSION", "")
 PEXELS_API_KEY = os.getenv("PEXELS_API_KEY", "")
 
+# Cloudflare Workers AI image generation remains server-only.
+CLOUDFLARE_ACCOUNT_ID = os.getenv("CLOUDFLARE_ACCOUNT_ID", "").strip()
+CLOUDFLARE_API_TOKEN = os.getenv("CLOUDFLARE_API_TOKEN", "")
+CLOUDFLARE_IMAGE_MODEL = os.getenv(
+    "CLOUDFLARE_IMAGE_MODEL", "@cf/bytedance/stable-diffusion-xl-lightning"
+).strip()
+
 # CORS
 ALLOWED_ORIGINS = [
     origin.strip()

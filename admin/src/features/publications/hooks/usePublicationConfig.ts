@@ -6,10 +6,10 @@ import {
   suggestLinkedInMedia, updatePublication,
 } from "../../../services/publication/handlePublication";
 import { isManualDraftConflict } from "../../../services/publication/error";
-import { uploadLinkedInMedia } from "../../../services/linkedin/handleLinkedIn";
+import { retryLinkedInLinkComment, uploadLinkedInMedia } from "../../../services/linkedin/handleLinkedIn";
 import { apiErrorMessage } from "../../../types/Api";
 import type {
-  FactualReview, GeneratedLinkedInPost, LinkedInMediaAsset, LinkedInMediaMode,
+  FactualReview, GeneratedLinkedInPost, LinkedInLinkPlacement, LinkedInMediaAsset, LinkedInMediaMode,
   LinkedInMode, Publication,
 } from "../../../types/Publication";
 
@@ -21,7 +21,7 @@ const isSelectedMedia = (media: Publication["linkedinMedia"][number]): media is 
 export const usePublicationConfig = (blogId: string) => {
   const client = useQueryClient();
   const [mode, setMode] = useState<LinkedInMode>("SAME");
-  const [includeWebLink, setIncludeWebLink] = useState(false);
+  const [linkPlacement, setLinkPlacement] = useState<LinkedInLinkPlacement>("NONE");
   const [content, setContent] = useState("");
   const [mediaMode, setMediaMode] = useState<LinkedInMediaMode>("none");
   const [selectedMedia, setSelectedMedia] = useState<LinkedInMediaAsset[]>([]);
@@ -50,7 +50,7 @@ export const usePublicationConfig = (blogId: string) => {
     if (!pub || hydratedId.current === blogId) return;
     hydratedId.current = blogId;
     setMode(pub.linkedinMode || "SAME");
-    setIncludeWebLink(pub.linkedinIncludeWebLink ?? false);
+    setLinkPlacement(pub.linkedinLinkPlacement ?? "NONE");
     setContent(pub.linkedinContent || "");
     setMediaMode(pub.linkedinMediaMode || "none");
     setSelectedMedia(pub.linkedinMedia.filter(isSelectedMedia));
@@ -78,7 +78,7 @@ export const usePublicationConfig = (blogId: string) => {
     publishWeb: true,
     publishLinkedin: true,
     linkedinMode: mode,
-    linkedinIncludeWebLink: includeWebLink,
+    linkedinLinkPlacement: linkPlacement,
   });
 
   // Refresh status and overview lists without rehydrating local text or images.
@@ -90,9 +90,9 @@ export const usePublicationConfig = (blogId: string) => {
     ]);
   };
 
-  // Construct reviewed content with the server-owned canonical-link option.
+  // Construct reviewed content with a server-owned link-placement option.
   const payload = (action: "SAVE_DRAFT" | "PUBLISH_NOW") => ({
-    mode, content, media: selectedMedia, includeWebLink, factCheck,
+    mode, content, media: selectedMedia, linkPlacement, factCheck,
     generation: { ...generation }, action,
   });
 
@@ -101,7 +101,7 @@ export const usePublicationConfig = (blogId: string) => {
       await normalizeSettings();
       // Keep preview text link-free so toggling the attachment cannot leave an old URL behind.
       return generateLinkedInDraft(blogId, {
-        mode: mode as Exclude<LinkedInMode, "CUSTOM">, includeWebLink: false, regenerate,
+        mode: mode as Exclude<LinkedInMode, "CUSTOM">, linkPlacement, regenerate,
       });
     },
     onSuccess: (data) => {
@@ -180,6 +180,13 @@ export const usePublicationConfig = (blogId: string) => {
     onError: async (error) => { toast.error(apiErrorMessage(error)); await refresh(); },
   });
 
+  // Retry only the separately failed first-comment side effect.
+  const retryCommentMutation = useMutation({
+    mutationFn: () => retryLinkedInLinkComment(pub!.linkedinRecordId!),
+    onSuccess: async () => { toast.success("Đã gửi yêu cầu thử lại bình luận liên kết."); await refresh(); },
+    onError: async (error) => { toast.error(apiErrorMessage(error)); await refresh(); },
+  });
+
   // Confirm before replacing any existing text with generated content.
   const generateDraft = () => {
     if (mode === "CUSTOM" || immutable) return;
@@ -193,11 +200,13 @@ export const usePublicationConfig = (blogId: string) => {
   const altTextValid = selectedMedia.every((item) => Boolean(item.altText?.trim()));
   const factCheckValid = !factCheck.requiresHumanFactCheck || factCheckAcknowledged;
   const busy = draftMutation.isPending || saveDraftMutation.isPending || publishMutation.isPending ||
-    uploadMutation.isPending || retryMutation.isPending;
+    uploadMutation.isPending || retryMutation.isPending || retryCommentMutation.isPending;
   const valid = Boolean(content.trim() && mediaCountValid && altTextValid && factCheckValid);
   const canSaveDraft = Boolean(pub && !immutable && valid && !busy);
   const canPublish = canSaveDraft && pub?.linkedinStatus !== "FAILED";
   const canRetry = pub?.linkedinStatus === "FAILED" && pub.linkedinError?.retryable === true && !dirty && !busy;
+  const canRetryComment = pub?.linkedinStatus === "PUBLISHED" && pub.linkedinCommentStatus === "FAILED" &&
+    Boolean(pub.linkedinRecordId) && !busy;
   const guidance = immutable ? (pub?.linkedinStatus === "PUBLISHED" ? "Bài đã đăng lên LinkedIn."
     : pub?.linkedinStatus === "PUBLISHING" ? "Đang đăng bài. Vui lòng chờ."
       : "Hãy kiểm tra bài trên LinkedIn trước khi thao tác tiếp.")
@@ -210,13 +219,13 @@ export const usePublicationConfig = (blogId: string) => {
               : "Lưu bản nháp để giữ nội dung; đăng LinkedIn để xuất bản công khai.";
 
   return {
-    mode, setMode, includeWebLink, setIncludeWebLink, content, setContent,
+    mode, setMode, linkPlacement, setLinkPlacement, content, setContent,
     mediaMode, setMediaMode, selectedMedia, setSelectedMedia, suggestions, setSuggestions,
     keywordInput, setKeywordInput, factCheck, factCheckAcknowledged, setFactCheckAcknowledged,
     showConfirmPublish, setShowConfirmPublish, pendingRegenerate, setPendingRegenerate,
-    setDirty, pub, immutable, busy, guidance, canSaveDraft, canPublish, canRetry,
+    setDirty, pub, immutable, busy, guidance, canSaveDraft, canPublish, canRetry, canRetryComment,
     isLoading: pubQuery.isLoading, isError: pubQuery.isError,
     generateDraft, draftMutation, saveDraftMutation, publishMutation,
-    searchMediaMutation, uploadMutation, retryMutation,
+    searchMediaMutation, uploadMutation, retryMutation, retryCommentMutation,
   };
 };

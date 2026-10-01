@@ -4,22 +4,13 @@ import { useParams, Link } from "react-router-dom";
 import { FiSave, FiEye } from "react-icons/fi";
 import { toast } from "react-toastify";
 
-import type {
-  IBlogData,
-  IBlogUpdateData,
-  IEditorData,
-} from "../../../types/Blog";
+import type { IBlogData, IEditorData } from "../../../types/Blog";
 import type { IDataSeoGenerate } from "../../../types/OpenAi";
-import {
-  checkDuplicateBlogLink,
-  getBlogDetail,
-  updateBlog,
-} from "../../../services/blog/handleBlog";
+import { getBlogDetail, updateBlog } from "../../../services/blog/handleBlog";
 import {
   extractH1FromMarkdown,
   fixEscapedMarkdownSyntax,
 } from "../../../utils/markdown";
-import { createUrl } from "../../../utils/blogUtils";
 import BlogPreviewDemo from "./BlogPreviewDemo";
 import BlogBasicInfoForm from "./BlogBasicInfoForm";
 import BlogSeoForm from "./BlogSeoForm";
@@ -53,7 +44,6 @@ const BlogUpdate = () => {
   const queryClient = useQueryClient();
   const { blog_id: blogId } = useParams<{ blog_id: string }>();
   const [isLoading, setIsLoading] = useState(false);
-  const [storedLinkBlog, setStoredLinkBlog] = useState("");
   const [content, setContent] = useState<IEditorData>({ title: "", body: "" });
   const [isOpenGenerate, setIsOpenGenerate] = useState(false);
   const [blogData, setBlogData] = useState<IBlogData>(INIT_BLOG_DATA);
@@ -146,36 +136,20 @@ const BlogUpdate = () => {
     const toastId = toast.loading("Đang cập nhật bài viết...");
     try {
       setIsLoading(true);
-      const linkBlogPost = createUrl(blogData.title);
-      const blogUpdateData: Partial<IBlogUpdateData> = {
+      const blogUpdateData = {
         id: blogData.id,
         tag: blogData.tag,
         title: blogData.title,
         banner_url: blogData.banner_url,
-        link_post: linkBlogPost,
         category: blogData.category,
-        state: "PENDING",
         seo: {
           title: blogData.seo.title,
           description: blogData.seo.description,
-          url: blogData.seo.url,
           keywords: blogData.seo.keywords,
           author: blogData.seo.author,
-          banner_url: blogData.banner_url,
         },
         content: blogContent,
-        created_at: blogData.created_at,
-        modified_at: blogData.modified_at,
       };
-
-      if (linkBlogPost !== storedLinkBlog) {
-        const isDuplicate = await checkDuplicateBlogLink(linkBlogPost);
-        if (isDuplicate) {
-          alert("Tiêu đề này đã tồn tại. Vui lòng chọn tiêu đề khác.");
-          setIsLoading(false);
-          return;
-        }
-      }
 
       await updateBlog(blogUpdateData, bannerImage as File);
       queryClient.invalidateQueries({ queryKey: ["blogs"] });
@@ -213,7 +187,6 @@ const BlogUpdate = () => {
 
   useEffect(() => {
     if (blogDetail) {
-      setStoredLinkBlog(blogDetail.link_post);
       setBlogData({
         ...blogDetail,
         seo: {
@@ -297,6 +270,7 @@ const BlogUpdate = () => {
           bannerImage={bannerImage}
           setBannerImage={setBannerImage}
           onFieldChange={handleChange}
+          onAIImageUse={(objectKey) => { setBannerImage(null); setBlogData((current) => ({ ...current, banner_url: objectKey })); }}
         />
       </div>
 

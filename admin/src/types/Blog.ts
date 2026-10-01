@@ -11,6 +11,22 @@ export interface SEO {
   banner_url?: string;
 }
 
+/** Fields an editor may send; the server owns the canonical URL. */
+export type SEOInput = Omit<SEO, "url" | "published_time" | "modified_time" | "banner_url">;
+
+/** Fields accepted by the Blog create endpoint. */
+export interface BlogCreateInput {
+  tag: string;
+  title: string;
+  banner_url: string;
+  category: string;
+  seo: SEOInput;
+  content: string;
+}
+
+/** Fields accepted by the Blog update endpoint. */
+export type BlogUpdateInput = Partial<BlogCreateInput> & { state?: BlogState };
+
 export interface IBlogData {
   id?: string;
   tag: string;
