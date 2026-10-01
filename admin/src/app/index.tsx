@@ -7,6 +7,7 @@ import { PATH } from "./store";
 import Login from "../features/auth/Login";
 import BlogUpdate from "../features/blogs/components/BlogUpdate";
 import BlogCreate from "../features/blogs/blog-create";
+import BlogResearch from "../features/blogs/research";
 import BlogManagement from "../features/blogs/blog-management";
 import LinkedInManagement from "../features/publications/LinkedInManagement";
 import LinkedInPost from "../features/publications/LinkedInPost";
@@ -29,6 +30,7 @@ const App = () => {
 
             <Route path={PATH.BLOG} element={<BlogManagement />} />
             <Route path={PATH.CREATE_BLOG} element={<BlogCreate />} />
+            <Route path={PATH.BLOG_RESEARCH} element={<BlogResearch />} />
             <Route path={PATH.PUBLIC_PREVIEW} element={<PublicBlogPreview />} />
             <Route path={PATH.CATEGORIES} element={<CategoryManagement />} />
             <Route path={PATH.EDIT_BLOG} element={<BlogUpdate />} />

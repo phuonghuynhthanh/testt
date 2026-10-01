@@ -3,6 +3,7 @@ import { FiCheck, FiAlertTriangle, FiSend } from "react-icons/fi";
 
 interface PublicationPublishCardProps {
   isApproved: boolean;
+  hasChannel: boolean;
   settingsDirty: boolean;
   canPublish: boolean;
   isPublishing: boolean;
@@ -13,6 +14,7 @@ interface PublicationPublishCardProps {
 // Render readiness checklist and trigger button for multi-channel publication.
 export const PublicationPublishCard: React.FC<PublicationPublishCardProps> = ({
   isApproved,
+  hasChannel,
   settingsDirty,
   canPublish,
   isPublishing,
@@ -26,6 +28,17 @@ export const PublicationPublishCard: React.FC<PublicationPublishCardProps> = ({
       </div>
 
       <div className="space-y-2 text-xs">
+        <div className="flex items-center gap-2">
+          {hasChannel ? (
+            <FiCheck className="text-emerald-400 shrink-0" />
+          ) : (
+            <FiAlertTriangle className="text-amber-400 shrink-0" />
+          )}
+          <span className={hasChannel ? "text-content-secondary" : "text-amber-400"}>
+            {hasChannel ? "Đã chọn kênh xuất bản." : "Chưa chọn kênh xuất bản."}
+          </span>
+        </div>
+
         <div className="flex items-center gap-2">
           {isApproved ? (
             <FiCheck className="text-emerald-400 shrink-0" />
@@ -49,16 +62,17 @@ export const PublicationPublishCard: React.FC<PublicationPublishCardProps> = ({
         </div>
       </div>
 
-      <div className="pt-2">
+      <div className="flex justify-end pt-2">
         <button
           type="button"
           onClick={onPublishClick}
           disabled={!canPublish || isPublishing}
           title={isPublishing ? "Đang xuất bản" : publishLabel || "Xuất bản"}
           aria-label={isPublishing ? "Đang xuất bản" : publishLabel || "Xuất bản"}
-          className="inline-flex size-10 items-center justify-center rounded-lg bg-teal-500 hover:bg-teal-600 text-white disabled:opacity-40 transition-colors shadow-sm"
+          className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-teal-500 px-4 text-xs font-semibold text-white hover:bg-teal-600 disabled:opacity-40 transition-colors shadow-sm"
         >
           <FiSend className={`text-sm ${isPublishing ? "animate-pulse" : ""}`} />
+          <span>{isPublishing ? "Đang xuất bản..." : publishLabel}</span>
         </button>
       </div>
     </div>

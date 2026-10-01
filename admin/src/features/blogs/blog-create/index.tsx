@@ -10,7 +10,6 @@ import type { IBlogData, SEO } from "../../../types/Blog";
 import { createBlogPost, generateBlogDraft } from "../../../services/blog/handleBlog";
 import { createCategory, listCategories } from "../../../services/category/handleCategory";
 import { PageHeader, SectionHeading, ConfirmDialog } from "../../../shared/ui";
-import BlogResearchTools from "../components/BlogResearchTools";
 
 const EMPTY_BLOG: IBlogData = {
   tag: "",
@@ -173,12 +172,6 @@ const BlogCreate: React.FC = () => {
           <BsStars className="text-sm text-purple-400" />
         </button>
       </div>
-
-      <BlogResearchTools
-        title={blog.title}
-        onTitleSelect={updateTitle}
-        onContentInsert={(content) => updateBlog("content", [blog.content, content].filter(Boolean).join("\n\n"))}
-      />
 
       <div className="bg-surface-card p-6 rounded-xl border border-surface-border space-y-4">
         <SectionHeading title="Thông tin cơ bản" description="Tiêu đề, thể loại và định danh bài viết" />

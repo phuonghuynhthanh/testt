@@ -25,7 +25,6 @@ import BlogBasicInfoForm from "./BlogBasicInfoForm";
 import BlogSeoForm from "./BlogSeoForm";
 import { PageHeader } from "../../../shared/ui";
 import PublicationPanel from "../../publications/components/PublicationPanel";
-import BlogResearchTools from "./BlogResearchTools";
 
 const INIT_BLOG_DATA: IBlogData = {
   id: "",
@@ -283,12 +282,6 @@ const BlogUpdate = () => {
           onFieldChange={handleChange}
         />
       </div>
-
-      <BlogResearchTools
-        title={blogData.title}
-        onTitleSelect={(title) => setBlogData((current) => ({ ...current, title }))}
-        onContentInsert={(value) => handleContentChange([blogContent, value].filter(Boolean).join("\n\n"))}
-      />
 
       <BlogSeoForm
         blogData={blogData}

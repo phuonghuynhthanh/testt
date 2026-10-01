@@ -116,9 +116,10 @@ const BlogManagement: React.FC = () => {
             to="/blog/create-blog"
             title="Tạo bài viết"
             aria-label="Tạo bài viết"
-            className="inline-flex size-9 items-center justify-center rounded-lg bg-primary-green text-primary-black shadow-sm transition-colors hover:bg-primary-green-dark"
+            className="inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-primary-green px-3.5 text-xs font-semibold text-primary-black shadow-sm transition-colors hover:bg-primary-green-dark"
           >
             <FiPlus className="w-4 h-4" />
+            <span>Tạo bài viết</span>
           </Link>
         }
       />
@@ -152,9 +153,10 @@ const BlogManagement: React.FC = () => {
                 to="/blog/create-blog"
                 title="Tạo bài viết đầu tiên"
                 aria-label="Tạo bài viết đầu tiên"
-                className="inline-flex size-9 items-center justify-center rounded-lg bg-primary-green text-primary-black transition-colors hover:bg-primary-green-dark"
+                className="inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-primary-green px-3.5 text-xs font-semibold text-primary-black transition-colors hover:bg-primary-green-dark"
               >
                 <FiPlus className="w-4 h-4" />
+                <span>Tạo bài viết</span>
               </Link>
             }
           />

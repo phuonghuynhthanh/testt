@@ -11,6 +11,7 @@ import { linkedinMediaKey, linkedinMediaUrl } from "../../../utils/linkedinMedia
 
 interface LinkedInWorkspaceCardProps {
   publishLinkedin: boolean;
+  settingsDirty: boolean;
   content: string;
   onContentChange: (val: string) => void;
   isGeneratingDraft: boolean;
@@ -39,6 +40,7 @@ interface LinkedInWorkspaceCardProps {
 // Render the right-side LinkedIn workspace, displaying idle prompt or full draft & media editing suite.
 export const LinkedInWorkspaceCard: React.FC<LinkedInWorkspaceCardProps> = ({
   publishLinkedin,
+  settingsDirty,
   content,
   onContentChange,
   isGeneratingDraft,
@@ -63,15 +65,22 @@ export const LinkedInWorkspaceCard: React.FC<LinkedInWorkspaceCardProps> = ({
   isSavingDraft,
   isPublished,
 }) => {
-  if (!publishLinkedin) {
+  // Keep the editor disabled until the selected LinkedIn channel is saved.
+  if (!publishLinkedin || settingsDirty) {
+    const needsSave = publishLinkedin && settingsDirty;
+
     return (
       <div className="rounded-xl border border-surface-border bg-surface-card p-12 text-center shadow-sm flex flex-col items-center justify-center min-h-[320px] space-y-3">
         <div className="size-12 rounded-full bg-surface-elevated flex items-center justify-center text-content-muted">
           <FaLinkedin className="text-2xl opacity-40" />
         </div>
-        <h4 className="text-sm font-semibold text-content-primary">LinkedIn đang tắt</h4>
+        <h4 className="text-sm font-semibold text-content-primary">
+          {needsSave ? "Chưa lưu kênh LinkedIn" : "LinkedIn đang tắt"}
+        </h4>
         <p className="text-xs text-content-muted max-w-xs leading-relaxed">
-          Bật &quot;Đăng lên LinkedIn&quot; và lưu cấu hình để soạn nội dung.
+          {needsSave
+            ? "Lưu cấu hình kênh trước khi tạo hoặc chỉnh sửa nội dung LinkedIn."
+            : "Bật \"Đăng lên LinkedIn\" và lưu cấu hình để soạn nội dung."}
         </p>
       </div>
     );

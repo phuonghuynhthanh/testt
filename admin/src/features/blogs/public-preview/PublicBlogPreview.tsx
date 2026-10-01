@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { FiArrowRight } from "react-icons/fi";
 import { getClientBlogs } from "../../../services/blog/handleBlog";
 import { listCategories } from "../../../services/category/handleCategory";
 import { apiErrorMessage } from "../../../types/Api";
@@ -67,10 +68,12 @@ const PublicBlogPreview: React.FC = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {items.map((blog) => (
-            <article
+            <button
               key={blog.id}
+              type="button"
               onClick={() => setReadingSlug(blog.link_post || blog.id)}
-              className="flex flex-col bg-surface-card rounded-2xl border border-surface-border overflow-hidden cursor-pointer group hover:border-primary-green/40 hover:shadow-lg transition-all duration-200"
+              aria-label={`Đọc bài ${blog.title}`}
+              className="flex flex-col bg-surface-card rounded-2xl border border-surface-border overflow-hidden cursor-pointer group text-left hover:border-primary-green/40 hover:-translate-y-0.5 hover:shadow-lg focus-visible:border-primary-green transition-all duration-200"
             >
               <div className="p-3 pb-0">
                 <BlogThumbnail
@@ -81,7 +84,7 @@ const PublicBlogPreview: React.FC = () => {
                 />
               </div>
 
-              <div className="p-5 flex-1 flex flex-col justify-between space-y-3">
+              <div className="p-5 flex-1 flex flex-col justify-between gap-4">
                 <div className="space-y-2">
                   <span className="inline-block px-2.5 py-0.5 rounded-md text-[11px] font-medium bg-emerald-950/40 text-emerald-400 border border-emerald-500/20">
                     {blog.category || "Bài viết"}
@@ -99,8 +102,13 @@ const PublicBlogPreview: React.FC = () => {
                       `Bài viết về ${blog.title.toLowerCase()} từ đội ngũ VietQuant.`}
                   </p>
                 </div>
+
+                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary-green">
+                  Đọc bài
+                  <FiArrowRight className="transition-transform group-hover:translate-x-0.5" />
+                </span>
               </div>
-            </article>
+            </button>
           ))}
         </div>
       )}

@@ -157,9 +157,10 @@ const PublicationManagement: React.FC = () => {
                           to={`/publications/${blog.id}`}
                           title="Mở cấu hình xuất bản"
                           aria-label="Mở cấu hình xuất bản"
-                          className="inline-flex size-8 items-center justify-center rounded-lg border border-surface-border bg-surface-elevated text-content-primary hover:bg-surface-hover hover:border-primary-green/40 hover:text-primary-green transition-colors shadow-xs"
+                          className="inline-flex h-8 items-center justify-center gap-1.5 rounded-lg border border-primary-green/30 bg-primary-green/10 px-3 text-xs font-semibold text-primary-green hover:bg-primary-green/15 transition-colors shadow-xs"
                         >
                           <FiSend className="w-3.5 h-3.5 text-primary-green" />
+                          <span>Mở luồng xuất bản</span>
                         </Link>
                       </td>
                     </tr>

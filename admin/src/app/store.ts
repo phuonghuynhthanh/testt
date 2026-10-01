@@ -3,6 +3,7 @@ export const PATH = {
   LOGIN: "/login",
   BLOG: "/blog",
   CREATE_BLOG: "/blog/create-blog",
+  BLOG_RESEARCH: "/blog/research",
   CATEGORIES: "/categories",
   EDIT_BLOG: "/blog/default/:blog_id",
   PUBLIC_PREVIEW: "/blog/preview",

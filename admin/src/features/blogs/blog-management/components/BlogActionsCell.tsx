@@ -28,9 +28,10 @@ export const BlogActionsCell: React.FC<BlogActionsCellProps> = ({
           disabled={isApproving}
           title={isApproving ? "Đang duyệt bài viết" : "Duyệt bài viết"}
           aria-label={isApproving ? "Đang duyệt bài viết" : "Duyệt bài viết"}
-          className="inline-flex size-7 items-center justify-center rounded-md border border-surface-border bg-surface-elevated text-emerald-400 hover:bg-emerald-950/30 hover:border-emerald-500/40 transition-colors disabled:opacity-50"
+          className="inline-flex h-8 items-center justify-center gap-1.5 rounded-md border border-emerald-500/30 bg-emerald-950/30 px-2.5 text-xs font-semibold text-emerald-300 hover:bg-emerald-950/50 transition-colors disabled:opacity-50"
         >
           <FiCheck className={`w-3.5 h-3.5 ${isApproving ? "animate-pulse" : ""}`} />
+          <span>{isApproving ? "Đang duyệt" : "Duyệt"}</span>
         </button>
       )}
 
@@ -38,9 +39,10 @@ export const BlogActionsCell: React.FC<BlogActionsCellProps> = ({
         to={`/publications/${blogId}`}
         title="Mở cấu hình xuất bản"
         aria-label="Mở cấu hình xuất bản"
-        className="inline-flex size-7 items-center justify-center rounded-md border border-surface-border bg-surface-elevated text-content-primary hover:bg-surface-hover hover:border-primary-green/40 hover:text-primary-green transition-colors"
+        className="inline-flex h-8 items-center justify-center gap-1.5 rounded-md border border-primary-green/30 bg-primary-green/10 px-2.5 text-xs font-semibold text-primary-green hover:bg-primary-green/15 transition-colors"
       >
         <FiSend className="w-3 h-3 text-primary-green" />
+        <span>Xuất bản</span>
       </Link>
 
       <Link

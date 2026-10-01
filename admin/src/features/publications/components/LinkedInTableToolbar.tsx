@@ -92,9 +92,10 @@ export const LinkedInTableToolbar: React.FC<LinkedInTableToolbarProps> = ({
           aria-label="Kiểm tra kết nối LinkedIn"
           onClick={onVerify}
           disabled={isVerifying}
-          className="inline-flex size-8 items-center justify-center rounded-lg border border-surface-border bg-surface-elevated text-emerald-400 hover:bg-surface-hover disabled:opacity-50 transition-colors"
+          className="inline-flex h-8 items-center justify-center gap-1.5 rounded-lg border border-surface-border bg-surface-elevated px-2.5 text-xs font-medium text-emerald-400 hover:bg-surface-hover disabled:opacity-50 transition-colors"
         >
           <FiCheckCircle className="text-sm" />
+          <span className="hidden lg:inline">{isVerifying ? "Đang kiểm tra..." : "Kiểm tra kết nối"}</span>
         </button>
 
         {verified !== null && (
@@ -114,13 +115,14 @@ export const LinkedInTableToolbar: React.FC<LinkedInTableToolbarProps> = ({
           title={showHistory ? "Ẩn lịch sử Company Page" : "Hiện lịch sử Company Page"}
           aria-label={showHistory ? "Ẩn lịch sử Company Page" : "Hiện lịch sử Company Page"}
           onClick={onToggleHistory}
-          className={`inline-flex size-8 items-center justify-center rounded-lg border transition-colors ${
+          className={`inline-flex h-8 items-center justify-center gap-1.5 rounded-lg border px-2.5 text-xs font-medium transition-colors ${
             showHistory
               ? "bg-surface-elevated text-primary-green border-primary-green/40"
               : "border-surface-border bg-surface-elevated text-content-secondary hover:bg-surface-hover"
           }`}
         >
           <FiClock className="text-sm" />
+          <span className="hidden lg:inline">{showHistory ? "Ẩn lịch sử" : "Lịch sử"}</span>
         </button>
       </div>
     </div>

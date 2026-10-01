@@ -58,7 +58,10 @@ export const PublicationChannelCard: React.FC<PublicationChannelCardProps> = ({
           <button
             type="button"
             onClick={onToggleWeb}
-            className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+            disabled={isPublished}
+            aria-label="Đăng lên web"
+            aria-pressed={publishWeb}
+            className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 ${
               publishWeb ? "bg-teal-600" : "bg-surface-elevated border-surface-border"
             }`}
           >
@@ -83,7 +86,10 @@ export const PublicationChannelCard: React.FC<PublicationChannelCardProps> = ({
           <button
             type="button"
             onClick={onToggleLinkedin}
-            className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+            disabled={isPublished}
+            aria-label="Đăng lên LinkedIn"
+            aria-pressed={publishLinkedin}
+            className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 ${
               publishLinkedin ? "bg-teal-600" : "bg-surface-elevated border-surface-border"
             }`}
           >
@@ -107,6 +113,7 @@ export const PublicationChannelCard: React.FC<PublicationChannelCardProps> = ({
                 type="radio"
                 name="linkedin-mode"
                 checked={mode === "SAME"}
+                disabled={isPublished}
                 onChange={() => onChangeMode("SAME")}
                 className="mt-0.5 text-teal-600 focus:ring-teal-500"
               />
@@ -123,6 +130,7 @@ export const PublicationChannelCard: React.FC<PublicationChannelCardProps> = ({
                 type="radio"
                 name="linkedin-mode"
                 checked={mode === "SUMMARY"}
+                disabled={isPublished}
                 onChange={() => onChangeMode("SUMMARY")}
                 className="mt-0.5 text-teal-600 focus:ring-teal-500"
               />
@@ -139,6 +147,7 @@ export const PublicationChannelCard: React.FC<PublicationChannelCardProps> = ({
                 type="radio"
                 name="linkedin-mode"
                 checked={mode === "CUSTOM"}
+                disabled={isPublished}
                 onChange={() => onChangeMode("CUSTOM")}
                 className="mt-0.5 text-teal-600 focus:ring-teal-500"
               />
@@ -155,7 +164,7 @@ export const PublicationChannelCard: React.FC<PublicationChannelCardProps> = ({
             <input
               type="checkbox"
               checked={includeWebLink}
-              disabled={!publishWeb}
+              disabled={!publishWeb || isPublished}
               onChange={(e) => onToggleWebLink(e.target.checked)}
               className="rounded text-teal-600 focus:ring-teal-500"
             />
@@ -164,16 +173,17 @@ export const PublicationChannelCard: React.FC<PublicationChannelCardProps> = ({
         </div>
       )}
 
-      <div className="pt-2">
+      <div className="flex justify-end pt-2">
         <button
           type="button"
           onClick={onSaveSettings}
           disabled={!settingsDirty || isSaving || isPublished}
           title={isSaving ? "Đang lưu cấu hình" : "Lưu cấu hình"}
           aria-label={isSaving ? "Đang lưu cấu hình" : "Lưu cấu hình"}
-          className="inline-flex size-9 items-center justify-center rounded-lg bg-teal-600 hover:bg-teal-700 text-white disabled:opacity-40 transition-colors shadow-sm"
+          className="inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-teal-600 px-3.5 text-xs font-semibold text-white hover:bg-teal-700 disabled:opacity-40 transition-colors shadow-sm"
         >
           <FiCheck className={`text-sm ${isSaving ? "animate-pulse" : ""}`} />
+          <span>{isSaving ? "Đang lưu..." : "Lưu cấu hình"}</span>
         </button>
       </div>
     </div>

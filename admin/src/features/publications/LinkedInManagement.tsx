@@ -130,9 +130,10 @@ const LinkedInManagement: React.FC = () => {
             to="/linkedin/new"
             title="Tạo bài LinkedIn"
             aria-label="Tạo bài LinkedIn"
-            className="inline-flex size-9 items-center justify-center rounded-lg bg-[#0a66c2] text-white shadow-sm transition-colors hover:bg-[#084e96]"
+            className="inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-[#0a66c2] px-3.5 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-[#084e96]"
           >
             <FiPlus className="w-4 h-4" />
+            <span>Tạo bài LinkedIn</span>
           </Link>
         }
       />

@@ -161,7 +161,12 @@ const PublicationConfigPage: React.FC = () => {
   const isApproved = blogQuery.data?.state === "APPROVED";
   const webPublished = publishWeb && isApproved;
   const isPublished = pub?.linkedinStatus === "PUBLISHED";
-  const canPublish = isApproved && !settingsDirty && (!publishLinkedin || Boolean(content.trim()));
+  const hasChannel = publishWeb || publishLinkedin;
+  const canPublish =
+    isApproved &&
+    hasChannel &&
+    !settingsDirty &&
+    (!publishLinkedin || Boolean(content.trim()));
 
   return (
     <section className="space-y-6">
@@ -219,6 +224,7 @@ const PublicationConfigPage: React.FC = () => {
 
           <PublicationPublishCard
             isApproved={isApproved}
+            hasChannel={hasChannel}
             settingsDirty={settingsDirty}
             canPublish={canPublish}
             isPublishing={publishMutation.isPending}
@@ -230,6 +236,7 @@ const PublicationConfigPage: React.FC = () => {
         <div className="lg:col-span-7 space-y-6">
           <LinkedInWorkspaceCard
             publishLinkedin={publishLinkedin}
+            settingsDirty={settingsDirty}
             content={content}
             onContentChange={setContent}
             isGeneratingDraft={draftMutation.isPending}
