@@ -3,6 +3,7 @@ import LinkedInWorkspaceCard from "./LinkedInWorkspaceCard";
 import { usePublicationConfig } from "../hooks/usePublicationConfig";
 import { linkedinMediaKey } from "../../../utils/linkedinMedia";
 import type { LinkedInMediaAsset, LinkedInMediaMode, LinkedInMode } from "../../../types/Publication";
+import { PostLanguageSelect } from "../../../shared/ui/PostLanguageSelect";
 import { AIImagePanel } from "../../../shared/media/AIImagePanel";
 
 const STATUS_LABELS = {
@@ -15,9 +16,9 @@ const STATUS_LABELS = {
 export const PublicationConfigWorkspace = ({ blogId }: { blogId: string }) => {
   const editor = usePublicationConfig(blogId);
   const {
-    mode, linkPlacement, content, mediaMode, selectedMedia, suggestions, keywordInput,
+    mode, language, linkPlacement, content, mediaMode, selectedMedia, suggestions, keywordInput,
     factCheck, factCheckAcknowledged, pub, immutable, busy, guidance,
-    canSaveDraft, canPublish, canRetry, canRetryComment,
+    canSaveDraft, canPublish, canRetry,
   } = editor;
   const locked = immutable || busy;
   const displayedCandidates = [
@@ -73,8 +74,8 @@ export const PublicationConfigWorkspace = ({ blogId }: { blogId: string }) => {
         <h2 className="text-sm font-semibold text-content-primary">1. Chọn cách soạn bài LinkedIn</h2>
         <div className="grid gap-3 sm:grid-cols-3">
           {([
-            ["SAME", "Chuyển nguyên bài", "Chuyển bài website thành văn bản LinkedIn."],
             ["SUMMARY", "Tóm tắt bằng AI", "Tạo bản tóm tắt để bạn kiểm tra và chỉnh sửa."],
+            ["SAME", "Chuyển nguyên bài", "Chuyển bài website thành văn bản LinkedIn."],
             ["CUSTOM", "Tự viết", "Soạn nội dung LinkedIn theo ý bạn."],
           ] as const).map(([value, label, description]) => (
             <label key={value} className={`flex cursor-pointer items-start gap-2 rounded-lg border p-3 text-xs ${mode === value ? "border-primary-green bg-primary-green/10" : "border-surface-border"}`}>
@@ -84,13 +85,17 @@ export const PublicationConfigWorkspace = ({ blogId }: { blogId: string }) => {
             </label>
           ))}
         </div>
+        {mode === "SUMMARY" && <PostLanguageSelect value={language} onChange={editor.setLanguage} disabled={locked} />}
         <p className="text-xs text-content-muted">Đổi cách soạn giữ nguyên nội dung hiện tại. Bạn có thể chỉnh sửa nội dung trước khi đăng.</p>
-        <div className="flex flex-wrap gap-2">{(["NONE", "IN_POST", "FIRST_COMMENT"] as const).map((placement) => <button key={placement} type="button" disabled={locked} onClick={() => { editor.setLinkPlacement(placement); editor.setDirty(true); }} className={`rounded-lg border px-3 py-2 text-xs ${linkPlacement === placement ? "border-primary-green bg-primary-green/10 text-content-primary" : "border-surface-border text-content-muted"}`}>{placement === "NONE" ? "Không liên kết" : placement === "IN_POST" ? "Trong bài đăng" : "Bình luận đầu tiên"}</button>)}</div>
+        <div className="flex flex-wrap gap-2">{(["NONE", "IN_POST"] as const).map((placement) => <button key={placement} type="button" disabled={locked} onClick={() => { editor.setLinkPlacement(placement); editor.setDirty(true); }} className={`rounded-lg border px-3 py-2 text-xs ${linkPlacement === placement ? "border-primary-green bg-primary-green/10 text-content-primary" : "border-surface-border text-content-muted"}`}>{placement === "NONE" ? "Không liên kết" : "Trong bài đăng"}</button>)}</div>
         <p className="text-xs text-content-muted">Hệ thống xác định URL bài website khi đăng; nội dung đã duyệt luôn không chứa URL.</p>
       </div>
 
       <LinkedInWorkspaceCard
         content={content}
+        blogId={blogId}
+        linkPlacement={linkPlacement}
+        language={editor.generation.language ?? "vietnamese"}
         onContentChange={(value) => { editor.setContent(value); editor.setDirty(true); }}
         isGeneratingDraft={editor.draftMutation.isPending}
         onGenerateDraft={editor.generateDraft}
@@ -123,15 +128,7 @@ export const PublicationConfigWorkspace = ({ blogId }: { blogId: string }) => {
         {pub.linkedinError && <p className="text-rose-400">{pub.linkedinError.message}</p>}
         {pub.linkedinStatus === "REVIEW_REQUIRED" && <p className="text-amber-300">Kết quả đăng chưa rõ ràng. Kiểm tra Trang Doanh nghiệp LinkedIn để tránh đăng trùng.</p>}
         {pub.linkedinPublishedAt && <p className="text-content-muted">Thời gian đăng: {pub.linkedinPublishedAt}</p>}
-        {pub.linkedinCommentStatus !== "NOT_REQUESTED" && <div className="border-t border-surface-border pt-2">
-          <p className="font-semibold text-content-primary">Bình luận liên kết: {pub.linkedinCommentStatus}</p>
-          {pub.linkedinCommentError && <p className="text-rose-400">{pub.linkedinCommentError.message}</p>}
-          {pub.linkedinCommentStatus === "REVIEW_REQUIRED" && <p className="text-amber-300">Hãy kiểm tra LinkedIn; hệ thống không tự thử lại để tránh bình luận trùng.</p>}
-          {canRetryComment && <button type="button" onClick={() => editor.retryCommentMutation.mutate()}
-            className="mt-2 underline" disabled={editor.retryCommentMutation.isPending}>
-            {editor.retryCommentMutation.isPending ? "Đang thử lại…" : "Thử lại bình luận"}
-          </button>}
-        </div>}
+
       </div>
 
       <BottomActionBar>

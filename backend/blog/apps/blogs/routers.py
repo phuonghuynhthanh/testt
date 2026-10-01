@@ -143,7 +143,7 @@ async def generate_blog_draft(
     data: schemas.GenerateBlogData, _: str = Depends(require_admin)
 ):
     return await BlogServices.ai_generate_blog_markdown_with_title(
-        data.title, data.category
+        data.title, data.category, language=data.language
     )
 
 
@@ -159,7 +159,7 @@ async def ai_generate_blog_markdown(
     _: str = Depends(require_admin),
 ):
     return await BlogServices.ai_generate_blog_markdown_with_title(
-        title=data.title, category=data.category
+        title=data.title, category=data.category, language=data.language
     )
 
 

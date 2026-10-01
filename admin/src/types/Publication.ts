@@ -1,3 +1,5 @@
+import type { PostLanguage } from "./Language";
+
 export type LinkedInMode = "SAME" | "SUMMARY" | "CUSTOM";
 
 export type PublicationStatus =
@@ -10,8 +12,7 @@ export type PublicationStatus =
   | "REVIEW_REQUIRED";
 
 export type LinkedInMediaMode = "none" | "single-image" | "multi-image";
-export type LinkedInLinkPlacement = "NONE" | "IN_POST" | "FIRST_COMMENT";
-export type LinkedInCommentStatus = "NOT_REQUESTED" | "PENDING" | "PUBLISHED" | "FAILED" | "REVIEW_REQUIRED";
+export type LinkedInLinkPlacement = "NONE" | "IN_POST";
 
 export interface PexelsCandidate {
   provider: "pexels";
@@ -61,6 +62,7 @@ export interface LinkedInErrorData {
 }
 
 export interface GeneratedLinkedInPost {
+  language?: PostLanguage;
   content?: string;
   style?: string;
   openingType?: string;
@@ -88,9 +90,6 @@ export interface Publication {
   linkedinFactCheck: FactualReview | null;
   linkedinGenerated: GeneratedLinkedInPost | null;
   linkedinPublishedLinkUrl: string | null;
-  linkedinCommentStatus: LinkedInCommentStatus;
-  linkedinCommentError: LinkedInErrorData | null;
-  linkedinCommentPublishedAt: string | null;
 }
 
 export interface LinkedInDraftResponse {
@@ -113,6 +112,7 @@ export interface LinkedInDraftRequest {
   mode: Exclude<LinkedInMode, "CUSTOM">;
   linkPlacement: LinkedInLinkPlacement;
   regenerate: boolean;
+  language?: PostLanguage;
 }
 
 export interface LinkedInContentUpdate {

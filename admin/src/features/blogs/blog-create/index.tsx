@@ -13,6 +13,8 @@ import BlogSeoCollapse from "./BlogSeoCollapse";
 import BlogContentEditorCard from "./BlogContentEditorCard";
 import CategoryCombobox from "./CategoryCombobox";
 import { getSeoData } from "../../../services/openai/handleSeoGenerate";
+import type { PostLanguage } from "../../../types/Language";
+import { PostLanguageSelect } from "../../../shared/ui/PostLanguageSelect";
 import { AIImagePanel } from "../../../shared/media/AIImagePanel";
 
 const EMPTY_BLOG: IBlogData = {
@@ -36,7 +38,8 @@ const EMPTY_BLOG: IBlogData = {
 const BlogCreate: React.FC = () => {
   const navigate = useNavigate();
   const client = useQueryClient();
-  const [source, setSource] = useState<"manual" | "ai">("manual");
+  const [source, setSource] = useState<"manual" | "ai">("ai");
+  const [language, setLanguage] = useState<PostLanguage>("vietnamese");
   const [blog, setBlog] = useState<IBlogData>(EMPTY_BLOG);
   const [image, setImage] = useState<File | null>(null);
   const [dirty, setDirty] = useState(false);
@@ -87,7 +90,7 @@ const BlogCreate: React.FC = () => {
   };
 
   const draft = useMutation({
-    mutationFn: () => generateBlogDraft(blog.title, blog.category),
+    mutationFn: () => generateBlogDraft(blog.title, blog.category, language),
     onSuccess: (data) => {
       setBlog((current) => ({
         ...current,
@@ -104,7 +107,7 @@ const BlogCreate: React.FC = () => {
 
   // Generate metadata only, preserving article content and manually entered SEO identity fields.
   const generateSeo = useMutation({
-    mutationFn: () => getSeoData(blog.title.trim(), blog.content),
+    mutationFn: () => getSeoData(blog.title.trim(), blog.content, language),
     onSuccess: (data) => {
       setBlog((current) => ({ ...current, seo: {
         ...current.seo,
@@ -205,20 +208,6 @@ const BlogCreate: React.FC = () => {
       <div className="flex w-fit gap-1 rounded-xl border border-surface-border bg-surface-card p-1">
         <button
           type="button"
-          title="Viết thủ công"
-          aria-label="Viết thủ công"
-          onClick={() => setSource("manual")}
-          className={`inline-flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-medium transition-colors ${
-            source === "manual"
-              ? "bg-surface-elevated text-primary-green border border-primary-green/30 shadow-sm"
-              : "text-content-secondary hover:text-content-primary"
-          }`}
-        >
-          <BsFileEarmarkText className="text-sm" />
-          <span>Viết thủ công</span>
-        </button>
-        <button
-          type="button"
           title="Tạo bản nháp bằng AI"
           aria-label="Tạo bản nháp bằng AI"
           onClick={() => setSource("ai")}
@@ -231,10 +220,25 @@ const BlogCreate: React.FC = () => {
           <BsStars className="text-sm text-purple-400" />
           <span>Trợ lý AI</span>
         </button>
+        <button
+          type="button"
+          title="Viết thủ công"
+          aria-label="Viết thủ công"
+          onClick={() => setSource("manual")}
+          className={`inline-flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-medium transition-colors ${
+            source === "manual"
+              ? "bg-surface-elevated text-primary-green border border-primary-green/30 shadow-sm"
+              : "text-content-secondary hover:text-content-primary"
+          }`}
+        >
+          <BsFileEarmarkText className="text-sm" />
+          <span>Viết thủ công</span>
+        </button>
       </div>
 
       <div className="bg-surface-card p-6 rounded-xl border border-surface-border space-y-4">
         <SectionHeading title="Thông tin cơ bản" description="Tiêu đề, thể loại và định danh bài viết" />
+        {source === "ai" && <PostLanguageSelect value={language} onChange={setLanguage} disabled={draft.isPending} />}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="md:col-span-2">

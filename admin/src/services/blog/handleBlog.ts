@@ -1,3 +1,4 @@
+import type { PostLanguage } from "../../types/Language";
 import getAxiosClient from "../../lib/axios/axiosClient";
 import type { PaginatedResponse } from "../../types/Api";
 import type { BlogCreateInput, BlogState, BlogUpdateInput, ClassifyLinksResponse, FetchContentResponse, IBlogData, IBlogItemData, LinkReference } from "../../types/Blog";
@@ -17,7 +18,7 @@ export const deleteBlog = async (id: string) => (await getAxiosClient().delete(`
 // Restore a recently soft-deleted Blog.
 export const restoreBlog = async (id: string) => (await getAxiosClient().post(`/blog/${id}/restore`)).data as IBlogData;
 // Generate an editable, preview-only AI Blog draft.
-export const generateBlogDraft = async (title: string, category: string) => (await getAxiosClient().post<IBlogData>("/blog/ai/generate-draft", { title, category })).data;
+export const generateBlogDraft = async (title: string, category: string, language: PostLanguage = "vietnamese") => (await getAxiosClient().post<IBlogData>("/blog/ai/generate-draft", { title, category, language })).data;
 // Generate a bounded set of Blog title suggestions.
 export const suggestBlogTitles = async (keyword: string, language: "vietnamese" | "english") =>
   (await getAxiosClient().get<string[]>("/blog/openai/ai-generate-list-title", { params: { keyword, quantity: 5, language } })).data;

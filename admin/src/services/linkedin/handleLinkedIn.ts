@@ -1,3 +1,4 @@
+import type { PostLanguage } from "../../types/Language";
 import getAxiosClient from "../../lib/axios/axiosClient";
 import type { PaginatedResponse } from "../../types/Api";
 import type { LinkedInDraftResponse, LinkedInHistory, LinkedInPost, LinkedInPostStatus, LinkedInSourceType } from "../../types/LinkedIn";
@@ -11,10 +12,18 @@ export interface LinkedInPostInput { content: string; topic: string; mediaMode: 
 export const listLinkedInPosts = async (params: LinkedInListParams): Promise<PaginatedResponse<LinkedInPost>> => (await getAxiosClient().get("/linkedin/posts", { params })).data;
 // Fetch one standalone LinkedIn post for editing or review.
 export const getLinkedInPost = async (id: string) => (await getAxiosClient().get<LinkedInPost>(`/linkedin/posts/${id}`)).data;
+// Render unsaved copy with a backend-owned target URL and cancel obsolete requests.
+export const previewLinkedInContent = async (
+  data: { content: string; linkPlacement: LinkedInLinkPlacement; language: PostLanguage },
+  blogId?: string,
+  signal?: AbortSignal,
+) => (await getAxiosClient().post<{ content: string; targetUrl: string | null }>(
+  blogId ? `/publications/blogs/${blogId}/linkedin/preview` : "/linkedin/preview", data, { signal },
+)).data;
 // Generate a preview-only standalone LinkedIn draft.
-export const generateLinkedInDraft = async (data: { topic: string; context?: string; targetAudience: LinkedInAudience; requestedMediaMode: LinkedInMediaMode }) => (await getAxiosClient().post<LinkedInDraftResponse>("/linkedin/ai/generate-draft", data)).data;
+export const generateLinkedInDraft = async (data: { topic: string; context?: string; targetAudience: LinkedInAudience; requestedMediaMode: LinkedInMediaMode; language?: PostLanguage }) => (await getAxiosClient().post<LinkedInDraftResponse>("/linkedin/ai/generate-draft", data)).data;
 // Ask AI for fresh topic proposals.
-export const proposeLinkedInTopics = async (data: { count: number; recentLimit: number; targetAudience: LinkedInAudience; guideline?: string }) => (await getAxiosClient().post<{ topics: string[] }>("/linkedin/ai/propose-topics", data)).data;
+export const proposeLinkedInTopics = async (data: { count: number; recentLimit: number; targetAudience: LinkedInAudience; guideline?: string; language?: PostLanguage }) => (await getAxiosClient().post<{ topics: string[] }>("/linkedin/ai/propose-topics", data)).data;
 // Create a reviewed LinkedIn draft or publish it immediately.
 export const createLinkedInPost = async (data: LinkedInPostInput) => (await getAxiosClient().post<LinkedInPost>("/linkedin/posts", data)).data;
 // Update a contract-permitted standalone LinkedIn post.
@@ -27,8 +36,6 @@ export const restoreLinkedInPost = async (id: string) => (await getAxiosClient()
 export const publishLinkedInPost = async (id: string) => (await getAxiosClient().post<LinkedInPost>(`/linkedin/posts/${id}/publish`)).data;
 // Retry a failed post through the backend safety checks.
 export const retryLinkedInPost = async (id: string) => (await getAxiosClient().post<LinkedInPost>(`/linkedin/posts/${id}/retry`)).data;
-// Retry only a server-confirmed failed first-comment request.
-export const retryLinkedInLinkComment = async (id: string) => (await getAxiosClient().post<LinkedInPost>(`/linkedin/posts/${id}/link-comment/retry`)).data;
 // Suggest Pexels candidates from a persisted post and optional keywords.
 export const suggestPostMedia = async (id: string, keywords: string[] = []) => (await getAxiosClient().post<{ items: PexelsCandidate[] }>(`/linkedin/posts/${id}/media/suggest`, keywords)).data.items;
 // Search Pexels directly for an unsaved post.

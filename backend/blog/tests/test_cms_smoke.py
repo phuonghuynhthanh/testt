@@ -20,6 +20,8 @@ EXPECTED_CMS_ROUTES = {
     ("POST", "/media/ai/generate"),
     ("POST", "/openai/seo-keywords"),
     ("POST", "/openai/seo-description"),
+    ("POST", "/linkedin/preview"),
+    ("POST", "/publications/blogs/{blog_id}/linkedin/preview"),
 }
 
 
@@ -32,6 +34,7 @@ def test_app_preserves_cms_routes():
     }
 
     assert EXPECTED_CMS_ROUTES <= actual_routes
+    assert not any("link-comment" in path for _, path in actual_routes)
     removed_prefixes = (
         "/course",
         "/business",

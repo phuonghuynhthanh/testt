@@ -12,7 +12,6 @@ import {
   proposeLinkedInTopics,
   publishLinkedInPost,
   retryLinkedInPost,
-  retryLinkedInLinkComment,
   searchLinkedInMedia,
   suggestPostMedia,
   updateLinkedInPost,
@@ -21,12 +20,16 @@ import {
 import { apiErrorMessage } from "../../types/Api";
 import type { LinkedInAudience, LinkedInSourceType } from "../../types/LinkedIn";
 import type { FactualReview, GeneratedLinkedInPost, LinkedInLinkPlacement, LinkedInMediaAsset, LinkedInMediaMode } from "../../types/Publication";
+import type { PostLanguage } from "../../types/Language";
+import { PostLanguageSelect } from "../../shared/ui/PostLanguageSelect";
+import { LinkedInContentEditor } from "./components/LinkedInContentEditor";
 import { AIImagePanel } from "../../shared/media/AIImagePanel";
 import { PageHeader, SectionHeading, ConfirmDialog, BottomActionBar } from "../../shared/ui";
 import { linkedinMediaKey, linkedinMediaUrl } from "../../utils/linkedinMedia";
 
 const EMPTY_FACT_CHECK: FactualReview = { requiresHumanFactCheck: false, factCheckNotes: [] };
 
+// Normalize factual-review data from older saved drafts.
 const normalizeFactCheck = (val?: Partial<FactualReview> | null): FactualReview => ({
   requiresHumanFactCheck: Boolean(val?.requiresHumanFactCheck),
   factCheckNotes: val?.factCheckNotes ?? [],
@@ -37,7 +40,8 @@ const LinkedInPost: React.FC = () => {
   const { post_id: id } = useParams<{ post_id: string }>();
   const navigate = useNavigate();
   const client = useQueryClient();
-  const [authorMode, setAuthorMode] = useState<"manual" | "ai">("manual");
+  const [authorMode, setAuthorMode] = useState<"manual" | "ai">("ai");
+  const [language, setLanguage] = useState<PostLanguage>("vietnamese");
   const [topic, setTopic] = useState("");
   const [context, setContext] = useState("");
   const [audience, setAudience] = useState<LinkedInAudience>(null);
@@ -71,6 +75,7 @@ const LinkedInPost: React.FC = () => {
     const loaded = normalizeFactCheck(detail.data.factCheck);
     setFactCheck(loaded);
     setGeneration(detail.data.generation ?? {});
+    setLanguage(detail.data.generation?.language ?? "vietnamese");
     setFactCheckAcknowledged(!loaded.requiresHumanFactCheck);
   }, [detail.data]);
 
@@ -94,7 +99,7 @@ const LinkedInPost: React.FC = () => {
   });
 
   const draft = useMutation({
-    mutationFn: () => generateLinkedInDraft({ topic, context, targetAudience, requestedMediaMode: mediaMode }),
+    mutationFn: () => generateLinkedInDraft({ topic, context, targetAudience, requestedMediaMode: mediaMode, language }),
     onSuccess: (data) => {
       setContent(data.content); setMediaMode(data.media.mode); setSourceType("INDEPENDENT_AI");
       setFactCheck(data.factualReview); setGeneration(data.generated);
@@ -107,7 +112,7 @@ const LinkedInPost: React.FC = () => {
   });
 
   const propose = useMutation({
-    mutationFn: () => proposeLinkedInTopics({ count: 3, recentLimit: 20, targetAudience }),
+    mutationFn: () => proposeLinkedInTopics({ count: 3, recentLimit: 20, targetAudience, language }),
     onSuccess: (d) => setTopics(d.topics),
     onError: (e) => toast.error(apiErrorMessage(e)),
   });
@@ -154,13 +159,6 @@ const LinkedInPost: React.FC = () => {
   const retry = useMutation({
     mutationFn: () => retryLinkedInPost(id!),
     onSuccess: () => { toast.success("Đã gửi yêu cầu thử lại."); invalidate(); },
-    onError: (e) => toast.error(apiErrorMessage(e)),
-  });
-
-  // Retry a failed first comment without re-publishing the main post.
-  const retryComment = useMutation({
-    mutationFn: () => retryLinkedInLinkComment(id!),
-    onSuccess: () => { toast.success("Đã gửi yêu cầu thử lại bình luận liên kết."); invalidate(); },
     onError: (e) => toast.error(apiErrorMessage(e)),
   });
 
@@ -236,30 +234,8 @@ const LinkedInPost: React.FC = () => {
       {detail.data?.lastError && (
         <div className="p-4 rounded-xl bg-rose-950/30 border border-rose-500/30 text-rose-300 text-xs">{detail.data.lastError}</div>
       )}
-      {detail.data?.status === "PUBLISHED" && detail.data.linkCommentStatus !== "NOT_REQUESTED" && (
-        <div className={`rounded-xl border p-4 text-xs ${detail.data.linkCommentStatus === "FAILED" ? "border-rose-500/30 text-rose-300" : "border-surface-border text-content-muted"}`}>
-          Bình luận liên kết: {detail.data.linkCommentStatus}.
-          {detail.data.linkCommentStatus === "FAILED" && id && <button type="button" onClick={() => retryComment.mutate()} disabled={retryComment.isPending} className="ml-3 underline">{retryComment.isPending ? "Đang thử lại…" : "Thử lại bình luận"}</button>}
-          {detail.data.linkCommentStatus === "REVIEW_REQUIRED" && <span className="ml-2">Hãy kiểm tra LinkedIn; hệ thống không tự thử lại để tránh bình luận trùng.</span>}
-        </div>
-      )}
-
       {!immutable && (
         <div className="flex w-fit gap-1 rounded-xl border border-surface-border bg-surface-card p-1">
-          <button
-            type="button"
-            title="Viết thủ công"
-            aria-label="Viết thủ công"
-            onClick={() => changeAuthorMode("manual")}
-            className={`inline-flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-medium transition-colors ${
-              authorMode === "manual"
-                ? "border border-primary-green/30 bg-surface-elevated text-primary-green shadow-sm"
-                : "text-content-secondary hover:text-content-primary"
-            }`}
-          >
-            <BsFileEarmarkText className="text-sm" />
-            <span>Viết thủ công</span>
-          </button>
           <button
             type="button"
             title="Tạo bằng AI"
@@ -274,6 +250,20 @@ const LinkedInPost: React.FC = () => {
             <BsStars className="text-sm text-purple-300" />
             <span>Tạo bằng AI</span>
           </button>
+          <button
+            type="button"
+            title="Viết thủ công"
+            aria-label="Viết thủ công"
+            onClick={() => changeAuthorMode("manual")}
+            className={`inline-flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-medium transition-colors ${
+              authorMode === "manual"
+                ? "border border-primary-green/30 bg-surface-elevated text-primary-green shadow-sm"
+                : "text-content-secondary hover:text-content-primary"
+            }`}
+          >
+            <BsFileEarmarkText className="text-sm" />
+            <span>Viết thủ công</span>
+          </button>
         </div>
       )}
 
@@ -284,6 +274,7 @@ const LinkedInPost: React.FC = () => {
           <input disabled={immutable} value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="Nhập chủ đề bài đăng..." className="w-full rounded-lg border border-surface-border bg-surface-elevated px-3.5 py-2 text-sm text-content-primary placeholder-content-muted focus:border-primary-green focus:outline-none focus:ring-1 focus:ring-primary-green transition disabled:opacity-50" />
         </div>
         {authorMode === "ai" && !immutable && <div className="space-y-4 rounded-xl border border-purple-500/20 bg-purple-950/10 p-4">
+          <PostLanguageSelect value={language} onChange={setLanguage} disabled={draft.isPending || propose.isPending} />
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
               <label className="mb-1.5 block text-xs font-medium text-content-secondary">Ngữ cảnh bổ sung</label>
@@ -329,11 +320,9 @@ const LinkedInPost: React.FC = () => {
             ))}
           </div>
         )}
-        <div>
-          <label className="block text-xs font-medium text-content-secondary mb-1.5">Nội dung bài viết <span className="text-rose-400">*</span></label>
-          <textarea disabled={immutable} rows={7} value={content} onChange={(e) => setContent(e.target.value)} placeholder="Soạn nội dung bài đăng LinkedIn..." className="w-full rounded-lg border border-surface-border bg-surface-elevated px-3.5 py-2.5 text-sm text-content-primary placeholder-content-muted focus:border-primary-green focus:outline-none focus:ring-1 focus:ring-primary-green transition resize-y disabled:opacity-50" />
-        </div>
-        <div><label className="mb-1.5 block text-xs font-medium text-content-secondary">Vị trí liên kết website</label><div className="flex flex-wrap gap-2">{(["NONE", "IN_POST", "FIRST_COMMENT"] as const).map((placement) => <button key={placement} type="button" disabled={immutable} onClick={() => setLinkPlacement(placement)} className={`rounded-lg border px-3 py-2 text-xs ${linkPlacement === placement ? "border-primary-green bg-primary-green/10 text-content-primary" : "border-surface-border text-content-muted"}`}>{placement === "NONE" ? "Không đính kèm" : placement === "IN_POST" ? "Trong bài đăng" : "Bình luận đầu tiên"}</button>)}</div><p className="mt-2 text-xs text-content-muted">Liên kết đích được hệ thống xác định khi xuất bản, không chỉnh sửa trong nội dung đã duyệt.</p></div>
+        <LinkedInContentEditor content={content} onChange={setContent} media={media}
+          linkPlacement={linkPlacement} language={generation.language ?? "vietnamese"} disabled={immutable} />
+        <div><label className="mb-1.5 block text-xs font-medium text-content-secondary">Vị trí liên kết website</label><div className="flex flex-wrap gap-2">{(["NONE", "IN_POST"] as const).map((placement) => <button key={placement} type="button" disabled={immutable} onClick={() => setLinkPlacement(placement)} className={`rounded-lg border px-3 py-2 text-xs ${linkPlacement === placement ? "border-primary-green bg-primary-green/10 text-content-primary" : "border-surface-border text-content-muted"}`}>{placement === "NONE" ? "Không đính kèm" : "Trong bài đăng"}</button>)}</div><p className="mt-2 text-xs text-content-muted">Liên kết đích được hệ thống xác định khi xuất bản, không chỉnh sửa trong nội dung đã duyệt.</p></div>
       </div>
 
       <div className="bg-surface-card p-6 rounded-xl border border-surface-border space-y-4">

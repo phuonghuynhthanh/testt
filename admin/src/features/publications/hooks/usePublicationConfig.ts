@@ -6,7 +6,8 @@ import {
   suggestLinkedInMedia, updatePublication,
 } from "../../../services/publication/handlePublication";
 import { isManualDraftConflict } from "../../../services/publication/error";
-import { retryLinkedInLinkComment, uploadLinkedInMedia } from "../../../services/linkedin/handleLinkedIn";
+import type { PostLanguage } from "../../../types/Language";
+import { uploadLinkedInMedia } from "../../../services/linkedin/handleLinkedIn";
 import { apiErrorMessage } from "../../../types/Api";
 import type {
   FactualReview, GeneratedLinkedInPost, LinkedInLinkPlacement, LinkedInMediaAsset, LinkedInMediaMode,
@@ -20,7 +21,8 @@ const isSelectedMedia = (media: Publication["linkedinMedia"][number]): media is 
 // Manage the LinkedIn adaptation of an already approved website article.
 export const usePublicationConfig = (blogId: string) => {
   const client = useQueryClient();
-  const [mode, setMode] = useState<LinkedInMode>("SAME");
+  const [mode, setMode] = useState<LinkedInMode>("SUMMARY");
+  const [language, setLanguage] = useState<PostLanguage>("vietnamese");
   const [linkPlacement, setLinkPlacement] = useState<LinkedInLinkPlacement>("NONE");
   const [content, setContent] = useState("");
   const [mediaMode, setMediaMode] = useState<LinkedInMediaMode>("none");
@@ -49,7 +51,7 @@ export const usePublicationConfig = (blogId: string) => {
   useEffect(() => {
     if (!pub || hydratedId.current === blogId) return;
     hydratedId.current = blogId;
-    setMode(pub.linkedinMode || "SAME");
+    setMode(!pub.linkedinRecordId && !pub.linkedinContent?.trim() ? "SUMMARY" : pub.linkedinMode || "SAME");
     setLinkPlacement(pub.linkedinLinkPlacement ?? "NONE");
     setContent(pub.linkedinContent || "");
     setMediaMode(pub.linkedinMediaMode || "none");
@@ -57,6 +59,7 @@ export const usePublicationConfig = (blogId: string) => {
     setSuggestions(pub.linkedinMedia.filter(isSelectedMedia));
     setFactCheck(pub.linkedinFactCheck ?? { requiresHumanFactCheck: false, factCheckNotes: [] });
     setGeneration(pub.linkedinGenerated ?? {});
+    setLanguage(pub.linkedinGenerated?.language ?? "vietnamese");
     setFactCheckAcknowledged(!pub.linkedinFactCheck?.requiresHumanFactCheck);
     setDirty(false);
   }, [pub, blogId]);
@@ -101,7 +104,7 @@ export const usePublicationConfig = (blogId: string) => {
       await normalizeSettings();
       // Keep preview text link-free so toggling the attachment cannot leave an old URL behind.
       return generateLinkedInDraft(blogId, {
-        mode: mode as Exclude<LinkedInMode, "CUSTOM">, linkPlacement, regenerate,
+        mode: mode as Exclude<LinkedInMode, "CUSTOM">, linkPlacement, regenerate, language,
       });
     },
     onSuccess: (data) => {
@@ -180,13 +183,6 @@ export const usePublicationConfig = (blogId: string) => {
     onError: async (error) => { toast.error(apiErrorMessage(error)); await refresh(); },
   });
 
-  // Retry only the separately failed first-comment side effect.
-  const retryCommentMutation = useMutation({
-    mutationFn: () => retryLinkedInLinkComment(pub!.linkedinRecordId!),
-    onSuccess: async () => { toast.success("Đã gửi yêu cầu thử lại bình luận liên kết."); await refresh(); },
-    onError: async (error) => { toast.error(apiErrorMessage(error)); await refresh(); },
-  });
-
   // Confirm before replacing any existing text with generated content.
   const generateDraft = () => {
     if (mode === "CUSTOM" || immutable) return;
@@ -200,13 +196,11 @@ export const usePublicationConfig = (blogId: string) => {
   const altTextValid = selectedMedia.every((item) => Boolean(item.altText?.trim()));
   const factCheckValid = !factCheck.requiresHumanFactCheck || factCheckAcknowledged;
   const busy = draftMutation.isPending || saveDraftMutation.isPending || publishMutation.isPending ||
-    uploadMutation.isPending || retryMutation.isPending || retryCommentMutation.isPending;
+    uploadMutation.isPending || retryMutation.isPending;
   const valid = Boolean(content.trim() && mediaCountValid && altTextValid && factCheckValid);
   const canSaveDraft = Boolean(pub && !immutable && valid && !busy);
   const canPublish = canSaveDraft && pub?.linkedinStatus !== "FAILED";
   const canRetry = pub?.linkedinStatus === "FAILED" && pub.linkedinError?.retryable === true && !dirty && !busy;
-  const canRetryComment = pub?.linkedinStatus === "PUBLISHED" && pub.linkedinCommentStatus === "FAILED" &&
-    Boolean(pub.linkedinRecordId) && !busy;
   const guidance = immutable ? (pub?.linkedinStatus === "PUBLISHED" ? "Bài đã đăng lên LinkedIn."
     : pub?.linkedinStatus === "PUBLISHING" ? "Đang đăng bài. Vui lòng chờ."
       : "Hãy kiểm tra bài trên LinkedIn trước khi thao tác tiếp.")
@@ -219,13 +213,13 @@ export const usePublicationConfig = (blogId: string) => {
               : "Lưu bản nháp để giữ nội dung; đăng LinkedIn để xuất bản công khai.";
 
   return {
-    mode, setMode, linkPlacement, setLinkPlacement, content, setContent,
+    mode, setMode, language, setLanguage, linkPlacement, setLinkPlacement, content, setContent,
     mediaMode, setMediaMode, selectedMedia, setSelectedMedia, suggestions, setSuggestions,
     keywordInput, setKeywordInput, factCheck, factCheckAcknowledged, setFactCheckAcknowledged,
     showConfirmPublish, setShowConfirmPublish, pendingRegenerate, setPendingRegenerate,
-    setDirty, pub, immutable, busy, guidance, canSaveDraft, canPublish, canRetry, canRetryComment,
+    setDirty, generation, pub, immutable, busy, guidance, canSaveDraft, canPublish, canRetry,
     isLoading: pubQuery.isLoading, isError: pubQuery.isError,
     generateDraft, draftMutation, saveDraftMutation, publishMutation,
-    searchMediaMutation, uploadMutation, retryMutation, retryCommentMutation,
+    searchMediaMutation, uploadMutation, retryMutation,
   };
 };

@@ -1,3 +1,4 @@
+import type { PostLanguage } from "../../types/Language";
 import getAxiosClient from "../../lib/axios/axiosClient";
 import type { IDataSeoGenerate } from "../../types/OpenAi";
 
@@ -5,6 +6,7 @@ import type { IDataSeoGenerate } from "../../types/OpenAi";
 export const getSeoKeywords = async (
   title: string,
   content: string,
+  language?: PostLanguage,
 ): Promise<string[]> => {
   try {
     const axiosClient = getAxiosClient();
@@ -13,6 +15,7 @@ export const getSeoKeywords = async (
       {
         blog_title: title,
         blog_content: content,
+        language,
       },
     );
     return response.data;
@@ -25,6 +28,7 @@ export const getSeoKeywords = async (
 export const getSeoDescription = async (
   title: string,
   content: string,
+  language?: PostLanguage,
 ): Promise<string> => {
   try {
     const axiosClient = getAxiosClient();
@@ -33,6 +37,7 @@ export const getSeoDescription = async (
       {
         blog_title: title,
         blog_content: content,
+        language,
       },
     );
     return response.data;
@@ -45,11 +50,12 @@ export const getSeoDescription = async (
 export const getSeoData = async (
   title: string,
   content: string,
+  language?: PostLanguage,
 ): Promise<IDataSeoGenerate> => {
   try {
     const [keywords, description] = await Promise.all([
-      getSeoKeywords(title, content),
-      getSeoDescription(title, content),
+      getSeoKeywords(title, content, language),
+      getSeoDescription(title, content, language),
     ]);
 
     return {

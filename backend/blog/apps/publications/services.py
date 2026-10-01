@@ -9,6 +9,7 @@ from apps.linkedin_posts.exceptions import LinkedInError
 from apps.linkedin_posts.models import LinkedInPost
 from apps.linkedin_posts.schemas import (
     LinkedInArticleSource,
+    LinkedInPreviewRequest,
     LinkedInLinkPlacement,
     LinkedInMode as ProviderMode,
     LinkedInPostAction,
@@ -60,7 +61,12 @@ def _media_mode(media: list[dict]) -> MediaMode:
 
 # Read new placement fields safely while legacy in-memory fixtures remain usable.
 def _placement(value, fallback: str = LinkedInLinkPlacement.NONE.value) -> str:
-    return getattr(value, "link_placement", getattr(value, "linkedin_link_placement", fallback))
+    placement = getattr(
+        value,
+        "link_placement",
+        getattr(value, "linkedin_link_placement", fallback),
+    )
+    return placement if placement in {"NONE", "IN_POST"} else "NONE"
 
 
 # Keep the compatibility response shape while reading LinkedIn state from its owner.
@@ -92,9 +98,6 @@ def _serialize(publication: BlogPublication, post: LinkedInPost | None = None) -
             post.generation if post else publication.linkedin_generation
         ),
         "linkedinPublishedLinkUrl": getattr(post, "published_link_url", None),
-        "linkedinCommentStatus": getattr(post, "link_comment_status", "NOT_REQUESTED"),
-        "linkedinCommentError": getattr(post, "link_comment_error", None),
-        "linkedinCommentPublishedAt": getattr(post, "link_comment_published_at", None),
     }
 
 
@@ -209,6 +212,32 @@ class PublicationService:
             recentPosts=(await LinkedInHistoryService().recent()) if mode is ProviderMode.SUMMARY else [],
         )
 
+    # Resolve the trusted Blog URL without changing publication state.
+    @classmethod
+    def preview(cls, blog_id: str, data: LinkedInPreviewRequest) -> dict:
+        blog = cls._blog(blog_id)
+        publication = cls._find_publication(blog_id)
+        if (
+            data.linkPlacement is LinkedInLinkPlacement.IN_POST
+            and publication
+            and not publication.publish_web
+        ):
+            raise HTTPException(
+                status_code=422,
+                detail="A LinkedIn web link requires website publication",
+            )
+        try:
+            link_url = (
+                canonical_blog_url(blog.link_post)
+                if data.linkPlacement is LinkedInLinkPlacement.IN_POST
+                else None
+            )
+        except ValueError as error:
+            raise HTTPException(status_code=422, detail=str(error)) from error
+        return LinkedInPostService.preview(
+            data, link_url=link_url, source_type="BLOG_ADAPTATION"
+        )
+
     # Generate a review-only preview without creating or changing any database row.
     @classmethod
     async def draft(cls, blog_id: str, data: DraftRequest) -> dict:
@@ -229,17 +258,25 @@ class PublicationService:
         )
         try:
             result = await LinkedInDraftGenerator(provider).draft(
-                await cls._source(blog, ProviderMode(data.mode.value))
+                await cls._source(blog, ProviderMode(data.mode.value)),
+                language=data.language,
             )
             return {
                 "content": result.content,
                 "media": result.media.model_dump(),
                 "factualReview": result.factualReview.model_dump(),
-                "generated": (
-                    result.generated.model_dump(by_alias=True)
-                    if result.generated
-                    else {}
-                ),
+                "generated": {
+                    **(
+                        result.generated.model_dump(by_alias=True)
+                        if result.generated
+                        else {}
+                    ),
+                    **(
+                        {"language": data.language}
+                        if data.mode.value == "SUMMARY"
+                        else {}
+                    ),
+                },
             }
         except LinkedInError as error:
             raise HTTPException(

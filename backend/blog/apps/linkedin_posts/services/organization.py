@@ -11,7 +11,6 @@ from apps.linkedin_posts.services.linkedin_client import LINKEDIN_API, LinkedInC
 INTROSPECTION_URL = "https://www.linkedin.com/oauth/v2/introspectToken"
 POSTING_ROLES = {"ADMINISTRATOR", "DIRECT_SPONSORED_CONTENT_POSTER", "CONTENT_ADMIN", "CONTENT_ADMINISTRATOR"}
 IMAGE_ROLES = {"ADMINISTRATOR", "DIRECT_SPONSORED_CONTENT_POSTER"}
-COMMENT_ROLES = {"ADMINISTRATOR", "DIRECT_SPONSORED_CONTENT_POSTER"}
 
 
 # Validate the strictly organization-only configuration; never fall back to a person URN.
@@ -81,9 +80,22 @@ class OrganizationVerifier:
             raise LinkedInError("invalid_response", "LinkedIn returned an invalid organization lookup response.")
         approved = {item["role"] for item in roles if item["state"] == "APPROVED"}
         writable = "w_organization_social" in scopes
-        comment_writable = "w_organization_social_feed" in scopes
         organization_result = {"urn": self.organization_urn, "name": organization["localizedName"].strip()}
         if isinstance(organization.get("vanityName"), str) and organization["vanityName"].strip():
             organization_result["vanityName"] = organization["vanityName"].strip()
-        comment_create = comment_writable and bool(approved & COMMENT_ROLES)
-        return OrganizationVerification(identity={**identity, "urn": next(iter(assignees))}, organization=organization_result, roles=[{"role": item["role"], "state": item["state"]} for item in roles], scopes=scopes, permissions={"organizationRead": True, "organizationSocialRead": "r_organization_social" in scopes, "organizationWrite": writable, "imageUpload": writable and bool(approved & IMAGE_ROLES), "commentCreate": comment_create}, readyForOrganicPosting=writable and bool(approved & POSTING_ROLES))
+        return OrganizationVerification(
+            identity={**identity, "urn": next(iter(assignees))},
+            organization=organization_result,
+            roles=[
+                {"role": item["role"], "state": item["state"]}
+                for item in roles
+            ],
+            scopes=scopes,
+            permissions={
+                "organizationRead": True,
+                "organizationSocialRead": "r_organization_social" in scopes,
+                "organizationWrite": writable,
+                "imageUpload": writable and bool(approved & IMAGE_ROLES),
+            },
+            readyForOrganicPosting=writable and bool(approved & POSTING_ROLES),
+        )

@@ -14,6 +14,7 @@ from apps.core.storage import StorageService
 from apps.core.date_time import DateTime
 from apps.core.publication_visibility import web_visible_clause
 from apps.core.urls import canonical_blog_url
+from apps.core.language import PostLanguage
 from apps.openai.services.gemini_ai import GeminiAiService
 from config import settings
 from config.database import DatabaseManager
@@ -464,14 +465,18 @@ class BlogServices:
     # Generate a complete editable Blog proposal without persistence.
     @classmethod
     async def ai_generate_blog_markdown_with_title(
-        cls, title: str, category: str
+        cls, title: str, category: str, language: PostLanguage = "vietnamese"
     ) -> dict:
         try:
             url = cls._create_url(title)
             # Build a review-only proposal; duplicate slugs are validated when saving.
-            markdown_output = await GeminiAiService.generate_blog_markdown(title)
-            seo_dict = await GeminiAiService.generate_seo_keywords_and_description(
-                title, markdown_output.blog_content
+            markdown_output = await GeminiAiService.generate_blog_markdown(
+                title, language=language
+            )
+            seo_dict = (
+                await GeminiAiService.generate_seo_keywords_and_description(
+                    title, markdown_output.blog_content, language=language
+                )
             )
             seo = schemas.SEODataSchema(
                 title=title,
@@ -480,7 +485,9 @@ class BlogServices:
                 keywords=seo_dict["keywords"],
                 author=settings.AUTHOR,
             )
-            tag = await GeminiAiService.generate_tag_base_on_title(title=title)
+            tag = await GeminiAiService.generate_tag_base_on_title(
+                title=title, language=language
+            )
             return {
                 "tag": tag,
                 "title": title,

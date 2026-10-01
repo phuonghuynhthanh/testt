@@ -34,7 +34,11 @@ class FakeVerifier:
             organization={"urn": self.organization_urn, "name": "VietQuant"},
             roles=[{"role": "ADMINISTRATOR", "state": "APPROVED"}],
             scopes=["rw_organization_admin", "w_organization_social"],
-            permissions={"organizationRead": True, "organizationWrite": True, "imageUpload": True, "commentCreate": True},
+            permissions={
+                "organizationRead": True,
+                "organizationWrite": True,
+                "imageUpload": True,
+            },
             readyForOrganicPosting=True,
         )
 
@@ -68,7 +72,6 @@ def test_text_publish_payload_and_id():
         return httpx.Response(201, headers={"x-restli-id": "urn:li:share:1"}, request=request)
 
     # Own and close the injected LinkedIn client around the post call.
-    # Own and close the injected LinkedIn client around the comment call.
     async def run():
         client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
         linkedin = LinkedInClient("token", "202601", client)
@@ -81,32 +84,6 @@ def test_text_publish_payload_and_id():
     assert captured["json"]["author"] == "urn:li:organization:123"
     assert captured["json"]["commentary"] == "Hello \\[world\\] #VietQuant"
     assert captured["json"]["distribution"]["feedDistribution"] == "MAIN_FEED"
-
-
-# Encode the post URN in the Social Actions path and accept any successful response status.
-@pytest.mark.parametrize("status", [200, 201])
-def test_organization_comment_payload_and_id(status):
-    captured = {}
-
-    # Record the outgoing comment request.
-    def handler(request):
-        captured["url"] = str(request.url)
-        captured["json"] = json.loads(request.content)
-        return httpx.Response(status, headers={"x-restli-id": "comment-1"}, request=request)
-
-    async def run():
-        client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
-        linkedin = LinkedInClient("token", "202601", client)
-        try:
-            return await OrganizationPublisher(FakeVerifier(linkedin)).create_organization_comment(
-                "urn:li:share:123", "Đọc bài đầy đủ:\nhttps://quant.vn/blog/latency"
-            )
-        finally:
-            await client.aclose()
-
-    assert asyncio.run(run()) == {"comment_id": "comment-1"}
-    assert "urn%3Ali%3Ashare%3A123/comments" in captured["url"]
-    assert captured["json"]["actor"] == "urn:li:organization:123"
 
 
 # Verify ambiguous final-create server failures are never marked safe to retry.
@@ -264,7 +241,7 @@ def test_organization_verification_happy_path():
     result = asyncio.run(run())
     assert result.readyForOrganicPosting is True
     assert result.permissions["imageUpload"] is True
-    assert result.permissions["commentCreate"] is True
+    assert "commentCreate" not in result.permissions
 
 
 # Preserve exact multi-image ordering from upload initialization through post creation.

@@ -19,7 +19,7 @@ async def generate_seo_keywords(
     _: str = Depends(require_admin),
 ):
     return await GeminiAiService.generate_seo_keywords(
-        data.blog_title, data.blog_content
+        data.blog_title, data.blog_content, language=data.language
     )
 
 
@@ -35,5 +35,5 @@ async def generate_seo_description(
     _: str = Depends(require_admin),
 ):
     return await GeminiAiService.generate_seo_description(
-        data.blog_title, data.blog_content
+        data.blog_title, data.blog_content, language=data.language
     )

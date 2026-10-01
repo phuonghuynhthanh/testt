@@ -1,6 +1,7 @@
 """HTTP contract for channel configuration, drafts, and explicit publishing."""
 
 from enum import Enum
+from apps.core.language import PostLanguage
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from apps.linkedin_posts.schemas import (
@@ -68,6 +69,7 @@ class DraftRequest(BaseModel):
     mode: LinkedInMode
     linkPlacement: LinkedInLinkPlacement = LinkedInLinkPlacement.NONE
     regenerate: bool = False
+    language: PostLanguage = "vietnamese"
 
     # Translate the retired boolean before strict field validation.
     @model_validator(mode="before")

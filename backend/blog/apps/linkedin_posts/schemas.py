@@ -1,6 +1,7 @@
 """Strict, Blog-independent LinkedIn input and output contracts."""
 
 from enum import Enum
+from apps.core.language import PostLanguage
 from datetime import datetime
 from typing import Literal
 
@@ -52,17 +53,6 @@ class LinkedInLinkPlacement(str, Enum):
 
     NONE = "NONE"
     IN_POST = "IN_POST"
-    FIRST_COMMENT = "FIRST_COMMENT"
-
-
-class LinkedInCommentStatus(str, Enum):
-    """Track the independent first-comment side effect."""
-
-    NOT_REQUESTED = "NOT_REQUESTED"
-    PENDING = "PENDING"
-    PUBLISHED = "PUBLISHED"
-    FAILED = "FAILED"
-    REVIEW_REQUIRED = "REVIEW_REQUIRED"
 
 
 # Translate one retired boolean field into the authoritative placement field.
@@ -330,6 +320,7 @@ class IndependentDraftRequest(StrictModel):
     context: str = ""
     targetAudience: str | None = Field(default=None, max_length=300)
     requestedMediaMode: MediaMode = MediaMode.NONE
+    language: PostLanguage = "vietnamese"
 
     # Normalize an empty hybrid audience control to backend inference.
     @field_validator("targetAudience")
@@ -345,6 +336,7 @@ class TopicProposalRequest(StrictModel):
     recentLimit: int = Field(default=20, ge=5, le=50)
     targetAudience: str | None = Field(default=None, max_length=300)
     guideline: str = ""
+    language: PostLanguage = "vietnamese"
 
     # Normalize an empty hybrid audience control to backend inference.
     @field_validator("targetAudience")
@@ -405,3 +397,11 @@ def linkedin_plain_text(value: str) -> str:
     value = re.sub(r"^\s{0,3}#{1,6}\s+", "", value, flags=re.MULTILINE)
     value = re.sub(r"[*_`]+", "", value)
     return re.sub(r"\n{3,}", "\n\n", value).strip()
+
+
+class LinkedInPreviewRequest(StrictModel):
+    """Render unsaved copy without persistence or provider requests."""
+
+    content: str = ""
+    linkPlacement: LinkedInLinkPlacement = LinkedInLinkPlacement.NONE
+    language: PostLanguage = "vietnamese"

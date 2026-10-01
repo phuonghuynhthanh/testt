@@ -1,3 +1,4 @@
+from apps.core.language import PostLanguage
 import re
 import json
 from typing import List
@@ -15,9 +16,17 @@ class GeminiAiService:
         gemini_config = GeminiConfig()
         return await gemini_config.gemini_chat_completion(prompt, system_prompt)
 
+    # Honor an optional output language for separately generated SEO keywords.
     @classmethod
-    async def generate_seo_keywords(cls, blog_title: str, blog_content: str):
-        prompt = PromptService.prompt_seo_keywords(blog_title, blog_content)
+    async def generate_seo_keywords(
+        cls,
+        blog_title: str,
+        blog_content: str,
+        language: PostLanguage | None = None,
+    ):
+        prompt = PromptService.prompt_seo_keywords(
+            blog_title, blog_content, language
+        )
         service = cls()
         result = await service.get_prompt_completion(prompt)
 
@@ -33,16 +42,27 @@ class GeminiAiService:
         except Exception as e:
             raise ValueError(f"Error parsing keywords from Gemini: {e}")
 
+    # Honor an optional output language for SEO descriptions.
     @classmethod
-    async def generate_seo_description(cls, blog_title: str, blog_content: str) -> str:
-        prompt = PromptService.prompt_seo_description(blog_title, blog_content)
+    async def generate_seo_description(
+        cls,
+        blog_title: str,
+        blog_content: str,
+        language: PostLanguage | None = None,
+    ) -> str:
+        prompt = PromptService.prompt_seo_description(
+            blog_title, blog_content, language
+        )
         service = cls()
         return await service.get_prompt_completion(prompt)
 
+    # Honor the article language while preserving the stored title.
     @classmethod
-    async def generate_blog_markdown(cls, title: str) -> GenerateSEOBlogMarkdownOut:
+    async def generate_blog_markdown(
+        cls, title: str, language: PostLanguage | None = None
+    ) -> GenerateSEOBlogMarkdownOut:
         try:
-            prompt = PromptService.prompt_blog_markdown(title)
+            prompt = PromptService.prompt_blog_markdown(title, language)
             service = cls()
             markdown_content = await service.get_prompt_completion(prompt)
 
@@ -59,14 +79,14 @@ class GeminiAiService:
             prompt = PromptService.prompt_get_list_title(keyword=trans_key, quantity=quantity, language=language)
             service = cls()
             list_title_str = await service.get_prompt_completion(prompt)
-            
+
             # Clean the response string
             cleaned_str = list_title_str.strip()
-            
+
             # Remove leading 'json' if present (case-insensitive)
             if cleaned_str.lower().startswith("json"):
                 cleaned_str = cleaned_str[4:].strip()
-            
+
             # Try to find JSON array in the response using regex
             json_match = re.search(r'\[.*?\]', cleaned_str, re.DOTALL)
             if json_match:
@@ -75,22 +95,26 @@ class GeminiAiService:
             else:
                 # If no JSON array found, try to parse the entire cleaned string
                 list_title = json.loads(cleaned_str)
-            
+
             if not isinstance(list_title, list):
                 raise ValueError("Model response is not a JSON array.")
-            
+
             return list_title
         except Exception as e:
             raise ValueError(f"Error generating list title: {e}")
 
+    # Keep generated SEO copy in the selected article language.
     @classmethod
     async def generate_seo_keywords_and_description(
-        cls, blog_title: str, blog_content: str
+        cls,
+        blog_title: str,
+        blog_content: str,
+        language: PostLanguage | None = None,
     ) -> dict:
         try:
             # Use PromptService to generate the combined prompt
             prompt_data = PromptService.prompt_seo_keywords_and_description(
-                blog_title, blog_content
+                blog_title, blog_content, language
             )
 
             openai_service = cls()
@@ -135,14 +159,19 @@ class GeminiAiService:
             raise ValueError(f"Error parsing JSON: {e}")
         except Exception as e:
             raise ValueError(f"Error generating SEO keywords and description: {e}")
-    
+
+    # Generate article tags in the requested language when explicitly selected.
     @classmethod
-    async def generate_tag_base_on_title(cls, title: str) -> str:
+    async def generate_tag_base_on_title(
+        cls, title: str, language: PostLanguage | None = None
+    ) -> str:
         try:
-            prompt = PromptService.prompt_get_tag(title=title)
+            prompt = PromptService.prompt_get_tag(
+                title=title, language=language
+            )
             service = cls()
             tag = await service.get_prompt_completion(prompt)
-            
+
             return tag
         except Exception as e:
             raise ValueError(f"Error generating tag base on title: {e}")

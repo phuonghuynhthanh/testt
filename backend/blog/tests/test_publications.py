@@ -104,7 +104,7 @@ def test_blog_linkedin_draft_has_no_persistence(monkeypatch):
             pass
 
         # Return a deterministic review preview.
-        async def draft(self, _):
+        async def draft(self, _, language="vietnamese"):
             return result
 
     monkeypatch.setattr(PublicationService, "_blog", classmethod(lambda cls, _: blog))

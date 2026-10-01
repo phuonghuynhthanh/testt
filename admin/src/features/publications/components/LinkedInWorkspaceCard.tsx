@@ -1,8 +1,11 @@
 import React from "react";
+import type { PostLanguage } from "../../../types/Language";
+import { LinkedInContentEditor } from "./LinkedInContentEditor";
 import { FaLinkedin } from "react-icons/fa";
 import { FiUpload, FiArrowUp, FiArrowDown } from "react-icons/fi";
 import type {
   FactualReview,
+  LinkedInLinkPlacement,
   LinkedInMediaAsset,
   LinkedInMediaMode,
   PexelsCandidate,
@@ -10,6 +13,9 @@ import type {
 import { linkedinMediaKey, linkedinMediaUrl } from "../../../utils/linkedinMedia";
 
 interface LinkedInWorkspaceCardProps {
+  blogId: string;
+  linkPlacement: LinkedInLinkPlacement;
+  language: PostLanguage;
   content: string;
   onContentChange: (val: string) => void;
   isGeneratingDraft: boolean;
@@ -37,6 +43,9 @@ interface LinkedInWorkspaceCardProps {
 // Render editable LinkedIn content with generated or manually uploaded image selections.
 export const LinkedInWorkspaceCard: React.FC<LinkedInWorkspaceCardProps> = ({
   content,
+  blogId,
+  linkPlacement,
+  language,
   onContentChange,
   isGeneratingDraft,
   onGenerateDraft,
@@ -78,15 +87,8 @@ export const LinkedInWorkspaceCard: React.FC<LinkedInWorkspaceCardProps> = ({
         )}
       </div>
 
-      <textarea
-        aria-label="Nội dung bài đăng LinkedIn"
-        value={content}
-        onChange={(e) => onContentChange(e.target.value)}
-        disabled={isPublished}
-        rows={6}
-        className="w-full rounded-lg border border-surface-border bg-surface-elevated p-3 text-xs sm:text-sm text-content-primary placeholder-content-muted focus:border-primary-green focus:outline-none focus:ring-1 focus:ring-primary-green transition"
-        placeholder="Soạn thảo nội dung bài đăng LinkedIn..."
-      />
+      <LinkedInContentEditor content={content} onChange={onContentChange} media={selectedMedia}
+        blogId={blogId} linkPlacement={linkPlacement} language={language} disabled={isPublished} />
 
       {factCheck.requiresHumanFactCheck && (
         <div className="rounded-lg border border-amber-500/30 bg-amber-950/20 p-3 text-xs text-amber-200 space-y-1.5">

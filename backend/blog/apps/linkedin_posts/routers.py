@@ -11,6 +11,7 @@ from apps.linkedin_posts.services.organization import OrganizationVerifier
 from apps.linkedin_posts.services.pexels import PexelsService
 from apps.linkedin_posts.schemas import (
     IndependentDraftRequest,
+    LinkedInPreviewRequest,
     LinkedInPostCreate,
     LinkedInPostUpdate,
     TopicProposalRequest,
@@ -29,6 +30,14 @@ TOPIC_PROPOSAL_ATTEMPTS = 3
 # Normalize topics for deterministic recent-history and in-batch duplicate checks.
 def _normalized_topic(value: str) -> str:
     return " ".join(value.strip().casefold().split())
+
+
+# Compose unsaved LinkedIn copy without database writes or external requests.
+@router.post("/preview")
+def preview_post(
+    data: LinkedInPreviewRequest, _: str = Depends(require_admin)
+):
+    return LinkedInPostService.preview(data)
 
 
 # Generate a standalone preview without persisting or posting it.
@@ -106,6 +115,7 @@ async def propose_topics(data: TopicProposalRequest, _: str = Depends(require_ad
     except LinkedInError as error:
         raise _http_error(error) from error
     # Keep this deliberately small: Gemini receives the source guideline plus live history.
+    from apps.core.language import language_instruction
     from apps.linkedin_posts.services.gemini import GeminiLinkedInProvider
     provider = GeminiLinkedInProvider(settings.GEMINI_API_KEY or "", settings.GEMINI_MODEL)
     try:
@@ -116,7 +126,25 @@ async def propose_topics(data: TopicProposalRequest, _: str = Depends(require_ad
         for _attempt in range(TOPIC_PROPOSAL_ATTEMPTS):
             remaining = data.count - len(topics)
             audience = data.targetAudience or "Infer the most suitable audience from topic, VietQuant guidance, and recent feed history."
-            prompt = "Đề xuất các chủ đề LinkedIn mới. Trả JSON object {topics: string[]}. Không lặp topic gần đây hoặc trong batch.\n" + json.dumps({"count": remaining, "targetAudience": audience, "guideline": data.guideline, "recentPosts": [item.model_dump(mode="json") for item in history], "alreadySelected": topics}, ensure_ascii=False)
+            prompt = (
+                language_instruction(data.language)
+                + "\n"
+                + "Đề xuất các chủ đề LinkedIn mới. "
+                "Trả JSON object {topics: string[]}. "
+                "Không lặp topic gần đây hoặc trong batch.\n"
+                + json.dumps(
+                    {
+                        "count": remaining,
+                        "targetAudience": audience,
+                        "guideline": data.guideline,
+                        "recentPosts": [
+                            item.model_dump(mode="json") for item in history
+                        ],
+                        "alreadySelected": topics,
+                    },
+                    ensure_ascii=False,
+                )
+            )
             payload = await provider._request(system_prompt, prompt, {"type": "object", "properties": {"topics": {"type": "array", "minItems": remaining, "maxItems": remaining, "items": {"type": "string"}}}, "required": ["topics"]}, "propose topics")
             values = payload.get("topics", []) if isinstance(payload, dict) else []
             for value in values if isinstance(values, list) else []:
@@ -149,12 +177,6 @@ async def publish_post(post_id: str, _: str = Depends(require_admin)):
 @router.post("/posts/{post_id}/retry")
 async def retry_post(post_id: str, _: str = Depends(require_admin)):
     return await LinkedInPostService.publish(post_id, retry=True)
-
-
-# Retry only a confirmed failed first-comment request.
-@router.post("/posts/{post_id}/link-comment/retry")
-async def retry_link_comment(post_id: str, _: str = Depends(require_admin)):
-    return await LinkedInPostService.retry_link_comment(post_id)
 
 
 # Suggest reviewable media for a saved post without replacing selected assets.

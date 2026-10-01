@@ -3,6 +3,7 @@
 from fastapi import APIRouter, Depends
 
 from apps.auth.services import require_admin
+from apps.linkedin_posts.schemas import LinkedInPreviewRequest
 from apps.publications.schemas import (
     DraftRequest,
     LinkedInCommandRequest,
@@ -27,6 +28,14 @@ def update_publication(
     blog_id: str, data: PublicationUpdate, _: str = Depends(require_admin)
 ):
     return PublicationService.update(blog_id, data)
+
+
+# Preview Blog-derived copy without persisting an association.
+@router.post("/{blog_id}/linkedin/preview")
+def preview_linkedin(
+    blog_id: str, data: LinkedInPreviewRequest, _: str = Depends(require_admin)
+):
+    return PublicationService.preview(blog_id, data)
 
 
 # Generate a reviewable SAME or SUMMARY draft; this endpoint never publishes.

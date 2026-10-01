@@ -1,6 +1,7 @@
 """Blog-to-LinkedIn adaptation with source-proven generation guardrails."""
 
 import json
+from apps.core.language import PostLanguage, language_instruction
 from pathlib import Path
 
 from apps.linkedin_posts.exceptions import LinkedInError
@@ -76,7 +77,8 @@ def _absolute_notes(content: str) -> list[str]:
     words = sorted(
         set(
             re.findall(
-                r"(?<!\w)(luôn|y hệt|chắc chắn|sẽ|ngay lập tức|hoàn hảo)(?!\w)",
+                r"(?<!\w)(luôn|y hệt|chắc chắn|sẽ|ngay lập tức|hoàn hảo|"
+                r"always|identical|guaranteed|immediately|perfect)(?!\w)",
                 content,
                 flags=re.IGNORECASE,
             )
@@ -110,7 +112,10 @@ def _validate_generated_content(
         or "\n" in ending
         or not re.search(r"\bvietquant\b", ending, re.IGNORECASE)
         or not re.search(
-            r"(?:\?|follow|theo dõi|hãy|cùng|tham gia|tìm hiểu|đọc thêm|chia sẻ|trao đổi|kết nối|ứng tuyển)",
+            r"(?:\?|follow|join|learn|read|share|discuss|connect|apply|"
+            r"explore|"
+            r"theo dõi|hãy|cùng|tham gia|tìm hiểu|đọc thêm|chia sẻ|trao đổi|"
+            r"kết nối|ứng tuyển)",
             ending,
             re.IGNORECASE,
         )
@@ -212,7 +217,11 @@ class LinkedInDraftGenerator:
         )
 
     # Generate, validate, and independently fact-review a semantic SUMMARY draft.
-    async def summary(self, source: LinkedInArticleSource) -> DraftResult:
+    async def summary(
+        self,
+        source: LinkedInArticleSource,
+        language: PostLanguage = "vietnamese",
+    ) -> DraftResult:
         prompt = _prompt("adapt_blog.md").format(
             title=source.title,
             content=source.content,
@@ -221,11 +230,15 @@ class LinkedInDraftGenerator:
             canonical_url="(link placement occurs only at publish time)",
             mode=source.mode.value,
         )
+        prompt += "\n\n" + language_instruction(language)
         last_error = None
         for _ in range(MAX_ATTEMPTS):
             try:
                 post = await self.provider.generate(
-                    _prompt("system.md"), prompt + "\n\n" + _generation_prompt(source)
+                    _prompt("system.md")
+                    + "\n"
+                    + language_instruction(language),
+                    prompt + "\n\n" + _generation_prompt(source),
                 )
                 _validate_generated_content(post, source)
                 review = await self.provider.review(post)
@@ -263,7 +276,11 @@ class LinkedInDraftGenerator:
         )
 
     # Route the selected mode without ever replacing administrator-owned CUSTOM text.
-    async def draft(self, source: LinkedInArticleSource) -> DraftResult:
+    async def draft(
+        self,
+        source: LinkedInArticleSource,
+        language: PostLanguage = "vietnamese",
+    ) -> DraftResult:
         if source.mode is LinkedInMode.CUSTOM:
             raise LinkedInError(
                 "invalid_input", "CUSTOM drafts must be supplied by an administrator."
@@ -271,7 +288,7 @@ class LinkedInDraftGenerator:
         return (
             await self.same(source)
             if source.mode is LinkedInMode.SAME
-            else await self.summary(source)
+            else await self.summary(source, language)
         )
 
     # Generate an independent post with the proven generation prompt, never adapt_blog.md.
@@ -282,6 +299,7 @@ class LinkedInDraftGenerator:
         audience: str | None,
         media_mode: str,
         recent_posts: list[dict],
+        language: PostLanguage = "vietnamese",
     ) -> DraftResult:
         source = LinkedInArticleSource(
             title=topic,
@@ -296,10 +314,16 @@ class LinkedInDraftGenerator:
             targetAudience=audience or "Infer the most suitable audience from topic, context, VietQuant guidance, and recent feed history.",
             requestedMediaMode=media_mode,
         )
+        prompt += "\n\n" + language_instruction(language)
         last_error = None
         for _ in range(MAX_ATTEMPTS):
             try:
-                post = await self.provider.generate(_prompt("system.md"), prompt)
+                post = await self.provider.generate(
+                    _prompt("system.md")
+                    + "\n"
+                    + language_instruction(language),
+                    prompt,
+                )
                 _validate_generated_content(post, source)
                 review = await self.provider.review(post)
                 notes = list(

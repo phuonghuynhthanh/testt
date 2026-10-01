@@ -29,6 +29,44 @@ LEGACY_CATEGORY_NAMES = {
 }
 
 
+# Retire comment links while preserving published and uncertain history.
+def retire_comment_links(engine) -> None:
+    with engine.begin() as connection:
+        connection.execute(
+            text(
+                """
+            UPDATE linkedin_posts SET link_placement = 'IN_POST'
+            WHERE link_placement = 'FIRST_COMMENT'
+              AND status IN ('DRAFT', 'READY', 'FAILED')
+              AND provider_post_id IS NULL
+        """
+            )
+        )
+        connection.execute(
+            text(
+                """
+            UPDATE post_publications
+            SET linkedin_link_placement = 'IN_POST',
+                linkedin_include_web_link = TRUE
+            WHERE linkedin_link_placement = 'FIRST_COMMENT'
+              AND linkedin_status IN (
+                'NOT_SELECTED', 'DRAFT', 'READY', 'FAILED'
+              )
+              AND linkedin_post_id IS NULL
+              AND (
+                linkedin_record_id IS NULL
+                OR linkedin_record_id IN (
+                    SELECT id FROM linkedin_posts
+                    WHERE link_placement = 'IN_POST'
+                      AND status IN ('DRAFT', 'READY', 'FAILED')
+                      AND provider_post_id IS NULL
+                )
+              )
+        """
+            )
+        )
+
+
 # Upgrade an earlier local publication table and create Web-only rows for legacy Blogs.
 def apply(engine) -> None:
     inspector = inspect(engine)
@@ -228,12 +266,21 @@ def apply(engine) -> None:
                     id=record_id,
                     content=row["linkedin_content"],
                     media_mode=mode,
-                    media=media.get("items", []) if isinstance(media, dict) else media,
+                    media=(
+                        media.get("items", [])
+                        if isinstance(media, dict)
+                        else media
+                    ),
                     fact_check=row.get("linkedin_fact_check"),
                     generation=row.get("linkedin_generation"),
                     source_type="BLOG_ADAPTATION",
                     link_placement=(
-                        "IN_POST" if row.get("linkedin_include_web_link") else "NONE"
+                        row.get("linkedin_link_placement")
+                        or (
+                            "IN_POST"
+                            if row.get("linkedin_include_web_link")
+                            else "NONE"
+                        )
                     ),
                     link_comment_status="NOT_REQUESTED",
                     status=(
@@ -280,6 +327,8 @@ def apply(engine) -> None:
                         .where(blogs.c.id == blog_id)
                         .values(seo={**seo, "url": canonical_url})
                     )
+
+    retire_comment_links(engine)
 
     # Retrofit the real foreign key on PostgreSQL databases upgraded by an earlier draft.
     inspector = inspect(engine)

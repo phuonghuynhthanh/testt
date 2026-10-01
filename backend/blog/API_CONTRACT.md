@@ -76,8 +76,17 @@ Các API danh sách quản trị sử dụng cấu trúc phân trang chuẩn:
 ### 1.6 CMS 2.0 authoritative fields and migrations
 - `link_post` and `seo.url` are response-only Blog fields. `POST /blog` and `PUT /blog/{id}` accept only `tag`, `title`, `banner_url`, `category`, `content`, `state` (update), and editable SEO fields `title`, `description`, `keywords`, `author`. Legacy `link_post` and `seo.url` are silently ignored; other unknown fields return 422.
 - The API creates a slug from the title (`blog`, `blog-2`, …), reserves soft-deleted slugs, retries a uniqueness race, and always returns `seo.url = DOMAIN_URL + /blog/{slug}`. `/blog/is-duplicate-link-post` remains deprecated compatibility-only.
-- `LinkedInLinkPlacement` is `NONE | IN_POST | FIRST_COMMENT`. Legacy `includeWebLink` / `linkedinIncludeWebLink` map to `IN_POST` only when no placement is supplied; conflicting values return 422. New responses omit legacy booleans.
-- `LinkedInCommentStatus` is `NOT_REQUESTED | PENDING | PUBLISHED | FAILED | REVIEW_REQUIRED`. A comment failure never changes a published main post. Only `PUBLISHED + FIRST_COMMENT + FAILED` can use the comment retry endpoint.
+- `LinkedInLinkPlacement` is `NONE | IN_POST`. Legacy `includeWebLink` / `linkedinIncludeWebLink` map to `IN_POST` only when no placement is supplied; conflicting values return 422. New responses omit legacy booleans.
+- Comment creation and comment retries are retired. Migration converts editable unpublished `FIRST_COMMENT` drafts to `IN_POST`; historical fields remain in storage but are omitted from responses.
+
+### LinkedIn preview and AI language
+
+- Admin-only `POST /linkedin/preview` and `POST /publications/blogs/{blog_id}/linkedin/preview` accept `{ "content": "...", "linkPlacement": "NONE | IN_POST", "language": "vietnamese | english" }` and return `{ "content": "...", "targetUrl": "..." }` (`targetUrl` is null for `NONE`).
+- Preview and publish share the same composer: reviewed text, localized link block, then trailing hashtag-only lines. URLs are resolved by the backend; preview does not save records or call external providers.
+- Blog draft generation (including its legacy alias), independent LinkedIn generation, LinkedIn topic proposals, and Blog-to-LinkedIn SUMMARY generation accept `language`, defaulting to `vietnamese`. Other language values return 422.
+- The selected language controls generated copy, CTA and Blog SEO metadata. Administrator-entered Blog titles remain unchanged. SAME mode preserves source wording and ignores the generation-language selection.
+- Generated LinkedIn metadata includes `generation.language` (or `generated.language` in draft responses) for restoring authoring settings and localizing attached links.
+- Separately generated SEO keyword/description requests accept optional `language`; omitted values keep legacy language inference.
 
 ### 1.7 AI image generation
 `POST /media/ai/generate` is Admin-only and stores a reviewable Cloudflare-generated object without attaching it to a Blog or LinkedIn post.
@@ -771,7 +780,7 @@ true
   "publishLinkedin": true,
   "linkedinMode": "SUMMARY",
   "linkedinContent": "Bài viết tóm tắt chuyên sâu cho LinkedIn... #VietQuant",
-  "linkedinLinkPlacement": "FIRST_COMMENT",
+  "linkedinLinkPlacement": "IN_POST",
   "linkedinRecordId": "post-789a-0123-bcde-456789abcdef",
   "linkedinStatus": "READY",
   "linkedinPostId": null,
@@ -800,7 +809,7 @@ true
   }
 }
 ```
-- `linkedinPublishedLinkUrl`, `linkedinCommentStatus`, `linkedinCommentError`, and `linkedinCommentPublishedAt` report the independent link/comment outcome.
+- `linkedinPublishedLinkUrl` records the backend-owned URL used when publishing. Responses omit retired comment fields.
 - **Enum `linkedinStatus`**: `NOT_SELECTED` | `DRAFT` | `READY` | `PUBLISHING` | `PUBLISHED` | `FAILED` | `REVIEW_REQUIRED`
 - **Enum `linkedinMode`**: `SAME` | `SUMMARY` | `CUSTOM`
 - **Enum `linkedinMediaMode`**: `none` | `single-image` | `multi-image`
@@ -821,7 +830,7 @@ true
 ```
 > *Quy tắc ràng buộc*:
 > - Phải chọn ít nhất một kênh (`publishWeb: true` hoặc `publishLinkedin: true`).
-> - `linkedinLinkPlacement` accepts `NONE`, `IN_POST`, or `FIRST_COMMENT`; any non-`NONE` value requires both Web and LinkedIn.
+> - `linkedinLinkPlacement` accepts `NONE` or `IN_POST`; any non-`NONE` value requires both Web and LinkedIn.
 - **Response (200 OK)**: Trả về đối tượng publication đã serialize.
 
 #### 28. AI tạo bản nháp bài LinkedIn từ Blog (Draft LinkedIn Post from Blog)
@@ -833,8 +842,9 @@ true
 ```json
 {
   "mode": "SUMMARY",
-  "linkPlacement": "FIRST_COMMENT",
-  "regenerate": true
+  "linkPlacement": "IN_POST",
+  "regenerate": true,
+  "language": "vietnamese"
 }
 ```
 - **Response (200 OK)**:

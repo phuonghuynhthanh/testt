@@ -1,9 +1,23 @@
+from apps.core.language import PostLanguage, language_instruction
+
+
 class PromptService:
+    # Build SEO keywords in the selected language or infer it from the title.
     @classmethod
-    def prompt_seo_keywords(cls, title: str, description: str) -> str:
+    def prompt_seo_keywords(
+        cls, title: str, description: str, language: PostLanguage | None = None
+    ) -> str:
         prompt = (
             "Generate exactly 10 SEO keywords as a JSON array of strings based on the title and content of my blog. "
-            "If the blog title or content is in Vietnamese, generate the keywords in Vietnamese. "
+            + (
+                language_instruction(language)
+                if language
+                else (
+                    "If the blog title or content is in Vietnamese, "
+                    "generate the keywords in Vietnamese."
+                )
+            )
+            + " "
             "The keywords should be relevant, high-ranking, and naturally fit the topic. Ensure they "
             "are optimized for search engines and suitable for my target audience. Here is the title "
             "and content of my blog:\n\n"
@@ -13,11 +27,23 @@ class PromptService:
         )
         return prompt
 
+    # Build SEO description instructions in the requested output language.
     @classmethod
-    def prompt_seo_description(cls, title: str, description: str) -> str:
+    def prompt_seo_description(
+        cls, title: str, description: str, language: PostLanguage | None = None
+    ) -> str:
         prompt = (
             "Generate an SEO-optimized meta description based on the title and content of my blog. "
-            "If the blog title or content is in Vietnamese, generate the meta description in natural, fluent Vietnamese. "
+            + (
+                language_instruction(language)
+                if language
+                else (
+                    "If the blog title or content is in Vietnamese, "
+                    "generate the meta description in natural, "
+                    "fluent Vietnamese."
+                )
+            )
+            + " "
             "The description should be concise, compelling, and include relevant keywords to improve search engine ranking. "
             "It must not exceed 160 characters and should attract readers to click. Here is the title and content of my blog:\n\n"
             f"Title: {title}\n"
@@ -26,41 +52,36 @@ class PromptService:
         )
         return prompt
 
+    # Generate metadata in the explicitly selected language when provided.
     @classmethod
-    def prompt_seo_keywords_and_description(cls, title: str, description: str) -> dict:
-        keywords_prompt = (
-            "Generate exactly 10 SEO keywords as a JSON array of strings based on the title and content of my blog. "
-            "If the blog title or content is in Vietnamese, generate the keywords in Vietnamese. "
-            "The keywords should be relevant, high-ranking, and naturally fit the topic. Ensure they "
-            "are optimized for search engines and suitable for my target audience. Here is the title "
-            "and content of my blog:\n\n"
-            f"Title: {title}\n"
-            f"Content: {description}\n\n"
-            "Return the result as a JSON array of strings only, with no additional text or explanation.\n"
-        )
+    def prompt_seo_keywords_and_description(
+        cls, title: str, description: str, language: PostLanguage | None = None
+    ) -> dict:
+        return {
+            "keywords": cls.prompt_seo_keywords(title, description, language),
+            "description": cls.prompt_seo_description(
+                title, description, language
+            ),
+        }
 
-        description_prompt = (
-            "Generate an SEO-optimized meta description based on the title and content of my blog. "
-            "If the blog title or content is in Vietnamese, generate the meta description in natural, fluent Vietnamese. "
-            "The description should be concise, compelling, and include relevant keywords to improve search engine ranking. "
-            "It must not exceed 160 characters and should attract readers to click. Here is the title and content of my blog:\n\n"
-            f"Title: {title}\n"
-            f"Content: {description}\n\n"
-            "Return only the SEO meta description as plain text, with no additional text or explanation.\n"
-        )
-
-        return {"keywords": keywords_prompt, "description": description_prompt}
-
+    # Prefer the requested output language over title-language inference.
     @classmethod
-    def prompt_blog_markdown(cls, title: str) -> str:
+    def prompt_blog_markdown(
+        cls, title: str, language: PostLanguage | None = None
+    ) -> str:
         prompt = (
             "You are a professional content generator and SEO expert. Create a comprehensive blog post (approximately 800 to 1200 words) by expanding on the provided title and content with detailed explanations, examples, and insights.\n\n"
             "Formatting Rules (Markdown only):\n"
             "1. The blog post should have the title only once as a `#` H1 heading. Do NOT repeat the blog post title as the first chapter heading.\n"
-            "2. Before generating content, detect the language of the title. Use this detected language for the quote and for the entire blog post.\n"
-            "3. **Strictly adhere to the language of the provided title for the entire blog post, including the quote.:**\n"
-            "4. Insert a short, impactful quote related to the topic:\n"
-            " - If the title is in Vietnamese, use Vietnamese for the quote.\n"
+            + (
+                language_instruction(language) + "\n"
+                if language
+                else (
+                    "2. Detect the title language and use it for all "
+                    "content, including quotes.\n"
+                )
+            )
+            + "4. Insert a short, impactful quote related to the topic:\n"
             " - Written in 1–2 sentences.\n"
             " - Contain approximately 40-60 words to maintain readability.\n"
             ' - Reference a credible source in the middle (e.g., "According to [source name](link)") with the source name hyperlinked.\n'
@@ -92,7 +113,6 @@ class PromptService:
             "- Write in a natural, engaging tone that connects with readers while maintaining professional quality.\n"
             "- Be approximately 800 to 1200 words long.\n"
             "- Ensure consistent spacing between sections for better readability.\n"
-            "- Content must be translated into the same language as the title."
             "- Return **only the raw Markdown content** — no triple backticks, no ```markdown blocks at the end, no explanations, no comments, and no HTML."
         )
         return prompt
@@ -154,8 +174,9 @@ class PromptService:
         )
         return prompt
 
+    # Generate a tag in the selected language or infer it from the title.
     @classmethod
-    def prompt_get_tag(cls, title: str):
+    def prompt_get_tag(cls, title: str, language: PostLanguage | None = None):
         return (
             "Bạn là một chuyên gia SEO. Nhiệm vụ của bạn là đọc title của bài blog và xuất ra duy nhất 1 tag khái quát nhất, thể hiện lĩnh vực chính mà title đề cập.\n"
             "Yêu cầu:\n"
@@ -163,6 +184,10 @@ class PromptService:
             "- Không dùng tên riêng (ví dụ: Hà Nội, Đà Lạt, Phú Quốc...).\n"
             "- Tag phải là lĩnh vực bao quát: ví dụ du lịch, ẩm thực, lập trình, sức khỏe, giáo dục, tài chính...  \n"
             "- Chỉ trả về tag, không giải thích thêm.  \n"
-            "- Tag này phải dịch sang cùng ngôn ngữ với title.\n"
-            f"Title: {title}"
+            + (
+                language_instruction(language) + "\n"
+                if language
+                else "- Tag này phải dịch sang cùng ngôn ngữ với title.\n"
+            )
+            + f"Title: {title}"
         )

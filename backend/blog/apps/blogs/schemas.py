@@ -2,6 +2,7 @@ from datetime import datetime
 from enum import Enum
 from typing import List, Literal, Optional
 
+from apps.core.language import PostLanguage
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
@@ -140,6 +141,7 @@ class BlogForClient(BaseModel):
 class GenerateBlogData(BaseModel):
     title: str
     category: str
+    language: PostLanguage = "vietnamese"
 
 
 class SearchReferencesRequest(BaseModel):
