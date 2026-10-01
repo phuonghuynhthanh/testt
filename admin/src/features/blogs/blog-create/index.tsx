@@ -4,7 +4,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { BsStars, BsFileEarmarkText } from "react-icons/bs";
 import { FiUpload, FiSend, FiSave } from "react-icons/fi";
 import { toast } from "react-toastify";
-import MarkdownEditor from "../../../shared/markdown/MarkdownEditor";
 import { createUrl } from "../../../utils/blogUtils";
 import { apiErrorMessage } from "../../../types/Api";
 import type { IBlogData, SEO } from "../../../types/Blog";
@@ -12,9 +11,10 @@ import type { LinkedInMode } from "../../../types/Publication";
 import { createBlogPost, generateBlogDraft } from "../../../services/blog/handleBlog";
 import { updatePublication, publishBlog } from "../../../services/publication/handlePublication";
 import { createCategory, listCategories } from "../../../services/category/handleCategory";
-import { PageHeader, SectionHeading, ConfirmDialog } from "../../../shared/ui";
+import { PageHeader, SectionHeading, ConfirmDialog, BottomActionBar } from "../../../shared/ui";
 import BlogSeoCollapse from "./BlogSeoCollapse";
 import BlogCreatePublicationSection from "./BlogCreatePublicationSection";
+import BlogContentEditorCard from "./BlogContentEditorCard";
 
 const EMPTY_BLOG: IBlogData = {
   tag: "",
@@ -154,7 +154,7 @@ const BlogCreate: React.FC = () => {
       client.invalidateQueries({ queryKey: ["blogs"] });
       client.invalidateQueries({ queryKey: ["categories"] });
       if (created?.id) {
-        navigate(`/blog/edit/${created.id}`);
+        navigate(`/blog/default/${created.id}`);
       }
     },
     onError: (error) => {
@@ -163,7 +163,7 @@ const BlogCreate: React.FC = () => {
         setDirty(false);
         client.invalidateQueries({ queryKey: ["blogs"] });
         toast.error(`Bài viết đã được lưu nhưng chưa hoàn tất cấu hình xuất bản: ${error.message}`);
-        navigate(`/blog/edit/${error.createdId}`);
+        navigate(`/blog/default/${error.createdId}`);
         return;
       }
       toast.error(apiErrorMessage(error));
@@ -217,11 +217,56 @@ const BlogCreate: React.FC = () => {
   const formValid = Boolean(blog.title.trim() && blog.category.trim() && blog.content.trim());
 
   return (
-    <section className="space-y-6 max-w-5xl mx-auto">
+    <section className="space-y-6 max-w-5xl mx-auto pb-40 sm:pb-28">
       <PageHeader
         title="Tạo bài viết mới"
         description="Soạn thảo bài viết mới hoặc tạo nhanh bản nháp thông minh bằng trợ lý AI"
       />
+
+      {/* Keep primary actions visible throughout the page scroll. */}
+      <BottomActionBar>
+        <div className="flex items-center gap-2 text-xs">
+          <span className="font-semibold text-content-primary">
+            {formValid ? "Bài viết đã sẵn sàng" : "Đang soạn thảo bài viết"}
+          </span>
+          <span className="text-content-muted">·</span>
+          <span className="text-content-muted">
+            {publishWeb && publishLinkedin
+              ? "Kênh: Web & LinkedIn"
+              : publishLinkedin
+              ? "Kênh: LinkedIn"
+              : publishWeb
+              ? "Kênh: Website"
+              : "Chưa chọn kênh"}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            title={save.isPending ? "Đang lưu" : "Lưu chờ duyệt"}
+            aria-label={save.isPending ? "Đang lưu" : "Lưu chờ duyệt"}
+            disabled={!formValid || save.isPending}
+            onClick={() => save.mutate("SAVE_PENDING")}
+            className="inline-flex items-center gap-2 rounded-lg border border-surface-border bg-surface-elevated px-4 py-2.5 text-xs font-medium text-content-primary transition-colors hover:bg-surface-hover disabled:cursor-not-allowed disabled:opacity-40 shadow-xs"
+          >
+            <FiSave className={`text-sm ${save.isPending ? "animate-pulse" : ""}`} />
+            <span>{save.isPending ? "Đang lưu..." : "Lưu chờ duyệt"}</span>
+          </button>
+
+          <button
+            type="button"
+            title={publishLinkedin ? "Hãy lưu bài viết trước để hoàn thiện nội dung LinkedIn" : "Xuất bản Website ngay"}
+            aria-label={publishLinkedin ? "Lưu bài viết trước khi xuất bản LinkedIn" : "Xuất bản Website ngay"}
+            disabled={!formValid || save.isPending || !publishWeb || publishLinkedin}
+            onClick={() => setConfirmPublish(true)}
+            className="inline-flex items-center gap-2 rounded-lg bg-primary-green px-4 py-2.5 text-xs font-semibold text-primary-black shadow-md transition-colors hover:bg-primary-green-dark disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            <FiSend className="text-sm" />
+            <span>Xuất bản ngay</span>
+          </button>
+        </div>
+      </BottomActionBar>
 
       <div className="flex w-fit gap-1 rounded-xl border border-surface-border bg-surface-card p-1">
         <button
@@ -322,47 +367,9 @@ const BlogCreate: React.FC = () => {
           </div>
         </div>
 
-        {source === "ai" && (
-          <div className="pt-2">
-            <button
-              type="button"
-              title={draft.isPending ? "Đang tạo bản nháp bằng AI" : blog.content ? "Tạo lại bằng AI" : "Tạo bản nháp AI"}
-              aria-label={draft.isPending ? "Đang tạo bản nháp bằng AI" : blog.content ? "Tạo lại bằng AI" : "Tạo bản nháp AI"}
-              disabled={!blog.title.trim() || !blog.category.trim() || draft.isPending}
-              onClick={handleRegenerateClick}
-              className="inline-flex items-center gap-2 rounded-lg border border-purple-500/30 bg-purple-950/40 px-3.5 py-2 text-xs font-medium text-purple-300 transition-colors hover:bg-purple-900/50 disabled:opacity-50"
-            >
-              <BsStars className={`text-sm text-purple-400 ${draft.isPending ? "animate-pulse" : ""}`} />
-              <span>{draft.isPending ? "Đang tạo bản nháp..." : blog.content ? "Tạo lại bằng AI" : "Tạo bản nháp bằng AI"}</span>
-            </button>
-          </div>
-        )}
       </div>
 
-      <div className="bg-surface-card p-6 rounded-xl border border-surface-border space-y-4">
-        <SectionHeading title="Nội dung bài viết" description="Định dạng Markdown tiêu chuẩn" />
-        <MarkdownEditor
-          value={blog.content}
-          title={blog.title}
-          onChange={(val) => updateBlog("content", val)}
-          height="h-96"
-          placeholder="Soạn thảo nội dung bài viết bằng Markdown..."
-        />
-      </div>
-
-      <BlogSeoCollapse seo={blog.seo} onUpdateSeo={updateSeo} />
-
-      <BlogCreatePublicationSection
-        publishWeb={publishWeb}
-        publishLinkedin={publishLinkedin}
-        mode={linkedinMode}
-        includeWebLink={includeWebLink}
-        onToggleWeb={handleToggleWeb}
-        onToggleLinkedin={handleToggleLinkedin}
-        onChangeMode={handleLinkedinModeChange}
-        onToggleWebLink={handleWebLinkToggle}
-      />
-
+      {/* Section 2: Ảnh bìa bài viết (moved right after Thông tin cơ bản) */}
       <div className="bg-surface-card p-6 rounded-xl border border-surface-border space-y-3">
         <SectionHeading title="Ảnh bìa bài viết" description="Tải lên tệp ảnh (JPEG, PNG, WebP) - Tùy chọn" />
         <div className="flex items-center gap-3">
@@ -392,31 +399,31 @@ const BlogCreate: React.FC = () => {
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center justify-end gap-3 pt-2">
-        <button
-          type="button"
-          title={save.isPending ? "Đang lưu" : "Lưu chờ duyệt"}
-          aria-label={save.isPending ? "Đang lưu" : "Lưu chờ duyệt"}
-          disabled={!formValid || save.isPending}
-          onClick={() => save.mutate("SAVE_PENDING")}
-          className="inline-flex items-center gap-2 rounded-lg border border-surface-border bg-surface-elevated px-4 py-2.5 text-xs font-medium text-content-primary transition-colors hover:bg-surface-hover disabled:cursor-not-allowed disabled:opacity-40 shadow-xs"
-        >
-          <FiSave className={`text-sm ${save.isPending ? "animate-pulse" : ""}`} />
-          <span>{save.isPending ? "Đang lưu..." : "Lưu chờ duyệt"}</span>
-        </button>
+      {/* Section 3: Nội dung bài viết với các chế độ Soạn thảo / Markdown / Xem trước */}
+      <BlogContentEditorCard
+        content={blog.content}
+        title={blog.title}
+        onChange={(val) => updateBlog("content", val)}
+        showAiButton={source === "ai"}
+        isAiPending={draft.isPending}
+        onAiGenerate={handleRegenerateClick}
+        canAiGenerate={Boolean(blog.title.trim() && blog.category.trim())}
+      />
 
-        <button
-          type="button"
-          title={publishLinkedin ? "Hãy lưu bài viết trước để hoàn thiện nội dung LinkedIn" : "Xuất bản Website ngay"}
-          aria-label={publishLinkedin ? "Lưu bài viết trước khi xuất bản LinkedIn" : "Xuất bản Website ngay"}
-          disabled={!formValid || save.isPending || !publishWeb || publishLinkedin}
-          onClick={() => setConfirmPublish(true)}
-          className="inline-flex items-center gap-2 rounded-lg bg-primary-green px-4 py-2.5 text-xs font-semibold text-primary-black shadow-md transition-colors hover:bg-primary-green-dark disabled:cursor-not-allowed disabled:opacity-40"
-        >
-          <FiSend className="text-sm" />
-          <span>Xuất bản ngay</span>
-        </button>
-      </div>
+      {/* Section 4: Cấu hình SEO */}
+      <BlogSeoCollapse seo={blog.seo} onUpdateSeo={updateSeo} />
+
+      {/* Section 5: Cấu hình xuất bản & Phân phối */}
+      <BlogCreatePublicationSection
+        publishWeb={publishWeb}
+        publishLinkedin={publishLinkedin}
+        mode={linkedinMode}
+        includeWebLink={includeWebLink}
+        onToggleWeb={handleToggleWeb}
+        onToggleLinkedin={handleToggleLinkedin}
+        onChangeMode={handleLinkedinModeChange}
+        onToggleWebLink={handleWebLinkToggle}
+      />
 
       <ConfirmDialog
         isOpen={confirmRegenerate}

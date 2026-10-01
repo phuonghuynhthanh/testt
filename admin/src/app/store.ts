@@ -6,6 +6,7 @@ export const PATH = {
   BLOG_RESEARCH: "/blog/research",
   CATEGORIES: "/categories",
   EDIT_BLOG: "/blog/default/:blog_id",
+  BLOG_DETAIL: "/blog/detail/:blog_id",
   PUBLIC_PREVIEW: "/blog/preview",
   PUBLICATIONS: "/publications",
   PUBLICATION_CONFIG: "/publications/:blog_id",

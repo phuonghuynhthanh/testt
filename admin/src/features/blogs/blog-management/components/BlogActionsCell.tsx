@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { FiCheck, FiSend, FiEdit2, FiTrash2 } from "react-icons/fi";
+import { FiCheck, FiSend, FiEdit2, FiTrash2, FiEye } from "react-icons/fi";
 import type { BlogState } from "../../../../types/Blog";
 
 interface BlogActionsCellProps {
@@ -43,6 +43,15 @@ export const BlogActionsCell: React.FC<BlogActionsCellProps> = ({
       >
         <FiSend className="w-3 h-3 text-primary-green" />
         <span>Xuất bản</span>
+      </Link>
+
+      <Link
+        to={`/blog/detail/${blogId}`}
+        title="Xem chi tiết bài viết"
+        aria-label="Xem chi tiết bài viết"
+        className="inline-flex size-7 items-center justify-center rounded-md border border-surface-border bg-surface-elevated text-content-secondary hover:text-primary-green hover:bg-emerald-950/30 hover:border-emerald-800/40 transition-colors"
+      >
+        <FiEye className="w-3.5 h-3.5" />
       </Link>
 
       <Link

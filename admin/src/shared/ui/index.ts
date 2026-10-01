@@ -5,3 +5,4 @@ export { ConfirmDialog } from "./ConfirmDialog";
 export { Pagination } from "./Pagination";
 export { SectionHeading } from "./SectionHeading";
 export { BlogThumbnail } from "./BlogThumbnail";
+export { BottomActionBar } from "./BottomActionBar";

@@ -15,6 +15,7 @@ import CategoryManagement from "../features/categories/CategoryManagement";
 import PublicBlogPreview from "../features/blogs/public-preview/PublicBlogPreview";
 import PublicationManagement from "../features/publications/PublicationManagement";
 import PublicationConfigPage from "../features/publications/PublicationConfigPage";
+import BlogDetailPage from "../features/blogs/blog-detail/BlogDetailPage";
 
 // Define the authenticated blog routes and the public login route.
 const App = () => {
@@ -34,6 +35,7 @@ const App = () => {
             <Route path={PATH.PUBLIC_PREVIEW} element={<PublicBlogPreview />} />
             <Route path={PATH.CATEGORIES} element={<CategoryManagement />} />
             <Route path={PATH.EDIT_BLOG} element={<BlogUpdate />} />
+            <Route path={PATH.BLOG_DETAIL} element={<BlogDetailPage />} />
             <Route path={PATH.PUBLICATIONS} element={<PublicationManagement />} />
             <Route path={PATH.PUBLICATION_CONFIG} element={<PublicationConfigPage />} />
             <Route path={PATH.LINKEDIN} element={<LinkedInManagement />} />

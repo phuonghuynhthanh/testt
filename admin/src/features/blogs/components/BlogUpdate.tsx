@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useParams } from "react-router-dom";
-import { IoIosSave } from "react-icons/io";
+import { useParams, Link } from "react-router-dom";
+import { FiSave, FiEye } from "react-icons/fi";
 import { toast } from "react-toastify";
 
 import type {
@@ -23,7 +23,7 @@ import { createUrl } from "../../../utils/blogUtils";
 import BlogPreviewDemo from "./BlogPreviewDemo";
 import BlogBasicInfoForm from "./BlogBasicInfoForm";
 import BlogSeoForm from "./BlogSeoForm";
-import { PageHeader } from "../../../shared/ui";
+import { PageHeader, StatusBadge, BottomActionBar } from "../../../shared/ui";
 import PublicationConfigWorkspace from "../../publications/components/PublicationConfigWorkspace";
 
 const INIT_BLOG_DATA: IBlogData = {
@@ -243,7 +243,7 @@ const BlogUpdate = () => {
   }, []);
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto">
+    <div className="space-y-6 max-w-5xl mx-auto pb-40 sm:pb-28">
       {openEditBlogContent && (
         <BlogPreviewDemo
           tag={blogData.tag}
@@ -260,20 +260,39 @@ const BlogUpdate = () => {
       <PageHeader
         title="Chi tiết bài viết"
         description="Chỉnh sửa thông tin cơ bản, cấu hình SEO và cập nhật nội dung bài viết"
-        actions={
+      />
+
+      {/* Keep the update actions visible throughout the page scroll. */}
+      <BottomActionBar>
+        <div className="flex items-center gap-2.5 text-xs min-w-0">
+          <StatusBadge status={blogData.state || "PENDING"} />
+          <span className="font-semibold text-content-primary truncate max-w-xs sm:max-w-sm md:max-w-md">
+            {blogData.title || "Chỉnh sửa bài viết"}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-3">
+          {blogId && (
+            <Link
+              to={`/blog/detail/${blogId}`}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-surface-border bg-surface-elevated px-3 py-2 text-xs font-medium text-content-secondary hover:text-content-primary hover:bg-surface-hover transition-colors"
+            >
+              <FiEye className="text-sm" />
+              <span>Xem chi tiết</span>
+            </Link>
+          )}
+
           <button
             type="button"
-            title={isLoading ? "Đang lưu thay đổi" : "Lưu thay đổi"}
-            aria-label={isLoading ? "Đang lưu thay đổi" : "Lưu thay đổi"}
-            className="inline-flex h-9 items-center gap-2 rounded-lg bg-primary-green px-4 text-xs font-semibold text-primary-black shadow-sm transition-colors hover:bg-primary-green-dark disabled:opacity-50"
             onClick={handleUpdate}
             disabled={isLoading}
+            className="inline-flex items-center gap-2 rounded-lg bg-primary-green px-4 py-2 text-xs font-semibold text-primary-black shadow-md transition-colors hover:bg-primary-green-dark disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <IoIosSave className={`text-base ${isLoading ? "animate-pulse" : ""}`} />
+            <FiSave className={`text-sm ${isLoading ? "animate-pulse" : ""}`} />
             <span>{isLoading ? "Đang lưu..." : "Lưu thay đổi"}</span>
           </button>
-        }
-      />
+        </div>
+      </BottomActionBar>
 
       <div className="bg-surface-card p-6 rounded-xl border border-surface-border">
         <BlogBasicInfoForm

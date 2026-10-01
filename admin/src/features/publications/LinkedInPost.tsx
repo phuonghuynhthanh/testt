@@ -20,7 +20,7 @@ import {
 import { apiErrorMessage } from "../../types/Api";
 import type { LinkedInAudience, LinkedInSourceType } from "../../types/LinkedIn";
 import type { FactualReview, GeneratedLinkedInPost, LinkedInMediaAsset, LinkedInMediaMode } from "../../types/Publication";
-import { PageHeader, SectionHeading, ConfirmDialog } from "../../shared/ui";
+import { PageHeader, SectionHeading, ConfirmDialog, BottomActionBar } from "../../shared/ui";
 import { linkedinMediaKey, linkedinMediaUrl } from "../../utils/linkedinMedia";
 
 const EMPTY_FACT_CHECK: FactualReview = { requiresHumanFactCheck: false, factCheckNotes: [] };
@@ -201,7 +201,7 @@ const LinkedInPost: React.FC = () => {
   }
 
   return (
-    <section className="space-y-6 max-w-5xl mx-auto">
+    <section className="space-y-6 max-w-5xl mx-auto pb-40 sm:pb-28">
       <div>
         <Link
           to="/linkedin"
@@ -396,13 +396,16 @@ const LinkedInPost: React.FC = () => {
         </div>
       )}
 
-      <div className="flex flex-wrap items-center justify-end gap-3 pt-2">
+      {/* Keep draft and publication actions accessible from every editing section. */}
+      {!immutable && <BottomActionBar>
+        <span className="text-xs text-content-muted">{formValid ? "Bài đăng đã sẵn sàng" : "Đang soạn thảo bài LinkedIn"}</span>
+        <div className="flex flex-wrap items-center gap-3">
         {!immutable && (
           <button
             type="button"
             title={save.isPending ? "Đang lưu bản nháp" : "Lưu bản nháp"}
             aria-label={save.isPending ? "Đang lưu bản nháp" : "Lưu bản nháp"}
-            disabled={!formValid || save.isPending}
+            disabled={!formValid || save.isPending || publish.isPending || retry.isPending}
             onClick={() => save.mutate()}
             className="inline-flex items-center gap-2 rounded-lg border border-surface-border bg-surface-elevated px-4 py-2.5 text-xs font-medium text-content-primary transition-colors hover:bg-surface-hover disabled:opacity-40 shadow-xs"
           >
@@ -415,7 +418,7 @@ const LinkedInPost: React.FC = () => {
             type="button"
             title="Đăng ngay lên LinkedIn"
             aria-label="Đăng ngay lên LinkedIn"
-            disabled={!formValid || publish.isPending}
+            disabled={!formValid || publish.isPending || save.isPending || retry.isPending}
             onClick={() => setConfirm(true)}
             className="inline-flex items-center gap-2 rounded-lg bg-[#0a66c2] px-4 py-2.5 text-xs font-semibold text-white shadow-md transition-colors hover:bg-[#084e96] disabled:opacity-40"
           >
@@ -428,7 +431,7 @@ const LinkedInPost: React.FC = () => {
             type="button"
             title="Thử lại xuất bản"
             aria-label="Thử lại xuất bản"
-            disabled={retry.isPending}
+            disabled={retry.isPending || save.isPending || publish.isPending}
             onClick={() => retry.mutate()}
             className="inline-flex items-center gap-2 rounded-lg bg-rose-600 px-4 py-2.5 text-xs font-semibold text-white transition-colors hover:bg-rose-700 disabled:opacity-40"
           >
@@ -436,7 +439,8 @@ const LinkedInPost: React.FC = () => {
             <span>Thử lại xuất bản</span>
           </button>
         )}
-      </div>
+        </div>
+      </BottomActionBar>}
 
       <ConfirmDialog
         isOpen={confirmAiOverwrite}
