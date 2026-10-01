@@ -265,11 +265,12 @@ const BlogUpdate = () => {
             type="button"
             title={isLoading ? "Đang lưu thay đổi" : "Lưu thay đổi"}
             aria-label={isLoading ? "Đang lưu thay đổi" : "Lưu thay đổi"}
-            className="inline-flex size-10 items-center justify-center rounded-lg bg-primary-green text-primary-black shadow-sm transition-colors hover:bg-primary-green-dark disabled:opacity-50"
+            className="inline-flex h-9 items-center gap-2 rounded-lg bg-primary-green px-4 text-xs font-semibold text-primary-black shadow-sm transition-colors hover:bg-primary-green-dark disabled:opacity-50"
             onClick={handleUpdate}
             disabled={isLoading}
           >
-            <IoIosSave className={`text-lg ${isLoading ? "animate-pulse" : ""}`} />
+            <IoIosSave className={`text-base ${isLoading ? "animate-pulse" : ""}`} />
+            <span>{isLoading ? "Đang lưu..." : "Lưu thay đổi"}</span>
           </button>
         }
       />

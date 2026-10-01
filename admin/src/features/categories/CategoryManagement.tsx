@@ -122,9 +122,10 @@ const CategoryManagement: React.FC = () => {
             title="Tạo danh mục"
             aria-label="Tạo danh mục"
             onClick={() => openForm()}
-            className="inline-flex size-10 items-center justify-center rounded-lg bg-primary-green text-primary-black shadow-sm transition-colors hover:bg-primary-green-dark"
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-primary-green px-3.5 text-xs font-semibold text-primary-black shadow-sm transition-colors hover:bg-primary-green-dark"
           >
             <FiPlus className="w-4 h-4" />
+            <span>Tạo danh mục</span>
           </button>
         }
       />
@@ -149,9 +150,10 @@ const CategoryManagement: React.FC = () => {
                 title="Tạo danh mục ngay"
                 aria-label="Tạo danh mục ngay"
                 onClick={() => openForm()}
-                className="inline-flex size-9 items-center justify-center rounded-lg bg-primary-green text-primary-black transition-colors hover:bg-primary-green-dark"
+                className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-primary-green px-3.5 text-xs font-semibold text-primary-black transition-colors hover:bg-primary-green-dark"
               >
                 <FiPlus className="w-4 h-4" />
+                <span>Tạo danh mục ngay</span>
               </button>
             }
           />

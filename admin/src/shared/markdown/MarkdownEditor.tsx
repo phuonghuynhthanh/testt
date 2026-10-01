@@ -207,6 +207,7 @@ const UploadImageButton = ({ onUploadFiles }: MarkdownToolbarProps) => {
         onClick={() => inputRef.current?.click()}
       >
         <MdFileUpload />
+        <span>Tải ảnh</span>
       </button>
       <input
         ref={inputRef}

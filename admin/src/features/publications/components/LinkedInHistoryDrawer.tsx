@@ -39,9 +39,10 @@ export const LinkedInHistoryDrawer: React.FC<LinkedInHistoryDrawerProps> = ({
           disabled={isSyncing}
           title={isSyncing ? "Đang đồng bộ lịch sử" : "Đồng bộ lịch sử LinkedIn"}
           aria-label={isSyncing ? "Đang đồng bộ lịch sử" : "Đồng bộ lịch sử LinkedIn"}
-          className="inline-flex size-7 items-center justify-center rounded-md border border-surface-border bg-surface-elevated text-cyan-400 hover:bg-surface-hover disabled:opacity-50"
+          className="inline-flex h-7 items-center gap-1.5 rounded-md border border-surface-border bg-surface-elevated px-2 text-xs font-medium text-cyan-400 hover:bg-surface-hover disabled:opacity-50"
         >
           <FiRefreshCw className={`w-3 h-3 ${isSyncing ? "animate-spin" : ""}`} />
+          <span>{isSyncing ? "Đang đồng bộ..." : "Đồng bộ"}</span>
         </button>
       </div>
 

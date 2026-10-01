@@ -155,11 +155,12 @@ export const LinkedInWorkspaceCard: React.FC<LinkedInWorkspaceCardProps> = ({
               <label
                 title={isUploading ? "Đang tải ảnh" : "Tải ảnh lên"}
                 aria-label={isUploading ? "Đang tải ảnh" : "Tải ảnh lên"}
-                className={`inline-flex size-7 cursor-pointer items-center justify-center rounded-md border border-surface-border bg-surface-elevated text-content-primary hover:bg-surface-hover ${
+                className={`inline-flex h-7 cursor-pointer items-center gap-1.5 rounded-md border border-surface-border bg-surface-elevated px-2.5 text-xs font-medium text-content-primary hover:bg-surface-hover ${
                   isUploading ? "pointer-events-none opacity-50" : ""
                 }`}
               >
                 <FiUpload className="text-xs" />
+                <span>{isUploading ? "Đang tải..." : "Tải ảnh lên"}</span>
                 <input
                   type="file"
                   multiple={mediaMode === "multi-image"}
@@ -206,18 +207,20 @@ export const LinkedInWorkspaceCard: React.FC<LinkedInWorkspaceCardProps> = ({
                             onClick={() => onMoveMedia(key, -1)}
                             title="Đưa ảnh lên trước"
                             aria-label="Đưa ảnh lên trước"
-                            className="flex-1 py-0.5 rounded border border-surface-border bg-surface-card text-center"
+                            className="inline-flex flex-1 items-center justify-center gap-1 rounded border border-surface-border bg-surface-card py-0.5 text-center"
                           >
-                            <FiArrowUp className="mx-auto text-[10px]" />
+                            <FiArrowUp className="text-[10px]" />
+                            <span>Lên</span>
                           </button>
                           <button
                             type="button"
                             onClick={() => onMoveMedia(key, 1)}
                             title="Đưa ảnh xuống sau"
                             aria-label="Đưa ảnh xuống sau"
-                            className="flex-1 py-0.5 rounded border border-surface-border bg-surface-card text-center"
+                            className="inline-flex flex-1 items-center justify-center gap-1 rounded border border-surface-border bg-surface-card py-0.5 text-center"
                           >
-                            <FiArrowDown className="mx-auto text-[10px]" />
+                            <FiArrowDown className="text-[10px]" />
+                            <span>Xuống</span>
                           </button>
                         </>
                       )}

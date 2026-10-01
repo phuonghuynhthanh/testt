@@ -19,7 +19,6 @@ import PublicationStepper from "./components/PublicationStepper";
 import PublicationChannelCard from "./components/PublicationChannelCard";
 import PublicationPublishCard from "./components/PublicationPublishCard";
 import LinkedInWorkspaceCard from "./components/LinkedInWorkspaceCard";
-import RawApiResponseAccordion from "./components/RawApiResponseAccordion";
 import type {
   FactualReview,
   LinkedInMediaAsset,
@@ -175,9 +174,10 @@ const PublicationConfigPage: React.FC = () => {
           to="/publications"
           title="Quay lại danh sách xuất bản"
           aria-label="Quay lại danh sách xuất bản"
-          className="size-9 inline-flex items-center justify-center rounded-lg border border-surface-border bg-surface-card text-content-secondary hover:text-content-primary hover:bg-surface-hover transition-colors"
+          className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-surface-border bg-surface-card px-3 text-xs font-medium text-content-secondary hover:text-content-primary hover:bg-surface-hover transition-colors"
         >
-          <FiArrowLeft className="text-base" />
+          <FiArrowLeft className="text-sm" />
+          <span>Quay lại danh sách</span>
         </Link>
         <PageHeader
           title={blogQuery.data?.title ? `Xuất bản: ${blogQuery.data.title}` : "Cấu hình xuất bản"}
@@ -278,8 +278,6 @@ const PublicationConfigPage: React.FC = () => {
             isSavingDraft={saveDraftMutation.isPending}
             isPublished={isPublished}
           />
-
-          <RawApiResponseAccordion data={pub} />
         </div>
       </div>
 

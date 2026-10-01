@@ -14,7 +14,7 @@ const HeaderMbl = ({ onToggleSidebar, isSidebarOpen }: HeaderMblProps) => {
       <button
         type="button"
         onClick={onToggleSidebar}
-        className="p-2 rounded-lg text-content-primary hover:text-white hover:bg-surface-elevated transition-colors duration-200 z-10 focus:outline-none focus:ring-2 focus:ring-primary-green"
+        className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-medium text-content-primary hover:text-white hover:bg-surface-elevated transition-colors duration-200 z-10 focus:outline-none focus:ring-2 focus:ring-primary-green"
         title={isSidebarOpen ? "Đóng menu" : "Mở menu"}
         aria-label={isSidebarOpen ? "Đóng menu" : "Mở menu"}
       >
@@ -23,6 +23,7 @@ const HeaderMbl = ({ onToggleSidebar, isSidebarOpen }: HeaderMblProps) => {
         ) : (
           <HiMenuAlt3 className="text-2xl text-content-primary" />
         )}
+        <span>{isSidebarOpen ? "Đóng menu" : "Mở menu"}</span>
       </button>
 
       {/* Logo - Center */}

@@ -47,10 +47,11 @@ const BlogSeoForm = ({
             type="button"
             title="Tạo SEO bằng AI"
             aria-label="Tạo SEO bằng AI"
-            className="inline-flex size-9 items-center justify-center rounded-lg border border-purple-500/30 bg-purple-950/40 text-purple-300 transition-colors hover:bg-purple-900/50 hover:text-purple-200"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-purple-500/30 bg-purple-950/40 px-3 py-1.5 text-xs font-medium text-purple-300 transition-colors hover:bg-purple-900/50 hover:text-purple-200 shadow-xs"
             onClick={onGenerateSEO}
           >
             <BsStars className="text-sm text-purple-400" />
+            <span>Tạo SEO bằng AI</span>
           </button>
         }
       />

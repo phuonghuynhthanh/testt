@@ -95,7 +95,7 @@ export const LinkedInTableToolbar: React.FC<LinkedInTableToolbarProps> = ({
           className="inline-flex h-8 items-center justify-center gap-1.5 rounded-lg border border-surface-border bg-surface-elevated px-2.5 text-xs font-medium text-emerald-400 hover:bg-surface-hover disabled:opacity-50 transition-colors"
         >
           <FiCheckCircle className="text-sm" />
-          <span className="hidden lg:inline">{isVerifying ? "Đang kiểm tra..." : "Kiểm tra kết nối"}</span>
+          <span>{isVerifying ? "Đang kiểm tra..." : "Kiểm tra kết nối"}</span>
         </button>
 
         {verified !== null && (
@@ -122,7 +122,7 @@ export const LinkedInTableToolbar: React.FC<LinkedInTableToolbarProps> = ({
           }`}
         >
           <FiClock className="text-sm" />
-          <span className="hidden lg:inline">{showHistory ? "Ẩn lịch sử" : "Lịch sử"}</span>
+          <span>{showHistory ? "Ẩn lịch sử" : "Lịch sử"}</span>
         </button>
       </div>
     </div>

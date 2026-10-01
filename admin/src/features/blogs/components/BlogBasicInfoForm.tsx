@@ -6,6 +6,8 @@ import type { IBlogData } from "../../../types/Blog";
 import { useQuery } from "@tanstack/react-query";
 import { listCategories } from "../../../services/category/handleCategory";
 
+import { formatCmsDate } from "../../../utils/date";
+
 interface BlogBasicInfoFormProps {
   blogData: IBlogData;
   bannerImage: File | null;
@@ -29,22 +31,11 @@ const BlogBasicInfoForm = ({
 
   return (
     <div className="py-6 space-y-4">
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
-        <InputField
-          label="Mã bài viết"
-          id="id"
-          name="id"
-          value={blogData.id ?? ""}
-          readOnly
-        />
-        <InputField
-          label="Cập nhật lần cuối"
-          id="modified_at"
-          name="modified_at"
-          value={blogData.modified_at ?? ""}
-          readOnly
-        />
-      </div>
+      {blogData.modified_at && (
+        <div className="flex items-center justify-end text-xs text-content-muted">
+          <span>Cập nhật lần cuối: <strong className="text-content-secondary font-medium">{formatCmsDate(blogData.modified_at)}</strong></span>
+        </div>
+      )}
       <InputUploadBanner
         fileImage={bannerImage}
         bannerUrl={blogData.banner_url}

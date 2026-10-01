@@ -45,9 +45,10 @@ const InputSeoKeyword: React.FC<InputSeoKeywordProps> = ({
           onClick={handleAddKeyword}
           title="Thêm từ khóa"
           aria-label="Thêm từ khóa"
-          className="inline-flex size-[38px] items-center justify-center rounded-lg bg-surface-elevated hover:bg-surface-hover text-content-primary hover:text-white border border-surface-border transition-colors"
+          className="inline-flex h-[38px] items-center gap-1.5 rounded-lg bg-surface-elevated px-3 text-xs font-medium text-content-primary hover:bg-surface-hover hover:text-white border border-surface-border transition-colors"
         >
           <IoMdAddCircle className="text-primary-green text-base" />
+          <span>Thêm</span>
         </button>
       </div>
 
@@ -62,11 +63,12 @@ const InputSeoKeyword: React.FC<InputSeoKeywordProps> = ({
               <button
                 type="button"
                 onClick={() => handleDeleteKeyword(index)}
-                className="text-content-muted hover:text-rose-400 transition-colors p-0.5"
+                className="inline-flex items-center gap-1 p-0.5 text-content-muted hover:text-rose-400 transition-colors"
                 title={`Xóa từ khóa ${keyword}`}
                 aria-label={`Xóa từ khóa ${keyword}`}
               >
                 <IoCloseOutline className="w-3.5 h-3.5" />
+                <span>Xóa</span>
               </button>
             </span>
           ))}

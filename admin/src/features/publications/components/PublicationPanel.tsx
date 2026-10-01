@@ -503,8 +503,13 @@ const PublicationPanel = ({
               {mediaMode !== "none" && <div className="flex flex-wrap gap-2">
                 <input value={keywordInput} onChange={(event) => setKeywordInput(event.target.value)} placeholder="Từ khóa (tùy chọn)..." className="rounded-lg border border-surface-border bg-surface-elevated px-3 py-1.5 text-xs text-content-primary placeholder-content-muted focus:outline-none focus:ring-1 focus:ring-primary-green" />
                 <button type="button" onClick={searchMedia} disabled={suggestionsMutation.isPending || isPublished} className="rounded-lg bg-indigo-600 hover:bg-indigo-700 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50 transition-colors">{suggestionsMutation.isPending ? "Đang tìm…" : keywordInput.trim() ? "Tìm lại" : "Tìm gợi ý"}</button>
-                <label title={uploadMutation.isPending ? "Đang tải ảnh" : "Tải ảnh lên"} aria-label={uploadMutation.isPending ? "Đang tải ảnh" : "Tải ảnh lên"} className={`inline-flex size-8 cursor-pointer items-center justify-center rounded-lg border border-surface-border bg-surface-elevated text-content-primary transition-colors hover:bg-surface-hover ${uploadMutation.isPending || isPublished ? "pointer-events-none opacity-50" : ""}`}>
+                <label
+                  title={uploadMutation.isPending ? "Đang tải ảnh" : "Tải ảnh lên"}
+                  aria-label={uploadMutation.isPending ? "Đang tải ảnh" : "Tải ảnh lên"}
+                  className={`inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-lg border border-surface-border bg-surface-elevated px-2.5 text-xs font-medium text-content-primary transition-colors hover:bg-surface-hover ${uploadMutation.isPending || isPublished ? "pointer-events-none opacity-50" : ""}`}
+                >
                   <FiUpload className={`text-sm ${uploadMutation.isPending ? "animate-pulse" : ""}`} />
+                  <span>{uploadMutation.isPending ? "Đang tải..." : "Tải ảnh lên"}</span>
                   <input type="file" multiple={mediaMode === "multi-image"} accept="image/jpeg,image/png,image/gif" className="hidden" onChange={(event) => { const files = Array.from(event.target.files ?? []); if (files.length) uploadMutation.mutate(files); event.currentTarget.value = ""; }} />
                 </label>
               </div>}
@@ -520,8 +525,8 @@ const PublicationPanel = ({
                   <p className="text-content-muted truncate">{candidate.provider === "pexels" ? `Ảnh bởi ${candidate.photographer}` : candidate.fileName}</p>
                   {candidate.provider === "pexels" && <a href={candidate.sourceUrl} target="_blank" rel="noreferrer" className="block text-cyan-400 hover:text-cyan-300 underline text-[11px]">Xem trên Pexels</a>}
                   {selected && selectedMedia.length > 1 && <div className="flex gap-2">
-                    <button type="button" title="Đưa ảnh lên trước" aria-label="Đưa ảnh lên trước" disabled={isPublished || selectedMedia.findIndex((item) => linkedinMediaKey(item) === key) === 0} onClick={() => moveMedia(key, -1)} className="flex-1 rounded border border-surface-border bg-surface-card py-1 text-content-secondary disabled:opacity-30"><FiArrowUp className="mx-auto" /></button>
-                    <button type="button" title="Đưa ảnh xuống sau" aria-label="Đưa ảnh xuống sau" disabled={isPublished || selectedMedia.findIndex((item) => linkedinMediaKey(item) === key) === selectedMedia.length - 1} onClick={() => moveMedia(key, 1)} className="flex-1 rounded border border-surface-border bg-surface-card py-1 text-content-secondary disabled:opacity-30"><FiArrowDown className="mx-auto" /></button>
+                    <button type="button" title="Đưa ảnh lên trước" aria-label="Đưa ảnh lên trước" disabled={isPublished || selectedMedia.findIndex((item) => linkedinMediaKey(item) === key) === 0} onClick={() => moveMedia(key, -1)} className="inline-flex flex-1 items-center justify-center gap-1 rounded border border-surface-border bg-surface-card py-1 text-content-secondary disabled:opacity-30"><FiArrowUp /><span>Lên</span></button>
+                    <button type="button" title="Đưa ảnh xuống sau" aria-label="Đưa ảnh xuống sau" disabled={isPublished || selectedMedia.findIndex((item) => linkedinMediaKey(item) === key) === selectedMedia.length - 1} onClick={() => moveMedia(key, 1)} className="inline-flex flex-1 items-center justify-center gap-1 rounded border border-surface-border bg-surface-card py-1 text-content-secondary disabled:opacity-30"><FiArrowDown /><span>Xuống</span></button>
                   </div>}
                   <button type="button" onClick={() => toggleMedia(candidate)} className={`w-full py-1.5 rounded-lg text-xs font-medium transition ${selected ? "bg-rose-950/40 text-rose-300 border border-rose-800/40 hover:bg-rose-900/40" : "bg-blue-600 hover:bg-blue-700 text-white"}`}>{selected ? "Bỏ chọn" : "Chọn ảnh này"}</button>
                 </div>
@@ -548,7 +553,7 @@ const PublicationPanel = ({
           <p className="mt-2 text-xs text-content-muted">{statusCopy[publication.linkedinStatus]}</p>
           {publication.linkedinError && <p className="mt-2 text-xs text-rose-400">{publication.linkedinError.message}</p>}
           {publication.linkedinStatus === "REVIEW_REQUIRED" && <p className="mt-3 rounded-lg border border-amber-500/30 bg-amber-950/20 p-3 text-xs text-amber-300">Kết quả xuất bản LinkedIn có thể chưa rõ ràng. Hãy kiểm tra Trang Doanh nghiệp trước khi thao tác tiếp. Tự động thử lại đã tắt để tránh trùng lặp bài đăng.</p>}
-          {isPublished && <p className="mt-3 text-xs text-emerald-400">LinkedIn đã xuất bản {publication.linkedinPublishedAt ? `vào lúc ${formatCmsDate(publication.linkedinPublishedAt)}` : ""}{publication.linkedinPostId ? ` · ID bài đăng: ${publication.linkedinPostId}` : ""}</p>}
+          {isPublished && <p className="mt-3 text-xs text-emerald-400">LinkedIn đã xuất bản {publication.linkedinPublishedAt ? `vào lúc ${formatCmsDate(publication.linkedinPublishedAt)}` : ""}</p>}
           {publication.linkedinStatus === "FAILED" && publication.linkedinError?.retryable === true && <button type="button" onClick={() => retryMutation.mutate()} disabled={retryMutation.isPending} className="mt-3 rounded-lg bg-rose-600 hover:bg-rose-700 px-4 py-2 text-xs font-semibold text-white transition-colors">{retryMutation.isPending ? "Đang thử lại…" : "Thử lại LinkedIn"}</button>}
           {settingsDirty && <p className="mt-3 text-xs text-amber-300">Vui lòng lưu cài đặt kênh trước khi xuất bản.</p>}
           {publishLinkedin && (!mediaCountValid || !altTextValid) && <p className="mt-2 text-xs text-amber-300">Vui lòng chọn hình ảnh và alt text phù hợp trước khi xuất bản.</p>}

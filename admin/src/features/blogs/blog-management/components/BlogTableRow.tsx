@@ -20,7 +20,7 @@ export const BlogTableRow: React.FC<BlogTableRowProps> = ({
 }) => {
   const formattedSlug = blog.link_post
     ? `/${blog.link_post.replace(/^\/+/, "")}`
-    : `/${blog.id}`;
+    : "";
 
   return (
     <tr className="hover:bg-surface-hover/60 transition-colors group">
@@ -38,12 +38,14 @@ export const BlogTableRow: React.FC<BlogTableRowProps> = ({
             >
               {blog.title}
             </h4>
-            <p
-              className="text-[11px] text-content-muted truncate font-mono mt-0.5"
-              title={formattedSlug}
-            >
-              {formattedSlug}
-            </p>
+            {formattedSlug && (
+              <p
+                className="text-[11px] text-content-muted truncate font-mono mt-0.5"
+                title={formattedSlug}
+              >
+                {formattedSlug}
+              </p>
+            )}
           </div>
         </div>
       </td>

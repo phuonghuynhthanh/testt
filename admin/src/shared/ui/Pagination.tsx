@@ -41,10 +41,11 @@ export const Pagination: React.FC<PaginationProps> = ({
           disabled={isFirstPage}
           onClick={() => onPageChange(page - 1)}
           title="Trang trước"
-          className="inline-flex size-8 items-center justify-center rounded-lg border border-surface-border bg-surface-card hover:bg-surface-elevated text-content-secondary hover:text-content-primary disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-surface-border bg-surface-card px-2.5 text-xs font-medium text-content-secondary hover:bg-surface-elevated hover:text-content-primary disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           aria-label="Trang trước"
         >
           <FiChevronLeft className="w-4 h-4" />
+          <span>Trước</span>
         </button>
 
         <span className="px-3 py-1 text-xs font-medium rounded-md bg-surface-elevated border border-surface-border text-content-primary">
@@ -56,10 +57,11 @@ export const Pagination: React.FC<PaginationProps> = ({
           disabled={isLastPage}
           onClick={() => onPageChange(page + 1)}
           title="Trang sau"
-          className="inline-flex size-8 items-center justify-center rounded-lg border border-surface-border bg-surface-card hover:bg-surface-elevated text-content-secondary hover:text-content-primary disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-surface-border bg-surface-card px-2.5 text-xs font-medium text-content-secondary hover:bg-surface-elevated hover:text-content-primary disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           aria-label="Trang sau"
         >
           <FiChevronRight className="w-4 h-4" />
+          <span>Sau</span>
         </button>
       </div>
     </div>

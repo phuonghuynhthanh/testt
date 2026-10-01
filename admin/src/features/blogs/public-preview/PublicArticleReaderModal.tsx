@@ -40,9 +40,10 @@ export const PublicArticleReaderModal: React.FC<PublicArticleReaderModalProps> =
               onClick={onClose}
               title="Quay lại"
               aria-label="Quay lại"
-              className="inline-flex size-8 items-center justify-center rounded-lg text-content-secondary hover:bg-surface-hover hover:text-content-primary"
+              className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-content-secondary hover:bg-surface-hover hover:text-content-primary"
             >
               <FiArrowLeft className="text-sm" />
+              <span>Quay lại</span>
             </button>
             <span>/</span>
             <span className="text-emerald-400 font-medium">Bản xem trước công khai</span>
@@ -53,9 +54,10 @@ export const PublicArticleReaderModal: React.FC<PublicArticleReaderModalProps> =
             onClick={onClose}
             title="Đóng xem trước"
             aria-label="Đóng xem trước"
-            className="size-8 inline-flex items-center justify-center rounded-lg text-content-muted hover:text-content-primary hover:bg-surface-hover transition-colors"
+            className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-content-muted hover:text-content-primary hover:bg-surface-hover transition-colors"
           >
             <FiX className="text-lg" />
+            <span>Đóng</span>
           </button>
         </div>
 
