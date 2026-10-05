@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="theme-color" content="#0F172A" />
+<title>VietQuant Admin (ui-ux-pro-max preview)</title>
+<link rel="icon" href="../../public/favicon.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Fira+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/light/style.css" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  // Tokens from the ui-ux-pro-max "Minimalism and Swiss Style" dark palette, with tight radii for dense layouts.
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          surface: { base: '#0F172A', card: '#1B2336', elevated: '#272F42', border: '#2A3347', hover: '#2F3A52' },
+          content: { primary: '#F8FAFC', secondary: '#CBD5E1', muted: '#94A3B8' },
+          primary: { green: { DEFAULT: '#22C55E', dark: '#4ADE80' }, black: { DEFAULT: '#0F172A' } },
+        },
+        fontFamily: { sans: ['Fira Sans', 'system-ui', 'sans-serif'], mono: ['Fira Code', 'ui-monospace', 'monospace'] },
+        borderRadius: { sm: '3px', DEFAULT: '4px', md: '4px', lg: '6px', xl: '8px', '2xl': '8px', '3xl': '10px' },
+      },
+    },
+  };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+<link rel="stylesheet" href="css/app.css" />
+</head>
+<body class="font-sans" data-density="compact">
+<div id="app"></div>
+<script src="js/data.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/app.js"></script>
+<script src="js/pages-blog.js"></script>
+<script src="js/pages-blog-list.js"></script>
+<script src="js/pages-misc.js"></script>
+<script src="js/pages-linkedin.js"></script>
+<script>startApp();</script>
+</body>
+</html>

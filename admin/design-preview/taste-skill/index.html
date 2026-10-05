@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>VietQuant Admin (design preview)</title>
+<link rel="icon" href="../../public/favicon.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/light/style.css" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  // Same tokens as admin/tailwind.config.js so the preview matches the real design system.
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          surface: { base: '#121212', card: '#1A1A1A', elevated: '#222222', border: '#2E2E2E', hover: '#2A2A2A' },
+          content: { primary: '#F9FAFB', secondary: '#E2E8F0', muted: '#B8C0CC' },
+          primary: { green: { DEFAULT: '#07e86c', dark: '#00be73' }, black: { DEFAULT: '#121212' } },
+        },
+        fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+        transitionTimingFunction: { fluid: 'cubic-bezier(0.32,0.72,0,1)' },
+      },
+    },
+  };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+<link rel="stylesheet" href="css/app.css" />
+</head>
+<body class="font-sans">
+<div id="app"></div>
+<script src="js/data.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/app.js"></script>
+<script src="js/pages-blog.js"></script>
+<script src="js/pages-misc.js"></script>
+<script src="js/pages-linkedin.js"></script>
+<script>startApp();</script>
+</body>
+</html>
