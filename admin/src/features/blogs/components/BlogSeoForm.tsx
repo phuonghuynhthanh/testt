@@ -1,5 +1,5 @@
 import type { ChangeEvent, Dispatch, SetStateAction } from "react";
-import { BsStars } from "react-icons/bs";
+import { Sparkle } from "@phosphor-icons/react";
 import InputField from "../../../shared/input/InputField";
 import InputSeoKeyword from "../../../shared/input/InputSeoKeyword";
 import SeoGenerate from "../../../shared/SeoGenerate";
@@ -23,7 +23,6 @@ interface BlogSeoFormProps {
   onDeleteKeyword: (index: number) => void;
 }
 
-// Render SEO metadata inputs and AI SEO generation controls with dark surface styling.
 const BlogSeoForm = ({
   blogData,
   content,
@@ -38,7 +37,7 @@ const BlogSeoForm = ({
   onDeleteKeyword,
 }: BlogSeoFormProps) => {
   return (
-    <div className="space-y-5 bg-surface-card p-6 rounded-xl border border-surface-border">
+    <div className="panel p-4 space-y-4">
       <SectionHeading
         title="Thông tin SEO & Metadata"
         description="Tối ưu hóa thẻ mô tả, từ khóa tìm kiếm và cấu hình chia sẻ bài viết"
@@ -47,17 +46,17 @@ const BlogSeoForm = ({
             type="button"
             title="Tạo SEO bằng AI"
             aria-label="Tạo SEO bằng AI"
-            className="inline-flex items-center gap-1.5 rounded-lg border border-purple-500/30 bg-purple-950/40 px-3 py-1.5 text-xs font-medium text-purple-300 transition-colors hover:bg-purple-900/50 hover:text-purple-200 shadow-xs"
+            className="btn btn-ai"
             onClick={onGenerateSEO}
           >
-            <BsStars className="text-sm text-purple-400" />
+            <Sparkle size={14} weight="light" className="text-purple-300" />
             <span>Tạo SEO bằng AI</span>
           </button>
         }
       />
 
-      <div className="space-y-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="space-y-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <InputField
             label="Thời gian xuất bản"
             id="published_time"
@@ -96,7 +95,7 @@ const BlogSeoForm = ({
         <div className="flex flex-col">
           <label
             htmlFor="seo.description"
-            className="text-xs font-medium text-content-secondary mb-1.5"
+            className="label mb-1.5"
           >
             Mô tả SEO (Meta Description)
           </label>
@@ -106,7 +105,7 @@ const BlogSeoForm = ({
             rows={3}
             value={blogData.seo.description}
             onChange={onFieldChange as unknown as (e: React.ChangeEvent<HTMLTextAreaElement>) => void}
-            className="w-full rounded-lg border border-surface-border bg-surface-elevated px-3.5 py-2 text-sm text-content-primary placeholder-content-muted focus:border-primary-green focus:outline-none focus:ring-1 focus:ring-primary-green transition resize-y"
+            className="inp w-full resize-y"
             placeholder="Nhập đoạn tóm tắt ngắn cho công cụ tìm kiếm Google..."
           />
         </div>

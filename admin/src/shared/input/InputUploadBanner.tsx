@@ -1,28 +1,18 @@
 import React, { useEffect, useId, useState } from "react";
-import { FaUpload } from "react-icons/fa";
+import { Trash, UploadSimple } from "@phosphor-icons/react";
 import { toast } from "react-toastify";
 import { IMAGE_URL } from "../../config/config";
 
-interface InputUploadBannerProps {
+interface BannerPreviewProps {
   fileImage?: File | null;
   bannerUrl?: string;
-  setBannerImage: (file: File) => void;
-  disabled?: boolean;
+  onClear?: () => void;
 }
 
-// Show the active banner and release local object URLs after replacement or unmount.
-const InputUploadBanner: React.FC<InputUploadBannerProps> = ({
-  fileImage,
-  setBannerImage,
-  bannerUrl,
-  disabled = false,
-}) => {
-  const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2 MB
-  const [isDragging, setIsDragging] = useState(false);
+// Render the selected banner (new file or stored object) with an optional remove button.
+export const BannerPreview: React.FC<BannerPreviewProps> = ({ fileImage, bannerUrl, onClear }) => {
   const [previewUrl, setPreviewUrl] = useState("");
-  const inputId = useId();
 
-  // Revoke each file preview when the selected local file changes.
   useEffect(() => {
     if (!fileImage) { setPreviewUrl(""); return; }
     const url = URL.createObjectURL(fileImage);
@@ -30,7 +20,48 @@ const InputUploadBanner: React.FC<InputUploadBannerProps> = ({
     return () => URL.revokeObjectURL(url);
   }, [fileImage]);
 
-  // Validate both picked and dropped files through one consistent upload boundary.
+  const src = fileImage
+    ? previewUrl
+    : bannerUrl
+      ? (/^https?:\/\//i.test(bannerUrl) ? bannerUrl : `${IMAGE_URL}/${bannerUrl}`)
+      : "";
+  if (!src) return null;
+
+  return (
+    <div className="group relative h-44 overflow-hidden rounded-xl border border-surface-border bg-surface-elevated sm:h-56">
+      <img src={src} alt="Ảnh bìa" className="h-full w-full object-cover" />
+      {onClear && (
+        <div className="absolute right-3 top-3 flex gap-2">
+          <button type="button" onClick={onClear} className="btn btn-secondary !h-8 backdrop-blur">
+            <Trash size={14} weight="light" />
+            Gỡ ảnh
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
+
+interface InputUploadBannerProps {
+  fileImage?: File | null;
+  bannerUrl?: string;
+  setBannerImage: (file: File) => void;
+  disabled?: boolean;
+  showPreview?: boolean;
+}
+
+const InputUploadBanner: React.FC<InputUploadBannerProps> = ({
+  fileImage,
+  setBannerImage,
+  bannerUrl,
+  disabled = false,
+  showPreview = true,
+}) => {
+  const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2 MB
+  const [isDragging, setIsDragging] = useState(false);
+  const inputId = useId();
+
+  // Validate type and size before handing the file to the parent.
   const selectFile = (file?: File) => {
     if (!file || disabled) return;
     if (!["image/jpeg", "image/png", "image/webp", "image/gif"].includes(file.type)) {
@@ -44,69 +75,46 @@ const InputUploadBanner: React.FC<InputUploadBannerProps> = ({
     setBannerImage(file);
   };
 
-  // Accept a dropped image without allowing the browser to navigate to the file.
-  const handleOnDropBanner = (e: React.DragEvent<HTMLDivElement>) => {
+  const handleOnDropBanner = (e: React.DragEvent<HTMLLabelElement>) => {
     e.preventDefault();
     setIsDragging(false);
     selectFile(e.dataTransfer.files?.[0]);
   };
 
-  // Permit choosing the same file again after clearing the previous selection.
   const handleOnChangeBanner = (e: React.ChangeEvent<HTMLInputElement>) => {
     selectFile(e.target.files?.[0]);
     e.currentTarget.value = "";
   };
 
   return (
-    <div>
-      <label className="block font-medium mb-1 text-primary-white">
-        Ảnh Banner
+    <div className="space-y-4">
+      {showPreview && <BannerPreview fileImage={fileImage} bannerUrl={bannerUrl} />}
+      <label
+        htmlFor={inputId}
+        onDragOver={(e) => {
+          e.preventDefault();
+          if (!disabled) setIsDragging(true);
+        }}
+        onDragLeave={() => setIsDragging(false)}
+        onDrop={handleOnDropBanner}
+        className={`flex cursor-pointer flex-col items-center gap-2 rounded-xl border border-dashed px-6 py-8 text-center transition-colors ${
+          isDragging
+            ? "border-primary-green/50 bg-surface-elevated"
+            : "border-surface-border bg-surface-elevated/40 hover:border-primary-green/50 hover:bg-surface-elevated"
+        }`}
+      >
+        <UploadSimple size={30} weight="light" className="text-content-muted" />
+        <span className="text-sm font-medium">Chọn tệp ảnh từ thiết bị</span>
+        <span className="hint">JPEG, PNG, WebP hoặc GIF, tối đa 2MB</span>
+        <input
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/gif"
+          disabled={disabled}
+          className="hidden"
+          id={inputId}
+          onChange={handleOnChangeBanner}
+        />
       </label>
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center mb-2 gap-3 min-h-[140px]">
-        <div
-          onDragOver={(e) => {
-            e.preventDefault();
-            if (!disabled) setIsDragging(true);
-          }}
-          onDragLeave={() => setIsDragging(false)}
-          onDrop={handleOnDropBanner}
-          className={`flex-1 flex justify-center items-center min-h-[120px] sm:h-[150px] border-2 border-dashed rounded-xl p-4 text-center cursor-pointer transition-colors ${
-            isDragging ? "border-primary-green bg-primary-green/10" : "border-surface-border hover:border-surface-hover hover:bg-surface-elevated/30"
-          }`}
-        >
-          <input
-            type="file"
-            accept="image/jpeg,image/png,image/webp,image/gif"
-            disabled={disabled}
-            className="hidden"
-            id={inputId}
-            onChange={handleOnChangeBanner}
-          />
-          <label
-            htmlFor={inputId}
-            className="flex flex-col items-center justify-center space-y-2 cursor-pointer"
-          >
-            <FaUpload className="text-2xl text-primary-green" />
-            <span className="text-sm text-content-muted">
-              Nhấp hoặc kéo thả hình ảnh để tải lên
-            </span>
-          </label>
-        </div>
-
-        {fileImage ? (
-          <img
-            src={previewUrl}
-            alt="Xem trước Banner"
-            className="rounded-xl h-[140px] sm:h-[150px] w-full sm:w-[250px] object-cover border border-surface-border"
-          />
-        ) : bannerUrl ? (
-          <img
-            src={/^https?:\/\//i.test(bannerUrl) ? bannerUrl : `${IMAGE_URL}/${bannerUrl}`}
-            alt="Xem trước Banner"
-            className="rounded-xl h-[140px] sm:h-[150px] w-full sm:w-[250px] object-cover border border-surface-border"
-          />
-        ) : null}
-      </div>
     </div>
   );
 };

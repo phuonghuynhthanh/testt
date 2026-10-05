@@ -2,7 +2,7 @@
 
 Tài liệu đặc tả toàn bộ API endpoints của hệ thống Blog & CMS Quant-VN dành cho đội ngũ phát triển Frontend (Admin CMS & Client Website).
 
-> **Contract version:** 2.0.0<br>
+> **Contract version:** 2.1.0<br>
 > **Backend baseline:** commit bàn giao chứa tài liệu này<br>
 > **Nguồn kiểm chứng:** FastAPI OpenAPI tại `GET /openapi.json` (Swagger UI: `GET /docs`)<br>
 > **Quy tắc thay đổi:** Mọi thay đổi request, response, status code hoặc enum phải cập nhật tài liệu này và OpenAPI trong cùng pull request.
@@ -128,7 +128,7 @@ Provider failures use safe domain codes such as `ai_image_quota_exceeded`, `ai_i
 
 ### 1.8 Pexels Blog banners
 
-Admin-only `POST /linkedin/media/search` remains the shared search endpoint: submit an array of keywords and receive `{ "items": PexelsCandidate[] }`. Searching does not attach an image.
+Admin-only `POST /linkedin/media/search` and its banner alias `POST /media/pexels/search` accept an array of keywords and return `{ "items": PexelsCandidate[] }`. Searching does not attach an image. The banner alias uses the AI rate limit.
 
 Admin-only `POST /media/pexels/import` accepts one complete `PexelsCandidate` (`provider`, `providerId`, `sourceUrl`, `imageUrl`, `photographer`, `attribution`, `altText`, `order`). It downloads only an allowed HTTPS Pexels image URL, enforces byte and image validation, and stores the selected banner before returning 201:
 
@@ -207,6 +207,16 @@ The frontend replaces its selected banner only after import succeeds and later s
 | 47 | `GET` | `/linkedin/organization/verify` | Admin | Kiểm tra quyền truy cập và phân quyền LinkedIn Company Page |
 | 48 | `POST` | `/linkedin/media/search` | Admin | Tìm kiếm hình ảnh trực tiếp từ Pexels qua keywords |
 | 49 | `POST` | `/linkedin/media/upload` | Admin | Upload ảnh quản trị viên chọn cho bài LinkedIn |
+| 50 | `GET` | `/auth/me` | Admin | Hồ sơ quản trị viên đang đăng nhập |
+| 51 | `POST` | `/auth/logout` | Admin | Xác nhận logout stateless, trả 204 |
+| 52 | `GET` | `/blog/admin/counts` | Admin | Đếm trạng thái theo category và search |
+| 53 | `GET` | `/blog/admin/stats` | Admin | KPI và sparkline 14 ngày theo giờ Việt Nam |
+| 54 | `POST` | `/blog/admin/bulk-state` | Admin | Đổi trạng thái / undo tối đa 100 bài |
+| 55 | `POST` | `/blog/admin/bulk-delete` | Admin | Xóa mềm tối đa 100 bài |
+| 56 | `POST` | `/blog/admin/bulk-restore` | Admin | Khôi phục tối đa 100 bài |
+| 57 | `PATCH` | `/blog/{id}/state` | Admin | Đổi trạng thái bằng JSON |
+| 58 | `GET` | `/blog/admin/export.csv` | Admin | Xuất tối đa 5.000 dòng CSV |
+| 59 | `POST` | `/media/pexels/search` | Admin | Tìm ảnh stock cho banner |
 
 ---
 
@@ -248,6 +258,7 @@ The frontend replaces its selected banner only after import succeeds and later s
 - **Query Parameters**:
   - `num_of_blogs` *(integer, optional, default: 0)*: Số lượng bài viết đã nạp trên client (hỗ trợ infinite scroll / load more).
   - `category` *(string, optional, default: "ALL")*: Lọc theo tên danh mục, hoặc `"ALL"` để lấy tất cả.
+  - `limit` *(integer, optional, default: 10, min: 1, max: 24)*: Số bài mỗi lần nạp; xem quy tắc `next_req` tại mục 6.
 - **Response (200 OK)**:
 ```json
 {
@@ -328,6 +339,9 @@ The frontend replaces its selected banner only after import succeeds and later s
 - **Query Parameters**:
   - `state` *(string, optional)*: Lọc theo trạng thái: `"PENDING"`, `"APPROVED"`, `"REJECTED"`.
   - `category` *(string, optional)*: Lọc theo tên chuyên mục.
+  - `search` *(string, optional, max: 100)*: Tìm title/slug như trước, OR thêm title/slug/tag không dấu.
+  - `sort` *(enum: title, category, state, modified; default: modified)* và `dir` *(enum: asc, desc; default: desc)*: Luôn tie-break theo `id` cùng chiều.
+  - `include` *(optional: linkedin)*: Thêm `linkedinPost: {id, status} | null` cho từng item; không truyền thì giữ response cũ.
   - `page` *(integer, optional, default: 1, min: 1)*: Số trang.
   - `pageSize` *(integer, optional, default: 20, min: 1, max: 100)*: Kích thước trang.
 - **Response (200 OK)**:
@@ -646,6 +660,7 @@ true
 - **Query Parameters**:
   - `page` *(integer, optional, default: 1, min: 1)*
   - `pageSize` *(integer, optional, default: 20, min: 1, max: 100)*
+  - `sort` *(enum: modified, name; default: name)*, `dir` *(enum: asc, desc; default: asc)*. UI quản lý dùng `sort=modified&dir=desc`; mặc định giữ thứ tự cũ.
 - **Response (200 OK)**:
 ```json
 {
@@ -655,7 +670,8 @@ true
       "name": "Quant Trading",
       "slug": "quant-trading",
       "createdAt": "2026-01-01T00:00:00",
-      "modifiedAt": "2026-01-01T00:00:00"
+      "modifiedAt": "2026-01-01T00:00:00",
+      "usageCount": 0
     }
   ],
   "page": 1,
@@ -668,6 +684,7 @@ true
 #### 18. Tạo chuyên mục mới (Create Category)
 - **Method & Path**: `POST /categories`
 - **Auth**: Admin (`Bearer <token>`)
+- **Query**: `strict=false` (default) giữ get-or-create/restore; `strict=true` trả 409 `{"detail":"Danh mục này đã tồn tại."}` nếu slug đã có danh mục active. Danh mục đã xóa mềm vẫn được restore. Tên tối đa 120 ký tự.
 - **Request Body**:
 ```json
 {
@@ -1456,3 +1473,63 @@ true
 - Release owner cung cấp base URL của đúng môi trường, tài khoản admin thử nghiệm và CORS origin của frontend; không gửi JWT secret, mật khẩu hash, MinIO, Gemini, LinkedIn hoặc Pexels credentials cho frontend.
 - Frontend xác nhận đăng nhập, CRUD Blog/Category, upload ảnh, publication và một luồng LinkedIn sandbox bằng `GET /docs` hoặc collection kiểm thử của dự án.
 - Nếu OpenAPI và tài liệu này mâu thuẫn, router/backend đang chạy là nguồn sự thật; ghi issue và cập nhật contract trước khi frontend phụ thuộc vào thay đổi đó.
+
+## 6. API BỔ SUNG CHO ADMIN UI (2.1.0)
+
+Các endpoint dưới đây yêu cầu JWT admin. Thay đổi chỉ bổ sung tham số/field; các API multipart và hành vi mặc định vẫn dùng được.
+
+### Hồ sơ và logout
+
+`GET /auth/me` trả `{username, name, email}`. `name` và `email` lấy từ `ADMIN_DISPLAY_NAME` / `ADMIN_EMAIL`, mặc định là `ADMIN_USERNAME` nếu không cấu hình hoặc để trống.
+
+`POST /auth/logout` trả 204 với body rỗng. JWT stateless không bị thu hồi trên server; frontend xóa token đã lưu. Thiếu hoặc sai token trả 401 cho cả hai route.
+
+### Đếm trạng thái và KPI
+
+`GET /blog/admin/counts?category=NEWS&search=bao%20cao` trả `{ALL, PENDING, APPROVED, REJECTED}` là số nguyên. Tôn trọng category/search, bỏ qua query `state`, loại mọi bài đã xóa mềm. Sidebar gọi route không filter để lấy badge `PENDING`.
+
+`GET /blog/admin/stats` trả cùng bốn key, mỗi key chứa `{count, last7, prev7, daily14}`. `count` đếm mọi bài active của trạng thái đó; `daily14` gồm 14 số nguyên theo `created_at`, từ 13 ngày trước tới hôm nay theo `Asia/Ho_Chi_Minh`, thứ tự cũ → mới, ngày trống = 0. `last7` là hôm nay và 6 ngày trước; `prev7` là 7 ngày liền trước đó. Thống kê không đếm bài soft-deleted.
+
+### Bulk action và undo
+
+`POST /blog/admin/bulk-state` nhận:
+
+```json
+{"items":[{"id":"blog-id","state":"APPROVED"}]}
+```
+
+`state` chỉ nhận `PENDING|APPROVED|REJECTED`. Response 200:
+
+```json
+{"updated":1,"items":[{"id":"blog-id","state":"APPROVED","modified_at":"2026-10-05T12:00:00"}],"notFound":[]}
+```
+
+Mỗi item có thể thêm `modifiedAt` ISO 8601 để undo về timestamp đã lưu trước thao tác; không truyền hoặc null dùng thời gian hiện tại. Timestamp có offset được đổi về giờ Việt Nam rồi lưu không timezone. ID không tồn tại hoặc đã xóa mềm vào `notFound`, không làm lỗi cả batch.
+
+`PATCH /blog/{id}/state` nhận `{state, modifiedAt?}` cùng quy tắc, trả `{id, state, modified_at}`; ID thiếu/đã xóa mềm trả 404. PUT multipart cũ vẫn được hỗ trợ.
+
+`POST /blog/admin/bulk-delete` nhận `{"ids":["blog-id"]}`, trả `{"deleted":1,"notFound":[]}`. `POST /blog/admin/bulk-restore` nhận cùng body, trả `{"restored":1,"notFound":[]}`. Delete chỉ chọn bài active, restore chỉ chọn bài đã xóa mềm; các ID không phù hợp vào `notFound`. Hai thao tác giữ nguyên media và `modified_at` để undo khôi phục đúng thứ tự.
+
+Mỗi batch nhận 1..100 ID không trùng; sai state, ID trống, duplicate hoặc quá giới hạn trả 422 trước khi ghi. Mỗi batch chạy một transaction, rollback toàn bộ nếu ghi lỗi. Ba bulk route và PATCH state dùng WRITE limiter.
+
+### Public feed và related articles
+
+`GET /blog/client/blogs?limit=6` giới hạn 1..24 (default 10). `next_req` chỉ thêm `&limit=6` khi limit khác 10; offset và đường dẫn giữ nguyên. Lỗi sẵn có `next_req` thiếu `category` được giữ theo phạm vi tương thích của kế hoạch, frontend tiếp tục giữ category khi nạp trang sau.
+
+`GET /blog/link/{slug}?related=category&limit=4` trả related APPROVED cùng `category_id`, loại bài hiện tại và bài soft-deleted/không Web-visible, sort `modified_at desc, id desc`. Bài không có `category_id` trả related rỗng. Không truyền `related` vẫn dùng tag ±10 phút như cũ.
+
+### LinkedIn và category usage
+
+Item của `GET /linkedin/posts` và response `GET /linkedin/posts/{id}` thêm `blogId` / `blogTitle` nullable. Chỉ bài `BLOG_ADAPTATION` liên kết tới Blog active qua publication có giá trị; bài độc lập, CUSTOM hoặc Blog đã xóa mềm trả null. List dùng một query batch, không gọi provider. Enum `sourceType` giữ `INDEPENDENT_AI|BLOG_ADAPTATION|CUSTOM`.
+
+`include=linkedin` trên list Blog join publication → LinkedIn; post đã xóa mềm hoặc chưa có trả null. `usageCount` của danh mục đếm Blog active theo `category_id`, bao gồm mọi state, không N+1.
+
+### CSV và tìm ảnh banner
+
+`GET /blog/admin/export.csv` nhận `state`, `category`, `search`, `sort`, `dir` giống list; xuất tối đa 5.000 dòng theo cùng thứ tự. Response `text/csv; charset=utf-8`, BOM UTF-8, filename `blogs.csv`, cột `Tiêu đề, Slug, Danh mục, Trạng thái, Cập nhật`. Text có ký tự đầu kích hoạt formula được thêm dấu nháy đơn để mở an toàn trong spreadsheet.
+
+`POST /media/pexels/search` nhận array keywords, trả `{items: PexelsCandidate[]}` cùng service/xử lý lỗi của `/linkedin/media/search`, dùng AI limiter. Không tự tải hoặc gắn ảnh vào bài.
+
+### Migration và phạm vi
+
+Startup migration thêm cột nullable `blogs.search_text` và backfill title + slug + tag bằng helper Unicode không phụ thuộc Postgres `unaccent`. Migration idempotent và giữ timestamp cũ. Mọi create/update qua ORM cập nhật search tự động. Không sửa default `quantity` hay lỗi category của `next_req`; không thêm alias `by-blog` hoặc SEO gộp vì API hiện tại đã hỗ trợ các luồng đó.

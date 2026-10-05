@@ -1,16 +1,12 @@
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams, Link } from "react-router-dom";
-import { FiSave, FiEye } from "react-icons/fi";
+import { FloppyDisk, X } from "@phosphor-icons/react";
 import { toast } from "react-toastify";
-
 import type { IBlogData, IEditorData } from "../../../types/Blog";
 import type { IDataSeoGenerate } from "../../../types/OpenAi";
 import { getBlogDetail, updateBlog } from "../../../services/blog/handleBlog";
-import {
-  extractH1FromMarkdown,
-  fixEscapedMarkdownSyntax,
-} from "../../../utils/markdown";
+import { extractH1FromMarkdown, fixEscapedMarkdownSyntax } from "../../../utils/markdown";
 import BlogPreviewDemo from "./BlogPreviewDemo";
 import BlogBasicInfoForm from "./BlogBasicInfoForm";
 import BlogSeoForm from "./BlogSeoForm";
@@ -18,26 +14,9 @@ import { PageHeader, StatusBadge, BottomActionBar } from "../../../shared/ui";
 import { apiErrorMessage } from "../../../types/Api";
 
 const INIT_BLOG_DATA: IBlogData = {
-  id: "",
-  tag: "",
-  title: "",
-  banner_url: "",
-  link_post: "",
-  category: "",
-  state: "PENDING",
-  seo: {
-    title: "",
-    description: "",
-    url: "",
-    keywords: [],
-    author: "",
-    published_time: "",
-    modified_time: "",
-    banner_url: "",
-  },
-  content: "",
-  created_at: "",
-  modified_at: "",
+  id: "", tag: "", title: "", banner_url: "", link_post: "", category: "", state: "PENDING",
+  seo: { title: "", description: "", url: "", keywords: [], author: "", published_time: "", modified_time: "", banner_url: "" },
+  content: "", created_at: "", modified_at: "",
 };
 
 // Coordinate blog update data loading, local editing state, and persistence.
@@ -53,10 +32,7 @@ const BlogUpdate = () => {
   const [bannerImage, setBannerImage] = useState<File | null>(null);
   const [bannerBusy, setBannerBusy] = useState(false);
   const [blogContent, setBlogContent] = useState("");
-  const [dataSeoGenerate, setDataSeoGenerate] = useState<IDataSeoGenerate>({
-    listSeoKey: [],
-    descript: "",
-  });
+  const [dataSeoGenerate, setDataSeoGenerate] = useState<IDataSeoGenerate>({ listSeoKey: [], descript: "" });
 
   const { data: blogDetail } = useQuery({
     queryKey: ["blogDetail", blogId],
@@ -66,10 +42,8 @@ const BlogUpdate = () => {
     refetchOnWindowFocus: false,
   });
 
-  // Toggle markdown editor preview overlay.
+  // Toggle or close markdown editor preview overlay.
   const handleClickEditBlogContent = () => setOpenEditBlogContent((prev) => !prev);
-
-  // Close markdown preview overlay.
   const closeEditBlogContent = () => setOpenEditBlogContent(false);
 
   // Normalize escaped markdown syntax and update editor content.
@@ -87,15 +61,11 @@ const BlogUpdate = () => {
   const handleContentChange = (newContent: string) => {
     setBlogContent(newContent);
     const h1Title = extractH1FromMarkdown(newContent);
-    if (h1Title) {
-      setBlogData((prev) => ({ ...prev, title: h1Title }));
-    }
+    if (h1Title) setBlogData((prev) => ({ ...prev, title: h1Title }));
   };
 
   // Handle input field changes including nested SEO properties.
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
-  ) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setBlogData((prev) => {
       if (name.startsWith("seo.")) {
@@ -108,16 +78,10 @@ const BlogUpdate = () => {
 
   // Add comma-separated SEO keywords to the existing list.
   const handleAddKeyword = () => {
-    const newKeywords = keywordInput
-      .split(",")
-      .map((kw) => kw.trim())
-      .filter(Boolean);
+    const newKeywords = keywordInput.split(",").map((kw) => kw.trim()).filter(Boolean);
     setBlogData((prev) => ({
       ...prev,
-      seo: {
-        ...prev.seo,
-        keywords: [...new Set([...prev.seo.keywords, ...newKeywords])],
-      },
+      seo: { ...prev.seo, keywords: [...new Set([...prev.seo.keywords, ...newKeywords])] },
     }));
     setKeywordInput("");
   };
@@ -126,10 +90,7 @@ const BlogUpdate = () => {
   const handleDeleteKeyword = (index: number) => {
     setBlogData((prev) => ({
       ...prev,
-      seo: {
-        ...prev.seo,
-        keywords: prev.seo.keywords.filter((_, i) => i !== index),
-      },
+      seo: { ...prev.seo, keywords: prev.seo.keywords.filter((_, i) => i !== index) },
     }));
   };
 
@@ -140,20 +101,14 @@ const BlogUpdate = () => {
     try {
       setIsLoading(true);
       const blogUpdateData = {
-        id: blogData.id,
-        tag: blogData.tag,
-        title: blogData.title,
-        banner_url: blogData.banner_url,
+        id: blogData.id, tag: blogData.tag, title: blogData.title, banner_url: blogData.banner_url,
         category: blogData.category,
         seo: {
-          title: blogData.seo.title,
-          description: blogData.seo.description,
-          keywords: blogData.seo.keywords,
-          author: blogData.seo.author,
+          title: blogData.seo.title, description: blogData.seo.description,
+          keywords: blogData.seo.keywords, author: blogData.seo.author,
         },
         content: blogContent,
       };
-
       await updateBlog(blogUpdateData, bannerImage as File);
       queryClient.invalidateQueries({ queryKey: ["blogs"] });
       queryClient.invalidateQueries({ queryKey: ["blogs", "pending"] });
@@ -179,9 +134,7 @@ const BlogUpdate = () => {
         ...prev,
         seo: {
           ...prev.seo,
-          keywords: [
-            ...new Set([...prev.seo.keywords, ...dataSeoGenerate.listSeoKey]),
-          ],
+          keywords: [...new Set([...prev.seo.keywords, ...dataSeoGenerate.listSeoKey])],
           description: dataSeoGenerate.descript,
         },
       }));
@@ -192,16 +145,11 @@ const BlogUpdate = () => {
     if (blogDetail) {
       setBlogData({
         ...blogDetail,
-        seo: {
-          ...blogDetail.seo,
-          keywords: [...new Set(blogDetail.seo.keywords)],
-        },
+        seo: { ...blogDetail.seo, keywords: [...new Set(blogDetail.seo.keywords)] },
       });
       setBlogContent(blogDetail.content);
       const h1Title = extractH1FromMarkdown(blogDetail.content);
-      if (h1Title) {
-        setBlogData((prev) => ({ ...prev, title: h1Title }));
-      }
+      if (h1Title) setBlogData((prev) => ({ ...prev, title: h1Title }));
     }
   }, [blogDetail]);
 
@@ -216,7 +164,7 @@ const BlogUpdate = () => {
   }, []);
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto pb-40 sm:pb-28">
+    <div className="space-y-6 max-w-[968px] mx-auto pb-40 sm:pb-28">
       {openEditBlogContent && (
         <BlogPreviewDemo
           tag={blogData.tag}
@@ -232,26 +180,21 @@ const BlogUpdate = () => {
 
       <PageHeader
         title="Chỉnh sửa bài viết"
-        description="Chỉnh sửa thông tin cơ bản, cấu hình SEO và cập nhật nội dung bài viết"
+        description="Cập nhật nội dung, ảnh bìa và SEO."
+        actions={<StatusBadge status={blogData.state || "PENDING"} />}
       />
 
-      {/* Keep the update actions visible throughout the page scroll. */}
       <BottomActionBar>
-        <div className="flex items-center gap-2.5 text-xs min-w-0">
-          <StatusBadge status={blogData.state || "PENDING"} />
-          <span className="font-semibold text-content-primary truncate max-w-xs sm:max-w-sm md:max-w-md">
-            {blogData.title || "Chỉnh sửa bài viết"}
-          </span>
+        <div className="flex items-center gap-2 text-xs">
+          <span className="font-semibold">Chỉnh sửa bài viết</span>
+          <span className="hidden text-content-muted sm:inline">Thay đổi chỉ được áp dụng sau khi lưu.</span>
         </div>
 
         <div className="flex items-center gap-3">
           {blogId && (
-            <Link
-              to={`/blog/detail/${blogId}`}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-surface-border bg-surface-elevated px-3 py-2 text-xs font-medium text-content-secondary hover:text-content-primary hover:bg-surface-hover transition-colors"
-            >
-              <FiEye className="text-sm" />
-              <span>Xem chi tiết</span>
+            <Link to={`/blog/detail/${blogId}`} className="btn btn-secondary">
+              <X size={16} weight="light" />
+              <span>Đóng</span>
             </Link>
           )}
 
@@ -259,15 +202,15 @@ const BlogUpdate = () => {
             type="button"
             onClick={handleUpdate}
             disabled={isLoading || bannerBusy}
-            className="inline-flex items-center gap-2 rounded-lg bg-primary-green px-4 py-2 text-xs font-semibold text-primary-black shadow-md transition-colors hover:bg-primary-green-dark disabled:opacity-50 disabled:cursor-not-allowed"
+            className="btn btn-primary"
           >
-            <FiSave className={`text-sm ${isLoading ? "animate-pulse" : ""}`} />
+            <FloppyDisk size={16} weight="light" />
             <span>{isLoading ? "Đang lưu..." : "Lưu thay đổi"}</span>
           </button>
         </div>
       </BottomActionBar>
 
-      <div className="bg-surface-card p-6 rounded-xl border border-surface-border">
+      <div className="panel p-4">
         <BlogBasicInfoForm
           blogData={blogData}
           bannerImage={bannerImage}
@@ -295,20 +238,20 @@ const BlogUpdate = () => {
         onDeleteKeyword={handleDeleteKeyword}
       />
 
-      <div className="bg-surface-card p-6 rounded-xl border border-surface-border space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-4 pb-3 border-b border-surface-border">
-          <h3 className="font-semibold text-content-primary text-base">Nội dung bài viết</h3>
-          <div className="flex items-center gap-3">
+      <div className="panel p-4 space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-surface-border pb-3">
+          <h3 className="text-base font-semibold">Nội dung bài viết</h3>
+          <div className="flex items-center gap-2">
             <button
               type="button"
-              className="text-xs px-3 py-1.5 rounded-lg bg-surface-elevated hover:bg-surface-hover border border-surface-border text-cyan-400 font-medium transition-colors"
+              className="btn btn-outline"
               onClick={handleClickEditBlogContent}
             >
               {!openEditBlogContent ? "Mở trình soạn thảo Markdown" : "Thu gọn trình soạn thảo"}
             </button>
             <button
               type="button"
-              className="rounded-lg bg-emerald-950/40 text-emerald-400 border border-emerald-500/30 px-3 py-1.5 text-xs font-medium hover:bg-emerald-900/50 transition-colors"
+              className="btn btn-ghost text-primary-green"
               onClick={handleFixMarkdownSyntax}
             >
               Sửa lỗi cú pháp Markdown
@@ -316,8 +259,6 @@ const BlogUpdate = () => {
           </div>
         </div>
       </div>
-
-
     </div>
   );
 };

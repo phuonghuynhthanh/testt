@@ -1,6 +1,5 @@
 import React, { useState } from "react";
-import { MdEdit, MdCode, MdPreview } from "react-icons/md";
-import { BsStars } from "react-icons/bs";
+import { PencilSimple, Code, Eye, Sparkle } from "@phosphor-icons/react";
 import MarkdownEditor from "../../../shared/markdown/MarkdownEditor";
 import MarkdownContent from "../../../shared/markdown/MarkdownContent";
 import { PostLanguageSelect } from "../../../shared/ui/PostLanguageSelect";
@@ -9,9 +8,9 @@ import type { PostLanguage } from "../../../types/Language";
 type EditorDisplayMode = "edit" | "markdown" | "preview";
 
 const MODE_OPTIONS = [
-  { value: "edit", label: "Soạn thảo", title: "Chế độ Soạn thảo trực quan", Icon: MdEdit },
-  { value: "markdown", label: "Markdown", title: "Chế độ xem và sửa mã Markdown", Icon: MdCode },
-  { value: "preview", label: "Xem trước", title: "Chế độ Xem trước giao diện", Icon: MdPreview },
+  { value: "edit", label: "Soạn thảo", title: "Chế độ Soạn thảo trực quan", Icon: PencilSimple },
+  { value: "markdown", label: "Markdown", title: "Chế độ xem và sửa mã Markdown", Icon: Code },
+  { value: "preview", label: "Xem trước", title: "Chế độ Xem trước giao diện", Icon: Eye },
 ] as const;
 
 interface BlogContentEditorCardProps {
@@ -26,7 +25,6 @@ interface BlogContentEditorCardProps {
   onLanguageChange: (language: PostLanguage) => void;
 }
 
-// Render multi-mode blog content editor supporting rich editor, raw markdown, and live preview.
 export const BlogContentEditorCard: React.FC<BlogContentEditorCardProps> = ({
   content,
   title,
@@ -41,17 +39,16 @@ export const BlogContentEditorCard: React.FC<BlogContentEditorCardProps> = ({
   const [mode, setMode] = useState<EditorDisplayMode>("edit");
 
   return (
-    <div className="bg-surface-card p-6 rounded-xl border border-surface-border space-y-4">
+    <div className="panel p-4 space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-surface-border pb-4">
         <div>
-          <h3 className="font-semibold text-content-primary text-base">Nội dung bài viết</h3>
+          <h3 className="text-base font-semibold">Nội dung bài viết</h3>
           <p className="text-xs text-content-muted mt-0.5">
             Định dạng Markdown tiêu chuẩn hỗ trợ soạn thảo, mã nguồn và xem trước
           </p>
         </div>
 
-        {/* Render the three editor modes from one shared button definition. */}
-        <div className="flex items-center self-start sm:self-auto bg-surface-elevated rounded-xl p-1 border border-surface-border gap-1">
+        <div className="seg self-start" role="tablist">
           {MODE_OPTIONS.map(({ value, label, title: optionTitle, Icon }) => (
             <button
               key={value}
@@ -59,13 +56,9 @@ export const BlogContentEditorCard: React.FC<BlogContentEditorCardProps> = ({
               onClick={() => setMode(value)}
               title={optionTitle}
               aria-label={optionTitle}
-              className={`inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 ${
-                mode === value
-                  ? "bg-surface-card text-content-primary shadow-sm border border-surface-border"
-                  : "bg-transparent text-content-muted hover:text-content-primary"
-              }`}
+              aria-pressed={mode === value}
             >
-              <Icon className="w-3.5 h-3.5" />
+              <Icon size={14} weight="light" />
               <span>{label}</span>
             </button>
           ))}
@@ -81,15 +74,14 @@ export const BlogContentEditorCard: React.FC<BlogContentEditorCardProps> = ({
             aria-label={isAiPending ? "Đang tạo bản nháp bằng AI" : content ? "Tạo lại bằng AI" : "Tạo bản nháp AI"}
             disabled={!canAiGenerate || isAiPending}
             onClick={onAiGenerate}
-            className="inline-flex items-center gap-2 rounded-lg border border-purple-500/30 bg-purple-950/40 px-3.5 py-2 text-xs font-medium text-purple-300 transition-colors hover:bg-purple-900/50 disabled:opacity-50"
+            className="btn btn-ai"
           >
-            <BsStars className={`text-sm text-purple-400 ${isAiPending ? "animate-pulse" : ""}`} />
+            <Sparkle size={14} weight="light" className={isAiPending ? "animate-spin" : ""} />
             <span>{isAiPending ? "Đang tạo bản nháp..." : content ? "Tạo lại bằng AI" : "Tạo bản nháp bằng AI"}</span>
           </button>
         </div>
       )}
 
-      {/* Mode 1: Visual Editor */}
       {mode === "edit" && (
         <MarkdownEditor
           value={content}
@@ -100,7 +92,6 @@ export const BlogContentEditorCard: React.FC<BlogContentEditorCardProps> = ({
         />
       )}
 
-      {/* Mode 2: Raw Markdown Textarea */}
       {mode === "markdown" && (
         <div className="space-y-2">
           <textarea
@@ -108,14 +99,13 @@ export const BlogContentEditorCard: React.FC<BlogContentEditorCardProps> = ({
             onChange={(e) => onChange(e.target.value)}
             placeholder="Nhập hoặc dán mã nguồn Markdown tại đây..."
             rows={16}
-            className="w-full rounded-xl border border-surface-border bg-surface-elevated p-4 font-mono text-xs leading-relaxed text-content-primary placeholder-content-muted focus:border-primary-green focus:outline-none focus:ring-1 focus:ring-primary-green transition resize-y"
+            className="inp !rounded-xl font-mono !text-xs leading-relaxed"
           />
         </div>
       )}
 
-      {/* Mode 3: Live Preview */}
       {mode === "preview" && (
-        <div className="rounded-xl border border-surface-border bg-surface-elevated/40 p-6 min-h-[320px] max-h-[600px] overflow-y-auto">
+        <div className="min-h-[320px] overflow-y-auto rounded-xl border border-surface-border bg-surface-elevated/40 p-6">
           {content.trim() ? (
             <MarkdownContent content={content} />
           ) : (

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { FiPlus, FiEdit2, FiTrash2, FiFolder } from "react-icons/fi";
+import { Plus, PencilSimple, Trash, Folder } from "@phosphor-icons/react";
 import { toast } from "react-toastify";
 import Modal from "../../shared/Popup/Modal";
 import {
@@ -12,13 +12,8 @@ import {
 } from "../../services/category/handleCategory";
 import { apiErrorMessage } from "../../types/Api";
 import type { Category } from "../../types/Category";
-import { formatCmsDate } from "../../utils/date";
-import {
-  PageHeader,
-  EmptyState,
-  ConfirmDialog,
-  Pagination,
-} from "../../shared/ui";
+import { formatCmsDateOnly } from "../../utils/date";
+import { PageHeader, EmptyState, ConfirmDialog, Pagination } from "../../shared/ui";
 
 const PAGE_SIZE = 10;
 
@@ -37,16 +32,13 @@ const CategoryManagement: React.FC = () => {
     placeholderData: keepPreviousData,
   });
 
-  // Step back when the current page disappears (e.g. its last item was deleted).
   const totalPages = Math.max(1, categories.data?.totalPages ?? 1);
   useEffect(() => {
     if (page > totalPages) setPage(totalPages);
   }, [page, totalPages]);
 
-  // Invalidate and refetch cached category queries.
   const refresh = () => client.invalidateQueries({ queryKey: ["categories"] });
 
-  // Reset and close the category creation and editing modal.
   const closeForm = () => {
     setFormOpen(false);
     setEditing(null);
@@ -103,14 +95,12 @@ const CategoryManagement: React.FC = () => {
     onError: (error) => toast.error(apiErrorMessage(error)),
   });
 
-  // Open the modal form for either creating a new category or renaming an existing one.
   const openForm = (category?: Category) => {
     setEditing(category ?? null);
     setName(category?.name ?? "");
     setFormOpen(true);
   };
 
-  // Submit the active create or rename form.
   const submitForm = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!name.trim()) return;
@@ -119,47 +109,43 @@ const CategoryManagement: React.FC = () => {
   };
 
   return (
-    <section className="space-y-6 max-w-5xl mx-auto">
+    <section className="max-w-[968px] mx-auto">
       <PageHeader
         title="Danh mục bài viết"
         description="Quản lý hệ thống phân loại danh mục cho các bài viết CMS"
         actions={
           <button
             type="button"
-            title="Tạo danh mục"
-            aria-label="Tạo danh mục"
             onClick={() => openForm()}
-            className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-primary-green px-3.5 text-xs font-semibold text-primary-black shadow-sm transition-colors hover:bg-primary-green-dark"
+            className="btn btn-primary btn-lg"
           >
-            <FiPlus className="w-4 h-4" />
+            <Plus size={16} weight="light" />
             <span>Tạo danh mục</span>
           </button>
         }
       />
 
-      <div className="bg-surface-card rounded-xl border border-surface-border overflow-hidden shadow-sm">
+      <div className="panel p-0 overflow-hidden">
         {categories.isLoading ? (
-          <div className="py-20 text-center text-sm text-content-muted">
+          <div className="py-20 text-center text-xs text-content-muted">
             Đang tải dữ liệu danh mục...
           </div>
         ) : categories.isError ? (
-          <div className="py-12 text-center text-sm text-rose-400">
+          <div className="py-12 text-center text-xs text-rose-400">
             {apiErrorMessage(categories.error)}
           </div>
         ) : (categories.data?.items.length ?? 0) === 0 ? (
           <EmptyState
-            icon={<FiFolder className="w-6 h-6 text-primary-green" />}
+            icon={<Folder weight="light" className="w-6 h-6 text-primary-green" />}
             title="Chưa có danh mục nào"
             description="Tạo danh mục đầu tiên để gán cho các bài viết trên hệ thống."
             action={
               <button
                 type="button"
-                title="Tạo danh mục ngay"
-                aria-label="Tạo danh mục ngay"
                 onClick={() => openForm()}
-                className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-primary-green px-3.5 text-xs font-semibold text-primary-black transition-colors hover:bg-primary-green-dark"
+                className="btn btn-primary"
               >
-                <FiPlus className="w-4 h-4" />
+                <Plus size={16} weight="light" />
                 <span>Tạo danh mục ngay</span>
               </button>
             }
@@ -167,47 +153,44 @@ const CategoryManagement: React.FC = () => {
         ) : (
           <>
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-surface-elevated text-xs font-semibold uppercase tracking-wider text-content-muted border-b border-surface-border">
+              <table className="w-full min-w-[560px] text-left text-sm">
+                <thead className="border-b border-surface-border bg-surface-elevated/60 text-xs font-semibold uppercase tracking-[0.05em] text-content-muted">
                   <tr>
-                    <th className="py-3 px-4">Tên danh mục</th>
-                    <th className="py-3 px-4">Ngày cập nhật</th>
-                    <th className="py-3 px-4 text-right">Thao tác</th>
+                    <th className="px-3 py-2">Tên danh mục</th>
+                    <th className="px-3 py-2">Ngày cập nhật</th>
+                    <th className="px-3 py-2 text-right">Thao tác</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-surface-border">
                   {categories.data?.items.map((item) => (
-                    <tr
-                      key={item.id}
-                      className="hover:bg-surface-hover/60 transition-colors"
-                    >
-                      <td className="py-3.5 px-4 font-medium text-content-primary">
+                    <tr key={item.id} className="hrow row-in transition-colors duration-300 hover:bg-surface-hover/50">
+                      <td className="px-3 py-2 font-medium text-content-primary">
                         {item.name}
                       </td>
-                      <td className="py-3.5 px-4 text-xs text-content-muted whitespace-nowrap">
+                      <td className="whitespace-nowrap px-3 py-2 text-xs text-content-muted">
                         {item.modifiedAt || item.modified_at
-                          ? formatCmsDate(item.modifiedAt ?? item.modified_at!)
+                          ? formatCmsDateOnly(item.modifiedAt ?? item.modified_at!)
                           : "—"}
                       </td>
-                      <td className="py-3.5 px-4 text-right whitespace-nowrap">
-                        <div className="inline-flex items-center gap-2">
+                      <td className="px-3 py-2 text-right whitespace-nowrap">
+                        <div className="row-actions inline-flex items-center gap-1">
                           <button
                             type="button"
                             title="Sửa danh mục"
-                            aria-label="Sửa danh mục"
                             onClick={() => openForm(item)}
-                            className="inline-flex size-8 items-center justify-center rounded border border-transparent text-cyan-400 transition-colors hover:border-cyan-800/40 hover:bg-cyan-950/30 hover:text-cyan-300"
+                            className="iconbtn cyan"
+                            aria-label="Sửa danh mục"
                           >
-                            <FiEdit2 className="w-3.5 h-3.5" />
+                            <PencilSimple size={18} weight="light" />
                           </button>
                           <button
                             type="button"
                             title="Xóa danh mục"
-                            aria-label="Xóa danh mục"
                             onClick={() => setDeleteTarget(item)}
-                            className="inline-flex size-8 items-center justify-center rounded border border-transparent text-rose-400 transition-colors hover:border-rose-800/40 hover:bg-rose-950/30 hover:text-rose-300"
+                            className="iconbtn danger"
+                            aria-label="Xóa danh mục"
                           >
-                            <FiTrash2 className="w-3.5 h-3.5" />
+                            <Trash size={18} weight="light" />
                           </button>
                         </div>
                       </td>
@@ -217,7 +200,7 @@ const CategoryManagement: React.FC = () => {
               </table>
             </div>
 
-            <div className="border-t border-surface-border px-4 bg-surface-card">
+            <div>
               <Pagination
                 page={categories.data?.page ?? page}
                 totalPages={categories.data?.totalPages ?? 1}
@@ -233,18 +216,15 @@ const CategoryManagement: React.FC = () => {
       <Modal
         isOpen={formOpen}
         onClose={closeForm}
-        className="max-w-md p-6"
+        className="max-w-md p-5"
         ariaLabel={editing ? "Cập nhật danh mục" : "Tạo danh mục mới"}
       >
         <form onSubmit={submitForm} className="space-y-4">
-          <h2 className="text-lg font-bold text-content-primary">
+          <h2 className="text-base font-bold text-content-primary">
             {editing ? "Cập nhật danh mục" : "Tạo danh mục mới"}
           </h2>
           <div>
-            <label
-              htmlFor="cat-name-input"
-              className="block text-xs font-medium text-content-secondary mb-1.5"
-            >
+            <label htmlFor="cat-name-input" className="block text-xs font-medium text-content-secondary mb-1">
               Tên danh mục <span className="text-rose-400">*</span>
             </label>
             <input
@@ -254,21 +234,17 @@ const CategoryManagement: React.FC = () => {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Nhập tên danh mục..."
-              className="w-full rounded-lg border border-surface-border bg-surface-elevated px-3.5 py-2 text-sm text-content-primary placeholder-content-muted focus:border-primary-green focus:outline-none focus:ring-1 focus:ring-primary-green transition"
+              className="inp text-xs h-8"
             />
           </div>
-          <div className="flex items-center justify-end gap-3 pt-3 border-t border-surface-border">
-            <button
-              type="button"
-              onClick={closeForm}
-              className="px-4 py-2 text-xs font-medium rounded-lg text-content-secondary hover:text-content-primary hover:bg-surface-elevated border border-surface-border transition-colors"
-            >
+          <div className="flex items-center justify-end gap-2 pt-3 border-t border-surface-border">
+            <button type="button" onClick={closeForm} className="btn btn-secondary">
               Hủy bỏ
             </button>
             <button
               type="submit"
               disabled={!name.trim() || create.isPending || rename.isPending}
-              className="px-4 py-2 text-xs font-semibold rounded-lg bg-primary-green hover:bg-primary-green-dark text-primary-black transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="btn btn-primary"
             >
               {create.isPending || rename.isPending ? "Đang lưu..." : "Lưu danh mục"}
             </button>

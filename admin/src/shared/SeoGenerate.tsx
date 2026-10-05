@@ -1,5 +1,4 @@
-import { useState } from "react";
-
+import React, { useState } from "react";
 import { toast } from "react-toastify";
 import type { IEditorData } from "../types/Blog";
 import type { IDataSeoGenerate } from "../types/OpenAi";
@@ -44,7 +43,7 @@ const SeoGenerate: React.FC<SeoGenerateProps> = ({
         render: "Tạo nội dung SEO thành công!",
         type: "success",
         isLoading: false,
-        autoClose: 5000,
+        autoClose: 3000,
       });
       onClose();
     } catch {
@@ -53,30 +52,21 @@ const SeoGenerate: React.FC<SeoGenerateProps> = ({
     }
   };
 
-  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setInputTitle(e.target.value);
-  };
-
-  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setInputContent(e.target.value);
-  };
-
-  // Render modal dialog for generating SEO metadata with OpenAI.
   return (
     <Modal isOpen={true} onClose={onClose} ariaLabel="Tạo nội dung SEO">
       <div className="p-1 sm:p-2">
-        <h2 className="text-xl font-semibold text-content-primary mb-2">
+        <h2 className="text-lg font-semibold text-content-primary mb-1">
           Tạo nội dung SEO
         </h2>
-        <p className="text-sm text-content-muted mb-6">
+        <p className="text-xs text-content-muted mb-4">
           Kiểm tra nội dung bên dưới trước khi tạo metadata SEO. AI sẽ phân tích thông tin này để tạo tiêu đề và mô tả tối ưu cho công cụ tìm kiếm.
         </p>
 
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-3.5">
           <div>
             <label
               htmlFor="title"
-              className="block text-xs font-medium mb-1.5 text-content-secondary"
+              className="label mb-1 text-xs font-medium text-content-secondary"
             >
               Tiêu đề bài viết (dùng cho AI phân tích)
             </label>
@@ -84,39 +74,39 @@ const SeoGenerate: React.FC<SeoGenerateProps> = ({
               id="title"
               type="text"
               value={inputTitle}
-              onChange={handleTitleChange}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-surface-border bg-surface-elevated text-content-primary placeholder-content-muted focus:outline-none focus:border-primary-green focus:ring-1 focus:ring-primary-green transition-colors text-sm"
+              onChange={(e) => setInputTitle(e.target.value)}
+              className="inp w-full"
             />
           </div>
 
           <div>
             <label
               htmlFor="content"
-              className="block text-xs font-medium mb-1.5 text-content-secondary"
+              className="label mb-1 text-xs font-medium text-content-secondary"
             >
               Nội dung bài viết (dùng cho AI phân tích)
             </label>
             <textarea
               id="content"
               value={inputContent}
-              onChange={handleContentChange}
-              rows={6}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-surface-border bg-surface-elevated text-content-primary placeholder-content-muted focus:outline-none focus:border-primary-green focus:ring-1 focus:ring-primary-green transition-colors text-sm resize-none"
+              onChange={(e) => setInputContent(e.target.value)}
+              rows={5}
+              className="inp w-full"
             />
           </div>
 
-          <div className="flex justify-end gap-3 mt-2">
+          <div className="flex justify-end gap-2 mt-2 pt-3 border-t border-surface-border">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-xs font-semibold rounded-lg border border-surface-border text-content-secondary hover:text-content-primary hover:bg-surface-hover transition-colors"
+              className="btn btn-ghost"
             >
               Hủy
             </button>
             <button
               type="button"
               onClick={handleConfirm}
-              className="px-4 py-2 text-xs font-semibold rounded-lg bg-primary-green hover:bg-primary-green-dark text-primary-black transition-colors shadow-sm"
+              className="btn btn-primary"
             >
               Tạo nội dung SEO
             </button>

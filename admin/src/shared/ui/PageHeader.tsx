@@ -2,30 +2,24 @@ import React from "react";
 
 interface PageHeaderProps {
   title: string;
-  description?: string;
+  description?: React.ReactNode;
   actions?: React.ReactNode;
 }
 
-// Render the standard page header containing title, description, and primary action controls.
+// Render the standard page title block with optional description and actions.
 export const PageHeader: React.FC<PageHeaderProps> = ({
   title,
   description,
   actions,
 }) => {
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-6 mb-6 border-b border-surface-border">
-      <div className="space-y-1">
-        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-content-primary">
-          {title}
-        </h1>
-        {description && (
-          <p className="text-sm text-content-muted leading-relaxed">
-            {description}
-          </p>
-        )}
+    <div className="page-h">
+      <div className="min-w-0">
+        <h1>{title}</h1>
+        {description && <p>{description}</p>}
       </div>
       {actions && (
-        <div className="flex items-center gap-3 shrink-0 flex-wrap">
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
           {actions}
         </div>
       )}

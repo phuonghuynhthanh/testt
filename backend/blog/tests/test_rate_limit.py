@@ -56,6 +56,30 @@ def test_login_sixth_attempt_is_limited(client, failed_login):
     assert len(failed_login) == 5
 
 
+# Exercise the WRITE limiter on the added moderation routes.
+@pytest.mark.parametrize("path,payload,service", [
+    ("/blog/admin/bulk-state", {"items": [{"id": "a", "state": "APPROVED"}]}, "bulk_state"),
+    ("/blog/admin/bulk-delete", {"ids": ["a"]}, "bulk_delete_restore"),
+    ("/blog/admin/bulk-restore", {"ids": ["a"]}, "bulk_delete_restore"),
+    ("/blog/a/state", {"state": "APPROVED"}, "bulk_state"),
+])
+# Stop the thirty-first moderation write before it reaches the service.
+def test_bulk_and_patch_write_limits(client, monkeypatch, path, payload, service):
+    calls = []
+
+    # Record accepted writes without opening the database.
+    def change(*args, **kwargs):
+        calls.append(1)
+        return {"updated": 1, "items": [{"id": "a", "state": "APPROVED", "modified_at": "2026-10-05T12:00:00"}], "notFound": []}
+
+    monkeypatch.setattr(BlogServices, service, change)
+    method = "PATCH" if path.endswith("/state") else "POST"
+    for _ in range(30):
+        assert client.request(method, path, json=payload).status_code == 200
+    assert client.request(method, path, json=payload).status_code == 429
+    assert len(calls) == 30
+
+
 # Read the disabled environment setting and verify repeated requests remain unblocked.
 def test_rate_limit_disabled(client, failed_login, monkeypatch):
     monkeypatch.setenv("RATE_LIMIT_ENABLED", "false")

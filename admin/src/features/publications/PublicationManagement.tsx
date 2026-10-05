@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useDebouncedValue } from "../../hook/useDebouncedValue";
-import { FiSend, FiSearch } from "react-icons/fi";
+import { PaperPlaneTilt, MagnifyingGlass, Path } from "@phosphor-icons/react";
 import { getListBlogs } from "../../services/blog/handleBlog";
 import { apiErrorMessage } from "../../types/Api";
 import {
@@ -12,7 +12,6 @@ import {
   Pagination,
   BlogThumbnail,
 } from "../../shared/ui";
-
 
 const PAGE_SIZE = 10;
 
@@ -35,7 +34,6 @@ const PublicationManagement: React.FC = () => {
     placeholderData: keepPreviousData,
   });
 
-  // Step back when the current page disappears (e.g. its last item was deleted).
   const totalPages = Math.max(1, blogs.data?.totalPages ?? 1);
   useEffect(() => {
     if (page > totalPages) setPage(totalPages);
@@ -44,38 +42,43 @@ const PublicationManagement: React.FC = () => {
   const filteredItems = blogs.data?.items ?? [];
 
   return (
-    <section className="space-y-5">
+    <section>
       <PageHeader
         title="Xuất bản bài viết"
         description="Chọn bài website đã duyệt để tạo và đăng bài LinkedIn."
       />
 
-      <div className="flex items-center gap-3 rounded-xl border border-teal-500/20 bg-teal-950/20 p-3.5 text-xs text-teal-300">
-        <FiSend className="w-4 h-4 shrink-0 text-primary-green" />
+      <div className="mb-5 flex items-start gap-3 rounded-2xl border border-teal-500/20 bg-teal-950/20 p-4 text-xs leading-relaxed text-teal-300">
+        <Path weight="light" size={18} className="mt-0.5 shrink-0 text-primary-green" />
         <span>
-          <strong>Quy trình:</strong> chọn bài website → soạn nội dung LinkedIn → chọn ảnh và liên kết → đăng LinkedIn. Chỉ bước cuối mới đăng thật.
+          <strong>Quy trình:</strong> chọn bài website, soạn nội dung LinkedIn, chọn ảnh và liên kết, rồi đăng LinkedIn. Chỉ bước cuối mới đăng thật.
         </span>
       </div>
 
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-surface-card p-3 rounded-xl border border-surface-border">
-        <div className="relative w-full sm:w-64">
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(e) => {
-              setSearchTerm(e.target.value);
-              setPage(1);
-            }}
-            placeholder="Tìm theo tiêu đề hoặc đường dẫn..."
-            className="w-full rounded-lg border border-surface-border bg-surface-elevated pl-8 pr-3 py-1.5 text-xs text-content-primary placeholder-content-muted focus:outline-none focus:ring-1 focus:ring-primary-green"
-          />
-          <FiSearch className="absolute left-2.5 top-1/2 -translate-y-1/2 text-content-muted text-xs pointer-events-none" />
+      <section className="panel overflow-hidden">
+        <div className="border-b border-surface-border p-3.5">
+          <div className="relative sm:w-80">
+            <MagnifyingGlass
+              weight="light"
+              size={16}
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-content-muted"
+            />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setPage(1);
+              }}
+              placeholder="Tìm theo tiêu đề hoặc đường dẫn..."
+              className="inp sm !pl-9"
+              autoComplete="off"
+            />
+          </div>
         </div>
-      </div>
 
-      <div className="bg-surface-card rounded-xl border border-surface-border overflow-hidden shadow-sm">
         {blogs.isLoading ? (
-          <div className="py-20 text-center text-sm text-content-muted">
+          <div className="py-16 text-center text-sm text-content-muted">
             Đang tải danh sách bài viết xuất bản...
           </div>
         ) : blogs.isError ? (
@@ -89,75 +92,55 @@ const PublicationManagement: React.FC = () => {
           />
         ) : (
           <>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm min-w-[640px]">
-                <thead className="bg-surface-elevated text-xs font-semibold uppercase tracking-wider text-content-muted border-b border-surface-border">
-                  <tr>
-                    <th className="py-3 px-4">Bài viết</th>
-                    <th className="py-3 px-4">Trạng thái</th>
-                    <th className="py-3 px-4 text-right">Thao tác</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-surface-border">
-                  {filteredItems.map((blog) => (
-                    <tr
-                      key={blog.id}
-                      className="hover:bg-surface-hover/60 transition-colors group"
+            <div className="hidden grid-cols-[minmax(0,1fr)_9rem_11rem] gap-4 border-b border-surface-border bg-surface-elevated/60 px-3 py-2 text-xs font-semibold uppercase tracking-[0.05em] text-content-muted md:grid">
+              <span>Bài viết</span>
+              <span>Trạng thái</span>
+              <span className="text-right">Thao tác</span>
+            </div>
+            <ul className="divide-y divide-surface-border">
+              {filteredItems.map((blog) => (
+                <li
+                  key={blog.id}
+                  className="hrow row-in grid items-center gap-x-4 gap-y-3 px-3 py-2.5 transition-colors duration-300 hover:bg-surface-hover/50 md:grid-cols-[minmax(0,1fr)_9rem_11rem]"
+                >
+                  <div className="flex min-w-0 items-center gap-3.5">
+                    <BlogThumbnail bannerUrl={blog.banner_url} title={blog.title} size="md" />
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold" title={blog.title}>
+                        {blog.title}
+                      </p>
+                      <p className="mt-0.5 text-[11px] text-content-muted">
+                        {blog.category || "Chưa phân loại"}
+                      </p>
+                    </div>
+                  </div>
+                  <div>
+                    <StatusBadge status={blog.state} />
+                  </div>
+                  <div className="md:text-right">
+                    <Link
+                      to={`/publications/${blog.id}`}
+                      title="Tạo bài LinkedIn"
+                      className="btn btn-li"
                     >
-                      <td className="py-3.5 px-4">
-                        <div className="flex items-center gap-3 min-w-0">
-                          <BlogThumbnail
-                            bannerUrl={blog.banner_url}
-                            title={blog.title}
-                            size="md"
-                          />
-                          <div className="min-w-0 flex-1">
-                            <h4
-                              className="text-xs sm:text-sm font-semibold text-content-primary truncate group-hover:text-primary-green transition-colors"
-                              title={blog.title}
-                            >
-                              {blog.title}
-                            </h4>
-                            <p className="text-[11px] text-content-muted mt-0.5">
-                              {blog.category || "Chưa phân loại"}
-                            </p>
-                          </div>
-                        </div>
-                      </td>
+                      <PaperPlaneTilt weight="light" size={14} />
+                      <span>Tạo bài LinkedIn</span>
+                    </Link>
+                  </div>
+                </li>
+              ))}
+            </ul>
 
-                      <td className="py-3.5 px-4 whitespace-nowrap">
-                        <StatusBadge status={blog.state} />
-                      </td>
-
-                      <td className="py-3.5 px-4 text-right whitespace-nowrap">
-                        <Link
-                          to={`/publications/${blog.id}`}
-                          title="Tạo bài LinkedIn"
-                          aria-label="Tạo bài LinkedIn"
-                          className="inline-flex h-8 items-center justify-center gap-1.5 rounded-lg border border-primary-green/30 bg-primary-green/10 px-3 text-xs font-semibold text-primary-green hover:bg-primary-green/15 transition-colors shadow-xs"
-                        >
-                          <FiSend className="w-3.5 h-3.5 text-primary-green" />
-                          <span>Tạo bài LinkedIn</span>
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="border-t border-surface-border px-4 bg-surface-card">
-              <Pagination
-                page={blogs.data?.page ?? page}
-                totalPages={blogs.data?.totalPages ?? 1}
-                totalItems={blogs.data?.total}
-                itemUnit="bài viết"
-                onPageChange={(p) => setPage(p)}
-              />
-            </div>
+            <Pagination
+              page={blogs.data?.page ?? page}
+              totalPages={blogs.data?.totalPages ?? 1}
+              totalItems={blogs.data?.total}
+              itemUnit="bài viết"
+              onPageChange={(p) => setPage(p)}
+            />
           </>
         )}
-      </div>
+      </section>
     </section>
   );
 };

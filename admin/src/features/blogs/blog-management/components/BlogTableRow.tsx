@@ -12,7 +12,7 @@ interface BlogTableRowProps {
   isApproving?: boolean;
 }
 
-// Render one article row displaying thumbnail, title, slug, category, status, and action controls.
+// Render one dense blog row: thumbnail + title, category, state, date and icon actions.
 export const BlogTableRow: React.FC<BlogTableRowProps> = ({
   blog,
   onApprove,
@@ -24,47 +24,36 @@ export const BlogTableRow: React.FC<BlogTableRowProps> = ({
     : "";
 
   return (
-    <tr className="hover:bg-surface-hover/60 transition-colors group">
-      <td className="py-3 px-4">
-        <div className="flex items-center gap-3 min-w-0 max-w-md">
-          <Link to={`/blog/detail/${blog.id}`} className="shrink-0" title="Xem chi tiết bài viết">
-            <BlogThumbnail
-              bannerUrl={blog.banner_url}
-              title={blog.title}
-              size="md"
-            />
+    <tr>
+      <td className="c-ttl">
+        <div className="c-title">
+          <Link to={`/blog/detail/${blog.id}`} className="shrink-0" title="Xem chi tiết bài viết" tabIndex={-1}>
+            <BlogThumbnail bannerUrl={blog.banner_url} title={blog.title} size="sm" />
           </Link>
-          <div className="min-w-0 flex-1">
-            <Link to={`/blog/detail/${blog.id}`} className="block" title={blog.title}>
-              <h4 className="text-xs sm:text-sm font-semibold text-content-primary truncate group-hover:text-primary-green transition-colors">
-                {blog.title}
-              </h4>
+          <div className="t-main">
+            <Link to={`/blog/detail/${blog.id}`} className="t-btn" title={blog.title}>
+              {blog.title}
             </Link>
             {formattedSlug && (
-              <p
-                className="text-[11px] text-content-muted truncate font-mono mt-0.5"
-                title={formattedSlug}
-              >
-                {formattedSlug}
-              </p>
+              <span className="sub">
+                <span className="mono" title={formattedSlug}>{formattedSlug}</span>
+              </span>
             )}
           </div>
         </div>
       </td>
 
-      <td className="py-3 px-4 text-xs text-content-secondary whitespace-nowrap">
+      <td className="c-cat" title={blog.category || undefined}>
         {blog.category || "Chưa phân loại"}
       </td>
 
-      <td className="py-3 px-4 whitespace-nowrap">
-        <StatusBadge status={blog.state} />
+      <td className="c-state">
+        <StatusBadge status={blog.state} variant="state" />
       </td>
 
-      <td className="py-3 px-4 text-xs text-content-muted whitespace-nowrap">
-        {formatCmsDateOnly(blog.modified_at)}
-      </td>
+      <td className="c-date mono">{formatCmsDateOnly(blog.modified_at)}</td>
 
-      <td className="py-3 px-4 text-right whitespace-nowrap">
+      <td className="c-act">
         <BlogActionsCell
           blogId={blog.id}
           state={blog.state}

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { MdEdit, MdPreview } from "react-icons/md";
+import { PencilSimple, Eye } from "@phosphor-icons/react";
 import { previewLinkedInContent } from "../../../services/linkedin/handleLinkedIn";
 import { apiErrorMessage } from "../../../types/Api";
 import type { LinkedInLinkPlacement, LinkedInMediaAsset } from "../../../types/Publication";
@@ -10,19 +10,37 @@ import { trimLinkedInPreviewUrl } from "../../../utils/linkedinPreviewUrl";
 
 // Keep LinkedIn text literal while making safe HTTP links clickable in the preview.
 const PreviewText = ({ content }: { content: string }) => (
-  <div className="whitespace-pre-wrap break-words text-sm leading-relaxed text-content-primary">
+  <div className="whitespace-pre-wrap break-words text-[13px] leading-relaxed text-content-secondary">
     {content.split(/(https?:\/\/[^\s<>]+)/g).map((part, index) => {
       if (!/^https?:\/\//.test(part)) return part;
       const url = trimLinkedInPreviewUrl(part);
-      return <span key={index}><a href={url} target="_blank" rel="noopener noreferrer"
-        className="break-all text-[#70b5f9] underline">{url}</a>{part.slice(url.length)}</span>;
+      return (
+        <span key={index}>
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="break-all text-[#70b5f9] underline"
+          >
+            {url}
+          </a>
+          {part.slice(url.length)}
+        </span>
+      );
     })}
   </div>
 );
 
 // Share edit and server-composed preview modes across both LinkedIn authoring flows.
-export const LinkedInContentEditor = ({ content, onChange, media, linkPlacement, language,
-  blogId, disabled = false }: {
+export const LinkedInContentEditor = ({
+  content,
+  onChange,
+  media,
+  linkPlacement,
+  language,
+  blogId,
+  disabled = false,
+}: {
   content: string;
   onChange: (content: string) => void;
   media: LinkedInMediaAsset[];
@@ -40,39 +58,72 @@ export const LinkedInContentEditor = ({ content, onChange, media, linkPlacement,
     refetchOnWindowFocus: false,
   });
 
-  return <div className="space-y-3">
-    <div className="flex flex-wrap items-center justify-between gap-3">
-      <h3 className="text-sm font-semibold text-content-primary">Nội dung bài đăng LinkedIn</h3>
-      <div className="flex gap-1 rounded-xl border border-surface-border bg-surface-elevated p-1">
-        {([{ value: "edit", label: "Soạn thảo", Icon: MdEdit },
-          { value: "preview", label: "Xem trước", Icon: MdPreview }] as const).map(({ value, label, Icon }) => (
-          <button key={value} type="button" aria-pressed={mode === value} onClick={() => setMode(value)}
-            className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium ${mode === value
-              ? "bg-surface-card text-content-primary shadow-sm" : "text-content-muted hover:text-content-primary"}`}>
-            <Icon className="h-3.5 w-3.5" />{label}
-          </button>
-        ))}
+  return (
+    <div>
+      <div className="mb-1.5 flex flex-wrap items-center justify-between gap-3">
+        <label className="label !mb-0">
+          Nội dung bài đăng <span className="text-rose-400">*</span>
+          <span className={`hint tabular-nums ml-2 font-normal ${content.length > 3000 ? "!text-rose-400" : ""}`}>{content.length}/3000</span>
+        </label>
+        <div className="seg">
+          {([
+            { value: "edit", label: "Soạn thảo", Icon: PencilSimple },
+            { value: "preview", label: "Xem trước", Icon: Eye },
+          ] as const).map(({ value, label, Icon }) => (
+            <button
+              key={value}
+              type="button"
+              aria-pressed={mode === value}
+              onClick={() => setMode(value)}
+              className={mode === value ? "active" : ""}
+            >
+              <Icon size={14} weight="light" />
+              <span>{label}</span>
+            </button>
+          ))}
+        </div>
       </div>
-    </div>
-    {mode === "edit" ? <textarea aria-label="Nội dung bài đăng LinkedIn" value={content}
-      onChange={(event) => onChange(event.target.value)} disabled={disabled} rows={7}
-      placeholder="Soạn nội dung bài đăng LinkedIn..."
-      className="w-full resize-y rounded-lg border border-surface-border bg-surface-elevated p-3 text-sm text-content-primary placeholder-content-muted focus:border-primary-green focus:outline-none focus:ring-1 focus:ring-primary-green disabled:opacity-50" />
-      : <div className="min-h-[320px] max-h-[600px] overflow-y-auto rounded-xl border border-surface-border bg-surface-elevated/40 p-4 sm:p-6" aria-live="polite">
-        {!content.trim() ? <p className="py-12 text-center text-xs text-content-muted">Chưa có nội dung để xem trước.</p>
-          : preview.isFetching || preview.isPending ? <p role="status" className="text-xs text-content-muted">Đang tải bản xem trước…</p>
-            : preview.isError ? <div role="alert" className="space-y-2 text-xs text-rose-400">
+
+      {mode === "edit" ? (
+        <textarea
+          aria-label="Nội dung bài đăng LinkedIn"
+          value={content}
+          onChange={(event) => onChange(event.target.value)}
+          disabled={disabled}
+          rows={11}
+          placeholder="Nhập nội dung bài LinkedIn..."
+          className="inp"
+        />
+      ) : (
+        <div className="min-h-[280px] max-h-[500px] overflow-y-auto rounded-xl border border-surface-border bg-surface-elevated/40 p-4" aria-live="polite">
+          {!content.trim() ? (
+            <p className="py-12 text-center text-xs text-content-muted">Chưa có nội dung để xem trước.</p>
+          ) : preview.isFetching || preview.isPending ? (
+            <p role="status" className="text-xs text-content-muted">Đang tải bản xem trước…</p>
+          ) : preview.isError ? (
+            <div role="alert" className="space-y-2 text-xs text-rose-400">
               <p>Không thể tải bản xem trước: {apiErrorMessage(preview.error)}</p>
               <button type="button" onClick={() => { void preview.refetch(); }} className="underline">Thử lại</button>
-            </div> : preview.data && <div className="space-y-4">
+            </div>
+          ) : preview.data && (
+            <div className="space-y-4">
               <PreviewText content={preview.data.content} />
-              {media.length > 0 && <div className={`grid gap-3 ${media.length > 1 ? "sm:grid-cols-2" : "grid-cols-1"}`}>
-                {[...media].sort((a, b) => a.order - b.order).map((image) => (
-                  <img key={linkedinMediaKey(image)} src={linkedinMediaUrl(image)} alt={image.altText}
-                    className="max-h-96 w-full rounded-lg object-contain" />
-                ))}
-              </div>}
-            </div>}
-      </div>}
-  </div>;
+              {media.length > 0 && (
+                <div className={`grid gap-2.5 ${media.length > 1 ? "sm:grid-cols-2" : "grid-cols-1"}`}>
+                  {[...media].sort((a, b) => a.order - b.order).map((image) => (
+                    <img
+                      key={linkedinMediaKey(image)}
+                      src={linkedinMediaUrl(image)}
+                      alt={image.altText}
+                      className="max-h-80 w-full rounded border border-surface-border object-contain"
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
 };

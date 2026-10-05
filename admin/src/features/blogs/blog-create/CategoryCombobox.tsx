@@ -1,5 +1,5 @@
 import React, { useEffect, useId, useState } from "react";
-import { FiChevronDown } from "react-icons/fi";
+import { CaretDown } from "@phosphor-icons/react";
 import type { Category } from "../../../types/Category";
 
 interface CategoryComboboxProps {
@@ -13,7 +13,6 @@ interface CategoryComboboxProps {
   onRetry: () => void;
 }
 
-// Keep category search separate from the saved selection and support native keyboard navigation.
 export default function CategoryCombobox({ value, items, loading, failed, creating, onChange, onCreate, onRetry }: CategoryComboboxProps) {
   const id = useId();
   const [open, setOpen] = useState(false);
@@ -24,12 +23,10 @@ export default function CategoryCombobox({ value, items, loading, failed, creati
   const matches = items.filter((item) => item.name.toLocaleLowerCase("vi-VN").includes(normalized));
   const exists = items.some((item) => item.name.trim().toLocaleLowerCase("vi-VN") === normalized);
 
-  // Keep keyboard-highlighted options visible in long category lists.
   useEffect(() => {
     if (open && active >= 0) document.getElementById(`${id}-option-${active}`)?.scrollIntoView({ block: "nearest" });
   }, [active, id, open]);
 
-  // Commit only an existing option; typing alone never changes the article category.
   const select = (category: string) => {
     onChange(category);
     setOpen(false);
@@ -37,7 +34,6 @@ export default function CategoryCombobox({ value, items, loading, failed, creati
     setActive(-1);
   };
 
-  // Move through filtered results and restore the committed selection on Escape.
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === "ArrowDown" || event.key === "ArrowUp") {
       event.preventDefault();
@@ -65,7 +61,7 @@ export default function CategoryCombobox({ value, items, loading, failed, creati
         setActive(-1);
       }
     }}>
-      <label htmlFor={id} className="block text-xs font-medium text-content-secondary mb-1.5">
+      <label htmlFor={id} className="label">
         Danh mục <span className="text-rose-400">*</span>
       </label>
       <div className="relative">
@@ -84,12 +80,12 @@ export default function CategoryCombobox({ value, items, loading, failed, creati
           onChange={(event) => { setSearch(event.target.value); setOpen(true); setActive(-1); }}
           onKeyDown={handleKeyDown}
           placeholder={value || "Tìm hoặc tạo danh mục..."}
-          className="w-full rounded-lg border border-surface-border bg-surface-elevated pl-3.5 pr-9 py-2 text-sm text-content-primary placeholder-content-muted focus:border-primary-green focus:outline-none focus:ring-1 focus:ring-primary-green disabled:opacity-50"
+          className="inp pr-9"
         />
-        <FiChevronDown aria-hidden="true" className="pointer-events-none absolute right-3 top-3 text-content-muted" />
+        <CaretDown size={16} weight="light" aria-hidden="true" className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-content-muted" />
       </div>
       {open && (
-        <div className="absolute z-30 mt-1 w-full rounded-lg border border-surface-border bg-surface-card shadow-xl overflow-hidden">
+        <div className="pop-in absolute z-20 mt-1.5 w-full overflow-hidden rounded-xl border border-surface-border bg-surface-card p-1 shadow-2xl shadow-black/50">
           <ul id={`${id}-list`} role="listbox" aria-label="Danh mục bài viết" className="max-h-56 overflow-y-auto">
             {matches.map((item, index) => (
               <li
@@ -99,21 +95,23 @@ export default function CategoryCombobox({ value, items, loading, failed, creati
                 aria-selected={value === item.name}
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={() => select(item.name)}
-                className={`cursor-pointer px-3.5 py-2 text-sm hover:bg-surface-hover ${active === index ? "bg-surface-hover" : ""} ${value === item.name ? "text-primary-green font-semibold" : "text-content-primary"}`}
-              >{item.name}{value === item.name ? " ✓" : ""}</li>
+                className={`cursor-pointer px-3 py-2 text-xs hover:bg-surface-elevated ${active === index ? "bg-surface-elevated" : ""} ${value === item.name ? "text-primary-green font-semibold" : "text-content-primary"}`}
+              >
+                {item.name}{value === item.name ? " ✓" : ""}
+              </li>
             ))}
           </ul>
-          {loading && <p role="status" className="px-3.5 py-2 text-xs text-content-muted">Đang tải danh mục...</p>}
-          {failed && <button type="button" onClick={onRetry} className="px-3.5 py-2 text-xs text-rose-400">Không tải được danh mục. Thử lại</button>}
-          {!loading && !failed && !matches.length && <p className="px-3.5 py-2 text-xs text-content-muted">Không có danh mục phù hợp.</p>}
+          {loading && <p role="status" className="px-3 py-2 text-xs text-content-muted">Đang tải danh mục...</p>}
+          {failed && <button type="button" onClick={onRetry} className="px-3 py-2 text-xs text-rose-400">Không tải được danh mục. Thử lại</button>}
+          {!loading && !failed && !matches.length && <p className="px-3 py-2 text-xs text-content-muted">Không có danh mục phù hợp.</p>}
           {name && !exists && !loading && !failed && (
-            <button type="button" disabled={creating} onClick={() => { onCreate(name); setOpen(false); }} className="w-full border-t border-surface-border px-3.5 py-2.5 text-left text-xs font-semibold text-primary-green hover:bg-surface-hover disabled:opacity-50">
+            <button type="button" disabled={creating} onClick={() => { onCreate(name); setOpen(false); }} className="w-full border-t border-surface-border px-3 py-2 text-left text-xs font-semibold text-primary-green hover:bg-surface-elevated disabled:opacity-50">
               {creating ? "Đang tạo danh mục..." : `+ Tạo danh mục “${name}”`}
             </button>
           )}
         </div>
       )}
-      <p className="mt-1.5 text-[11px] text-content-muted">{value ? `Đã chọn: ${value}. ` : ""}Gõ để tìm hoặc tạo mới; dùng ↑ ↓ và Enter để chọn.</p>
+      <p className="hint mt-1.5">{value ? `Đã chọn: ${value}. ` : ""}Gõ để tìm hoặc tạo mới; dùng ↑ ↓ và Enter để chọn.</p>
     </div>
   );
 }

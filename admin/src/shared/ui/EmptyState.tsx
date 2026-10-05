@@ -1,5 +1,5 @@
 import React from "react";
-import { FiInbox } from "react-icons/fi";
+import { Tray } from "@phosphor-icons/react";
 
 interface EmptyStateProps {
   icon?: React.ReactNode;
@@ -8,7 +8,6 @@ interface EmptyStateProps {
   action?: React.ReactNode;
 }
 
-// Render a placeholder state when a table or collection has no content to display.
 export const EmptyState: React.FC<EmptyStateProps> = ({
   icon,
   title,
@@ -16,19 +15,19 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   action,
 }) => {
   return (
-    <div className="flex flex-col items-center justify-center py-16 px-4 text-center rounded-xl border border-dashed border-surface-border bg-surface-card/40">
-      <div className="w-12 h-12 rounded-full bg-surface-elevated flex items-center justify-center text-content-muted mb-4 text-xl">
-        {icon || <FiInbox className="w-6 h-6" />}
+    <div className="empty py-14 px-4 text-center">
+      <div className="ic inline-grid place-items-center w-11 h-11 rounded-lg border border-surface-border bg-surface-elevated text-content-muted text-xl mx-auto">
+        {icon || <Tray size={22} weight="light" />}
       </div>
-      <h3 className="text-base font-semibold text-content-primary mb-1">
+      <h3 className="mt-3.5 text-[15px] font-semibold text-content-primary">
         {title}
       </h3>
       {description && (
-        <p className="text-sm text-content-muted max-w-sm mb-5 leading-relaxed">
+        <p className="mt-1 mb-4 mx-auto max-w-sm text-[13px] text-content-muted leading-relaxed">
           {description}
         </p>
       )}
-      {action && <div className="mt-1">{action}</div>}
+      {action && <div className="mt-2">{action}</div>}
     </div>
   );
 };

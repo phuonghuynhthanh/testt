@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { FiCheck, FiSend, FiEdit2, FiTrash2, FiEye } from "react-icons/fi";
+import { Check, LinkedinLogo, PencilSimple, Trash, Eye } from "@phosphor-icons/react";
 import type { BlogState } from "../../../../types/Blog";
 
 interface BlogActionsCellProps {
@@ -11,7 +11,7 @@ interface BlogActionsCellProps {
   isApproving?: boolean;
 }
 
-// Render website approval and editing actions with LinkedIn adaptation for approved articles.
+// Render icon-only row actions: view, edit, approve or LinkedIn, delete.
 export const BlogActionsCell: React.FC<BlogActionsCellProps> = ({
   blogId,
   state,
@@ -20,7 +20,36 @@ export const BlogActionsCell: React.FC<BlogActionsCellProps> = ({
   isApproving = false,
 }) => {
   return (
-    <div className="inline-flex items-center gap-1.5 justify-end">
+    <span className="row">
+      <Link
+        to={`/blog/detail/${blogId}`}
+        title="Xem chi tiết bài viết"
+        aria-label="Xem chi tiết bài viết"
+        className="ib"
+      >
+        <Eye size={18} weight="light" />
+      </Link>
+
+      <Link
+        to={`/blog/default/${blogId}`}
+        title="Chỉnh sửa bài viết"
+        aria-label="Chỉnh sửa bài viết"
+        className="ib"
+      >
+        <PencilSimple size={18} weight="light" />
+      </Link>
+
+      {state === "APPROVED" && (
+        <Link
+          to={`/publications/${blogId}`}
+          title="Tạo bài LinkedIn"
+          aria-label="Tạo bài LinkedIn"
+          className="ib li"
+        >
+          <LinkedinLogo size={18} weight="light" />
+        </Link>
+      )}
+
       {state === "PENDING" && (
         <button
           type="button"
@@ -28,51 +57,22 @@ export const BlogActionsCell: React.FC<BlogActionsCellProps> = ({
           disabled={isApproving}
           title={isApproving ? "Đang duyệt bài viết" : "Duyệt bài viết"}
           aria-label={isApproving ? "Đang duyệt bài viết" : "Duyệt bài viết"}
-          className="inline-flex h-8 items-center justify-center gap-1.5 rounded-md border border-emerald-500/30 bg-emerald-950/30 px-2.5 text-xs font-semibold text-emerald-300 hover:bg-emerald-950/50 transition-colors disabled:opacity-50"
+          className="ib ok"
         >
-          <FiCheck className={`w-3.5 h-3.5 ${isApproving ? "animate-pulse" : ""}`} />
-          <span>{isApproving ? "Đang duyệt" : "Duyệt"}</span>
+          <Check size={18} weight="light" className={isApproving ? "animate-spin" : ""} />
         </button>
       )}
-
-      {state === "APPROVED" && <Link
-        to={`/publications/${blogId}`}
-        title="Tạo bài LinkedIn"
-        aria-label="Tạo bài LinkedIn"
-        className="inline-flex h-8 items-center justify-center gap-1.5 rounded-md border border-primary-green/30 bg-primary-green/10 px-2.5 text-xs font-semibold text-primary-green hover:bg-primary-green/15 transition-colors"
-      >
-        <FiSend className="w-3 h-3 text-primary-green" />
-        <span>Tạo bài LinkedIn</span>
-      </Link>}
-
-      <Link
-        to={`/blog/detail/${blogId}`}
-        title="Xem chi tiết bài viết"
-        aria-label="Xem chi tiết bài viết"
-        className="inline-flex size-7 items-center justify-center rounded-md border border-surface-border bg-surface-elevated text-content-secondary hover:text-primary-green hover:bg-emerald-950/30 hover:border-emerald-800/40 transition-colors"
-      >
-        <FiEye className="w-3.5 h-3.5" />
-      </Link>
-
-      <Link
-        to={`/blog/default/${blogId}`}
-        title="Chỉnh sửa bài viết"
-        aria-label="Chỉnh sửa bài viết"
-        className="inline-flex size-7 items-center justify-center rounded-md border border-surface-border bg-surface-elevated text-content-secondary hover:text-cyan-300 hover:bg-cyan-950/30 hover:border-cyan-800/40 transition-colors"
-      >
-        <FiEdit2 className="w-3.5 h-3.5" />
-      </Link>
 
       <button
         type="button"
         title="Xóa bài viết"
         aria-label="Xóa bài viết"
         onClick={() => onDelete(blogId)}
-        className="inline-flex size-7 items-center justify-center rounded-md border border-surface-border bg-surface-elevated text-content-secondary hover:text-rose-300 hover:bg-rose-950/30 hover:border-rose-800/40 transition-colors"
+        className="ib bad"
       >
-        <FiTrash2 className="w-3.5 h-3.5" />
+        <Trash size={18} weight="light" />
       </button>
-    </div>
+    </span>
   );
 };
 

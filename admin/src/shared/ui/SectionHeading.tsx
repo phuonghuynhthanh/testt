@@ -6,22 +6,18 @@ interface SectionHeadingProps {
   action?: React.ReactNode;
 }
 
-// Render a consistent section heading divider for structured forms and setting panels.
+// Render a card section header with a bottom divider, matching the design preview.
 export const SectionHeading: React.FC<SectionHeadingProps> = ({
   title,
   description,
   action,
 }) => {
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-3 mb-4 border-b border-surface-border">
-      <div className="space-y-0.5">
-        <h2 className="text-base sm:text-lg font-semibold text-content-primary">
-          {title}
-        </h2>
+    <div className="flex items-start justify-between gap-3 border-b border-surface-border pb-3">
+      <div className="min-w-0">
+        <h3 className="text-sm font-semibold">{title}</h3>
         {description && (
-          <p className="text-xs sm:text-sm text-content-muted leading-relaxed">
-            {description}
-          </p>
+          <p className="mt-0.5 text-xs text-content-muted">{description}</p>
         )}
       </div>
       {action && <div className="shrink-0">{action}</div>}

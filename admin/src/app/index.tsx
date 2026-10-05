@@ -20,7 +20,7 @@ import BlogDetailPage from "../features/blogs/blog-detail/BlogDetailPage";
 // Define the authenticated blog routes and the public login route.
 const App = () => {
   return (
-    <div className="relative bg-primary-black">
+    <div className="relative min-h-screen bg-surface-base text-content-primary">
       <Suspense fallback={<LoadingPage />}>
         <Routes>
           {/* Public routes */}

@@ -13,7 +13,6 @@ interface InputFieldProps {
   className?: string;
 }
 
-// Render a standardized form text input with dark surface styling and clear focus states.
 const InputField: React.FC<InputFieldProps> = ({
   label,
   id,
@@ -26,7 +25,7 @@ const InputField: React.FC<InputFieldProps> = ({
 }) => {
   return (
     <div className={`flex-1 flex flex-col ${className}`}>
-      <label htmlFor={id} className="text-xs font-medium text-content-secondary mb-1.5">
+      <label htmlFor={id} className="label mb-1.5 text-xs font-medium text-content-secondary">
         {label}
       </label>
       <input
@@ -37,10 +36,10 @@ const InputField: React.FC<InputFieldProps> = ({
         onChange={handleChange}
         readOnly={readOnly}
         placeholder={placeholder}
-        className={`w-full rounded-lg border border-surface-border px-3.5 py-2 text-sm text-content-primary placeholder-content-muted transition ${
+        className={`inp h-9 w-full rounded-md border border-surface-border bg-surface-base px-3 text-sm text-content-primary placeholder:text-[#8493A8] transition ${
           readOnly
-            ? "bg-surface-card/60 text-content-muted cursor-not-allowed border-dashed"
-            : "bg-surface-elevated focus:border-primary-green focus:outline-none focus:ring-1 focus:ring-primary-green"
+            ? "opacity-55 cursor-not-allowed border-dashed bg-surface-elevated/40"
+            : "focus:border-primary-green focus:outline-none focus:ring-1 focus:ring-primary-green"
         }`}
       />
     </div>

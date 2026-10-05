@@ -8,7 +8,6 @@ interface BlogThumbnailProps {
   className?: string;
 }
 
-// Resolve full media source URL from storage key or direct link.
 const resolveMediaUrl = (url?: string): string => {
   if (!url) return "";
   if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("data:")) {
@@ -19,7 +18,6 @@ const resolveMediaUrl = (url?: string): string => {
   return base ? `${base.replace(/\/+$/, "")}/${cleanKey}` : `/${cleanKey}`;
 };
 
-// Render article thumbnail with VietQuant teal gradient fallback.
 export const BlogThumbnail: React.FC<BlogThumbnailProps> = ({
   bannerUrl,
   title = "VietQuant",
@@ -30,9 +28,9 @@ export const BlogThumbnail: React.FC<BlogThumbnailProps> = ({
   const mediaUrl = resolveMediaUrl(bannerUrl);
 
   const sizeClasses = {
-    sm: "size-8 rounded-lg text-xs",
-    md: "size-10 rounded-xl text-sm",
-    lg: "w-full aspect-video rounded-xl text-3xl",
+    sm: "w-10 h-[26px] rounded-[4px] text-xs font-semibold",
+    md: "w-12 h-8 rounded-lg text-[11px] font-bold",
+    lg: "w-full aspect-video rounded-lg text-[11px] font-bold",
   }[size];
 
   if (mediaUrl && !loadError) {
@@ -44,7 +42,7 @@ export const BlogThumbnail: React.FC<BlogThumbnailProps> = ({
           src={mediaUrl}
           alt={title}
           onError={() => setLoadError(true)}
-          className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
+          className="h-full w-full object-cover"
         />
       </div>
     );
@@ -52,10 +50,10 @@ export const BlogThumbnail: React.FC<BlogThumbnailProps> = ({
 
   return (
     <div
-      className={`relative overflow-hidden shrink-0 flex items-center justify-center font-bold text-white shadow-inner bg-gradient-to-br from-[#00897b] via-[#00796b] to-[#004d40] border border-teal-500/20 select-none ${sizeClasses} ${className}`}
+      className={`relative overflow-hidden shrink-0 grid place-items-center text-content-muted bg-surface-elevated border border-surface-border select-none ${sizeClasses} ${className}`}
       title={title}
     >
-      <span className="opacity-90 tracking-tighter drop-shadow-sm font-sans">V</span>
+      <span>{(title || "VQ").trim().slice(0, 2).toUpperCase()}</span>
     </div>
   );
 };

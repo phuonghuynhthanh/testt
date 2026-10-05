@@ -1,54 +1,42 @@
 :root {
-  /* Base colors */
-  --border-color: #ffffff;
-  --bg-black: #222222;
-  --bg-code: #121212;
-
-  /* Typography highlight colors */
-  --heading-main: #ffffff;
-  --heading-green: #07e86c;
-  --heading-green-dark: #00be73;
-
-  /* Table colors */
-  --table-border: #485563;
-  --table-border-light: #7b8e99;
-
-  /* Misc */
-  --text-muted: #ffffffb5;
-  --text-primary: #ffffff;
-
-  --toolbar-bg: #121212; /* nền toolbar */
-  --toolbar-border: #374151;
+  --border-color: #2A3347;
+  --bg-black: #1B2336;
+  --bg-code: #0F172A;
+  --heading-main: #F8FAFC;
+  --heading-green: #22C55E;
+  --heading-green-dark: #4ADE80;
+  --table-border: #2A3347;
+  --table-border-light: #475569;
+  --text-muted: #94A3B8;
+  --text-primary: #F8FAFC;
+  --toolbar-bg: #1B2336;
+  --toolbar-border: #2A3347;
   --toolbar-btn-bg: transparent;
-  --toolbar-btn-hover: #111827;
-  --toolbar-btn-active: #1f2937;
-  --toolbar-icon: #e5e7eb; /* màu icon / chữ */
-  --toolbar-icon-active: #60a5fa;
+  --toolbar-btn-hover: #272F42;
+  --toolbar-btn-active: #2F3A52;
+  --toolbar-icon: #CBD5E1;
+  --toolbar-icon-active: #4ADE80;
 }
 
-/* Wrapper */
-/* Override the library's white page surface and faint select placeholders in both editor and portals. */
 .mdxeditor.dark-theme,
 .mdxeditor-popup-container {
-  --basePageBg: #1A1A1A;
-  --baseText: #B8C0CC;
-  --baseTextContrast: #F9FAFB;
-  --baseBorderHover: #B8C0CC;
+  --basePageBg: #1B2336;
+  --baseText: #CBD5E1;
+  --baseTextContrast: #F8FAFC;
+  --baseBorderHover: #475569;
+  z-index: 60;
 }
 
 .mdxeditor-select-content {
-  background-color: #1A1A1A;
-  color: #E2E8F0;
-}
-
-/* Keep readable editor menus above the full-screen authoring overlay. */
-.mdxeditor-popup-container {
-  z-index: 60;
+  background-color: #1B2336;
+  color: #CBD5E1;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
 }
 
 .markdown-editor-wrapper {
   border: 1px solid var(--border-color);
-  background: #121212;
+  background: #0F172A;
   color: var(--text-primary);
   border-radius: 6px;
   overflow: hidden;
@@ -57,15 +45,7 @@
   min-height: 0;
 }
 
-.markdown-editor-wrapper .mdxeditor {
-  height: 100%;
-  max-height: 100%;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
+.markdown-editor-wrapper .mdxeditor,
 .markdown-editor-wrapper .mdxeditor-diff-source-wrapper,
 .markdown-editor-wrapper .mdxeditor-rich-text-editor,
 .markdown-editor-wrapper .mdxeditor-source-editor,
@@ -73,9 +53,9 @@
   flex: 1 1 auto;
   min-height: 0;
   height: 100%;
-  overflow: hidden;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .markdown-editor-wrapper .mdxeditor .mdxeditor-root-contenteditable {
@@ -85,10 +65,6 @@
   overflow-y: auto;
   overflow-x: hidden;
   display: block;
-}
-
-.markdown-editor-wrapper .mdxeditor .mdxeditor-root-contenteditable > div {
-  min-height: 0;
 }
 
 .markdown-editor-wrapper .mdxeditor-source-editor .cm-editor,
@@ -103,11 +79,10 @@
   overflow: auto;
 }
 
-/* Toolbar */
 .markdown-editor-wrapper .mdxeditor-toolbar {
-  background-color: var(--bg-black);
-  border-bottom: 1px solid var(--border-color);
-  padding: 8px;
+  background-color: var(--toolbar-bg);
+  border-bottom: 1px solid var(--toolbar-border);
+  padding: 6px 8px;
   position: sticky;
   top: 0;
   z-index: 2;
@@ -115,223 +90,154 @@
   color: var(--text-primary);
 }
 
-/* Editor content */
 .markdown-editor-content {
-  padding: 20px;
-  font-family: "Inter", system-ui, sans-serif;
-  font-size: 17px;
-  line-height: 1.9;
-  min-height: 0;
-  box-sizing: border-box;
-  display: block;
-  width: 100%;
-  color: rgba(255, 255, 255, 0.75);
+  padding: 16px;
+  font-family: "Fira Sans", system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.75;
+  color: #CBD5E1;
 }
 
-/* Heading styles */
 .mdxeditor-root-contenteditable h1 {
-  font-size: 30px;
-  line-height: 1.2;
+  font-size: 1.4rem;
+  line-height: 1.25;
   font-weight: 700;
   color: var(--heading-main);
-  margin: 40px 0 16px;
-  letter-spacing: 0;
+  margin: 24px 0 12px;
 }
 
-.mdxeditor-root-contenteditable h2,
+.mdxeditor-root-contenteditable h2 {
+  font-size: 16px;
+  line-height: 1.35;
+  font-weight: 600;
+  color: var(--heading-main);
+  margin-top: 20px;
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border-color);
+}
+
 .mdxeditor-root-contenteditable h3,
 .mdxeditor-root-contenteditable h4,
 .mdxeditor-root-contenteditable h5,
 .mdxeditor-root-contenteditable h6 {
+  font-size: 14px;
   font-weight: 600;
   color: var(--heading-green-dark);
-  margin-top: 12px;
-  margin-bottom: 12px;
-  letter-spacing: 0;
+  margin: 14px 0 8px;
 }
 
-.mdxeditor-root-contenteditable h2 {
-  font-size: 20px;
-  line-height: 1.35;
-  margin-top: 32px;
-  margin-bottom: 12px;
-  padding-bottom: 0;
-  border-bottom: 0;
-}
-
-.mdxeditor-root-contenteditable h3 {
-  font-size: 16px;
-  text-transform: uppercase;
-}
-
-.mdxeditor-root-contenteditable h4 {
-  font-size: 17px;
-}
-.mdxeditor-root-contenteditable h5 {
-  font-size: 16px;
-}
-.mdxeditor-root-contenteditable h6 {
-  font-size: 15px;
-}
-
-/* Paragraph */
 .mdxeditor-root-contenteditable p {
-  line-height: 1.9;
-  margin: 12px 0;
-  text-align: left;
-  color: rgba(255, 255, 255, 0.75);
+  line-height: 1.75;
+  margin: 10px 0;
+  color: #CBD5E1;
 }
 
-/* Lists */
 .mdxeditor-root-contenteditable ul,
 .mdxeditor-root-contenteditable ol {
-  margin-bottom: 16px;
-  margin-left: 24px;
-  padding-left: 8px;
-  color: rgba(255, 255, 255, 0.75);
+  margin-bottom: 12px;
+  padding-left: 20px;
+  color: #CBD5E1;
 }
+.mdxeditor-root-contenteditable ul { list-style: disc; }
+.mdxeditor-root-contenteditable ol { list-style: decimal; }
+.mdxeditor-root-contenteditable li { margin-bottom: 4px; line-height: 1.75; }
+.mdxeditor-root-contenteditable li::marker { color: var(--heading-green); }
 
-.mdxeditor-root-contenteditable ul {
-  list-style: disc;
-}
-.mdxeditor-root-contenteditable ol {
-  list-style: decimal;
-}
-
-.mdxeditor-root-contenteditable li {
-  margin-bottom: 8px;
-  line-height: 1.8;
-}
-
-.mdxeditor-root-contenteditable li::marker {
-  color: var(--heading-green-dark);
-}
-
-/* Blockquote */
 .mdxeditor-root-contenteditable blockquote {
   background-color: var(--bg-black);
   border-radius: 6px;
-  padding: 12px 0 12px 16px;
-  border-left: 4px solid var(--heading-green);
+  padding: 8px 12px;
+  border-left: 3px solid var(--heading-green);
   font-style: italic;
-  color: var(--text-primary);
-  margin: 16px 0;
+  color: #94A3B8;
+  margin: 12px 0;
 }
 
-/* Code block */
 .mdxeditor-root-contenteditable code,
 .mdxeditor-root-contenteditable pre {
   background-color: var(--bg-code);
-  color: rgba(255, 255, 255, 0.78);
-  font-family: "Fira Code", "Consolas", monospace;
-  font-size: 14px;
+  color: #E2E8F0;
+  font-family: "Fira Code", monospace;
+  font-size: 13px;
 }
 
 .mdxeditor-root-contenteditable code {
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 2px 6px;
-  border-radius: 6px;
-  color: var(--heading-green-dark);
+  border: 1px solid var(--border-color);
+  padding: 1px 5px;
+  border-radius: 4px;
 }
 
 .mdxeditor-root-contenteditable pre {
-  padding: 20px 16px;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
   overflow: auto;
-  margin: 24px 0;
+  margin: 16px 0;
 }
+.mdxeditor-root-contenteditable pre code { background: transparent; padding: 0; border: 0; }
 
-.mdxeditor-root-contenteditable pre code {
-  background-color: transparent;
-  padding: 0;
-}
-
-/* Table */
 .mdxeditor-root-contenteditable table {
   width: 100%;
   border-collapse: collapse;
   border: 1px solid var(--table-border);
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 }
-
-.mdxeditor-root-contenteditable th {
-  border: 1px solid var(--table-border-light);
-  padding: 8px 16px;
-  background-color: var(--bg-code);
-  color: var(--heading-green);
-  font-weight: bold;
-  text-align: left;
-  font-size: 16px;
-}
-
+.mdxeditor-root-contenteditable th,
 .mdxeditor-root-contenteditable td {
-  border: 1px solid var(--table-border-light);
-  padding: 8px 16px;
-  font-size: 16px;
+  border: 1px solid var(--table-border);
+  padding: 6px 10px;
+  font-size: 13px;
+}
+.mdxeditor-root-contenteditable th {
+  background-color: var(--bg-black);
+  color: var(--heading-main);
+  font-weight: 600;
+  text-align: left;
 }
 
-/* Links */
 .mdxeditor-root-contenteditable a {
-  color: var(--heading-green);
-  text-decoration: none;
-}
-
-.mdxeditor-root-contenteditable a:hover {
+  color: #7DD3FC;
   text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
-/* Match MDXEditor code-block editing with the shared preview code surface. */
 .markdown-editor-wrapper [class*="_codeMirrorWrapper_"] {
-  margin: 24px 0;
+  margin: 16px 0;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  background: #121212;
-  padding: 44px 0 0;
-}
-
-.markdown-editor-wrapper [class*="_codeMirrorWrapper_"]::before {
-  content: "";
-  position: absolute;
-  left: 16px;
-  top: 18px;
-  width: 12px;
-  height: 12px;
-  border-radius: 999px;
-  background: #ff5f56;
-  box-shadow:
-    20px 0 0 #ffbd2e,
-    40px 0 0 #27c93f;
-  opacity: 0.85;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: #0F172A;
+  padding: 36px 0 0;
+  position: relative;
 }
 
 .markdown-editor-wrapper [class*="_codeMirrorToolbar_"] {
-  top: 8px;
-  right: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
+  top: 6px;
+  right: 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
   background: rgba(255, 255, 255, 0.05);
 }
 
 .markdown-editor-wrapper .cm-editor,
 .markdown-editor-wrapper .cm-scroller,
 .markdown-editor-wrapper .cm-content {
-  background: #121212;
-  color: rgba(255, 255, 255, 0.78);
+  background: #0F172A;
+  color: #CBD5E1;
 }
 
 .markdown-editor-wrapper .cm-line {
-  color: rgba(255, 255, 255, 0.78);
-  font-family: "Fira Code", "Consolas", monospace;
-  font-size: 14px;
-  line-height: 1.75;
+  color: #CBD5E1;
+  font-family: "Fira Code", monospace;
+  font-size: 13px;
+  line-height: 1.7;
 }
 
 .markdown-editor-wrapper .cm-gutters {
-  background: #121212;
-  border-right: 0;
-  color: #B8C0CC;
+  background: #0F172A;
+  border-right: 1px solid var(--border-color);
+  color: #94A3B8;
 }
 
 .markdown-editor-wrapper .cm-activeLine,
@@ -339,62 +245,29 @@
   background: rgba(255, 255, 255, 0.04);
 }
 
-.markdown-editor-wrapper .katex,
-.markdown-editor-wrapper .katex-display {
-  font-size: 1em;
-  font-weight: 400;
-  line-height: 1.6;
-}
-
-.markdown-editor-wrapper .katex-display {
-  margin: 16px 0;
-  overflow-x: auto;
-  overflow-y: hidden;
-}
-
-.markdown-editor-wrapper .mdxeditor-toolbar {
-  background: var(--toolbar-bg);
-  border-bottom: 1px solid var(--toolbar-border);
-}
-
-/* nút (thử nhiều selector nếu thư viện đặt tên khác) */
 .markdown-editor-wrapper .mdxeditor-toolbar button,
 .markdown-editor-wrapper .mdxeditor-toolbar .mdxeditor-toolbar-button {
-  background: var(--toolbar-btn-bg);
+  background: transparent;
   color: var(--toolbar-icon);
   border: none;
-  padding: 6px;
-  border-radius: 6px;
+  padding: 5px;
+  border-radius: 4px;
 }
 
-/* hover / focus */
 .markdown-editor-wrapper .mdxeditor-toolbar button:hover,
 .markdown-editor-wrapper .mdxeditor-toolbar .mdxeditor-toolbar-button:hover {
   background: var(--toolbar-btn-hover);
-  color: var(--toolbar-icon);
+  color: #F8FAFC;
 }
 
-/* active / selected */
 .markdown-editor-wrapper .mdxeditor-toolbar button[aria-pressed="true"],
 .markdown-editor-wrapper .mdxeditor-toolbar .mdxeditor-toolbar-button.active {
   background: var(--toolbar-btn-active);
   color: var(--toolbar-icon-active);
 }
 
-/* svg icon màu (nhiều thư viện dùng stroke hoặc fill) */
 .markdown-editor-wrapper .mdxeditor-toolbar button svg,
 .markdown-editor-wrapper .mdxeditor-toolbar svg {
-  stroke: var(--toolbar-icon);
-  fill: var(--toolbar-icon);
-}
-
-/* nếu SVG dùng currentColor thì chỉ cần: */
-.markdown-editor-wrapper .mdxeditor-toolbar button svg {
-  color: var(--toolbar-icon);
-}
-
-/* disabled */
-.markdown-editor-wrapper .mdxeditor-toolbar button:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
+  color: inherit;
+  fill: currentColor;
 }

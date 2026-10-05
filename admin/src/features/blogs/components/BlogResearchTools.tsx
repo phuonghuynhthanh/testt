@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { FiList, FiPlus, FiSearch } from "react-icons/fi";
+import { CaretDown, DownloadSimple, Funnel, Lightbulb, Plus, MagnifyingGlass } from "@phosphor-icons/react";
 import { toast } from "react-toastify";
 import {
   classifyBlogLinks,
@@ -10,9 +10,21 @@ import {
 } from "../../../services/blog/handleBlog";
 import { apiErrorMessage } from "../../../types/Api";
 import type { ClassifiedLink, FetchContentResponse, LinkReference } from "../../../types/Blog";
-import { SectionHeading } from "../../../shared/ui";
 
-const actionClass = "inline-flex items-center gap-1.5 rounded-lg border border-surface-border bg-surface-elevated px-3 py-2 text-xs font-medium text-content-primary transition-colors hover:bg-surface-hover disabled:opacity-40 shrink-0";
+// Tag chip classes per reference quality, matching the design preview.
+const TAG_CLASSES: Record<string, string> = {
+  NORMAL: "chip",
+  ADS: "chip !border-amber-500/30 !bg-amber-950/40 !text-amber-300",
+  SPAM: "chip !border-rose-500/30 !bg-rose-950/40 !text-rose-300",
+};
+
+// Badge classes per link classification category.
+const CATEGORY_CLASSES: Record<string, string> = {
+  organic: "bg-emerald-950/40 text-emerald-400 border-emerald-500/30",
+  ad: "bg-amber-950/40 text-amber-400 border-amber-500/30",
+  spam: "bg-rose-950/40 text-rose-400 border-rose-500/30",
+  duplicate: "bg-zinc-800 text-zinc-300 border-zinc-700",
+};
 
 // Render the standalone workspace for searching and assessing blog references.
 const BlogResearchTools = () => {
@@ -30,11 +42,13 @@ const BlogResearchTools = () => {
     onSuccess: setTitles,
     onError: (error) => toast.error(apiErrorMessage(error)),
   });
+
   const referenceSearch = useMutation({
     mutationFn: () => searchBlogReferences(keyword.trim(), language),
     onSuccess: setReferences,
     onError: (error) => toast.error(apiErrorMessage(error)),
   });
+
   const classification = useMutation({
     mutationFn: () => classifyBlogLinks(
       linksInput.split(/\s+/).map((url) => url.trim()).filter(Boolean),
@@ -42,6 +56,7 @@ const BlogResearchTools = () => {
     onSuccess: (result) => setClassified(result.classified_links),
     onError: (error) => toast.error(apiErrorMessage(error)),
   });
+
   const contentFetch = useMutation({
     mutationFn: () => fetchBlogReferenceContent(fetchUrl.trim()),
     onSuccess: (result) => {
@@ -62,48 +77,170 @@ const BlogResearchTools = () => {
   const canFetch = Boolean(fetchUrl.trim());
 
   return (
-    <div className="rounded-xl border border-surface-border bg-surface-card p-6">
-      <SectionHeading title="Nguồn tham khảo" description="Gợi ý tiêu đề, tìm kiếm, phân loại và trích xuất nguồn cho bài viết" />
-      <div className="space-y-3">
-        <details open className="rounded-lg border border-surface-border bg-surface-elevated p-4">
-          <summary className="cursor-pointer text-sm font-semibold text-content-primary">Gợi ý tiêu đề và tìm nguồn</summary>
-          <div className="mt-4 space-y-3">
+    <div className="panel">
+      <div className="space-y-3 p-4">
+        <details open className="group rounded-xl border border-surface-border bg-surface-elevated">
+          <summary className="flex cursor-pointer list-none items-center justify-between p-4 text-sm font-semibold">
+            Gợi ý tiêu đề và tìm nguồn
+            <CaretDown size={16} weight="light" className="text-content-muted transition-transform duration-300 group-open:rotate-180" />
+          </summary>
+          <div className="space-y-3 px-4 pb-4">
             <div className="flex flex-col gap-2 sm:flex-row">
-              <input value={keyword} onChange={(event) => setKeyword(event.target.value)} placeholder="Từ khóa hoặc chủ đề..." className="min-w-0 flex-1 rounded-lg border border-surface-border bg-surface-card px-3 py-2 text-sm text-content-primary focus:outline-none focus:ring-1 focus:ring-primary-green" />
-              <select value={language} onChange={(event) => setLanguage(event.target.value as "vietnamese" | "english")} className="rounded-lg border border-surface-border bg-surface-card px-3 py-2 text-sm text-content-primary">
+              <input
+                value={keyword}
+                onChange={(event) => setKeyword(event.target.value)}
+                placeholder="Từ khóa hoặc chủ đề..."
+                className="inp min-w-0 flex-1"
+              />
+              <select
+                value={language}
+                onChange={(event) => setLanguage(event.target.value as "vietnamese" | "english")}
+                aria-label="Ngôn ngữ"
+                className="inp sm !h-[2.5rem] !w-auto"
+              >
                 <option value="vietnamese">Tiếng Việt</option>
                 <option value="english">English</option>
               </select>
-              <button type="button" title="Gợi ý tiêu đề" aria-label="Gợi ý tiêu đề" disabled={!canQuery || titleSuggestions.isPending} onClick={() => titleSuggestions.mutate()} className={actionClass}><FiList /><span>Gợi ý tiêu đề</span></button>
-              <button type="button" title="Tìm nguồn tham khảo" aria-label="Tìm nguồn tham khảo" disabled={!canQuery || referenceSearch.isPending} onClick={() => referenceSearch.mutate()} className={actionClass}><FiSearch /><span>Tìm nguồn</span></button>
+              <button
+                type="button"
+                disabled={!canQuery || titleSuggestions.isPending}
+                onClick={() => titleSuggestions.mutate()}
+                className="btn btn-secondary !h-[2.5rem]"
+              >
+                <Lightbulb size={16} weight="light" />
+                <span>Gợi ý tiêu đề</span>
+              </button>
+              <button
+                type="button"
+                disabled={!canQuery || referenceSearch.isPending}
+                onClick={() => referenceSearch.mutate()}
+                className="btn btn-secondary !h-[2.5rem]"
+              >
+                <MagnifyingGlass size={16} weight="light" />
+                <span>Tìm nguồn</span>
+              </button>
             </div>
-            {titles.length > 0 && <div className="flex flex-wrap gap-2">{titles.map((item) => <span key={item} className="rounded-lg border border-purple-500/30 bg-purple-950/20 px-3 py-1.5 text-xs text-purple-200">{item}</span>)}</div>}
-            {references.length > 0 && <div className="space-y-2">{references.map((item) => <article key={item.url} className="flex items-start gap-3 rounded-lg border border-surface-border bg-surface-card p-3 text-xs">
-              <div className="min-w-0 flex-1"><a href={item.url} target="_blank" rel="noreferrer" className="font-medium text-cyan-400 hover:underline">{item.title || item.url}</a><p className="mt-1 truncate text-content-muted">{item.url}</p><span className="mt-1 inline-block rounded bg-surface-elevated px-1.5 py-0.5 text-[10px] text-content-secondary">{item.tag}</span></div>
-              <button type="button" title="Thêm vào danh sách phân loại" aria-label="Thêm vào danh sách phân loại" onClick={() => queueReference(item.url)} className={actionClass}><FiPlus /><span>Thêm</span></button>
-            </article>)}</div>}
+
+            {titles.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {titles.map((item) => (
+                  <span
+                    key={item}
+                    className="inline-flex items-center gap-2 rounded-lg border border-purple-500/30 bg-purple-950/20 px-3 py-1 text-xs text-purple-200"
+                  >
+                    {item}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {references.length > 0 && (
+              <div className="space-y-2">
+                {references.map((item) => (
+                  <article key={item.url} className="flex items-start gap-3 rounded-lg border border-surface-border bg-surface-card p-3 text-xs">
+                    <div className="min-w-0 flex-1">
+                      <a href={item.url} target="_blank" rel="noreferrer" className="font-medium text-cyan-400 hover:underline">
+                        {item.title || item.url}
+                      </a>
+                      <p className="mt-1 truncate text-content-muted">{item.url}</p>
+                    </div>
+                    <span className={TAG_CLASSES[item.tag] ?? "chip"}>{item.tag}</span>
+                    <button
+                      type="button"
+                      onClick={() => queueReference(item.url)}
+                      className="btn btn-secondary !h-8"
+                    >
+                      <Plus size={14} weight="light" />
+                      <span>Thêm</span>
+                    </button>
+                  </article>
+                ))}
+              </div>
+            )}
           </div>
         </details>
 
-        <details open className="rounded-lg border border-surface-border bg-surface-elevated p-4">
-          <summary className="cursor-pointer text-sm font-semibold text-content-primary">Phân loại liên kết</summary>
-          <div className="mt-4 space-y-3">
+        <details open className="group rounded-xl border border-surface-border bg-surface-elevated">
+          <summary className="flex cursor-pointer list-none items-center justify-between p-4 text-sm font-semibold">
+            Phân loại liên kết
+            <CaretDown size={16} weight="light" className="text-content-muted transition-transform duration-300 group-open:rotate-180" />
+          </summary>
+          <div className="space-y-3 px-4 pb-4">
             <div className="flex items-start gap-2">
-              <textarea rows={4} value={linksInput} onChange={(event) => setLinksInput(event.target.value)} placeholder="Mỗi URL một dòng..." className="min-w-0 flex-1 rounded-lg border border-surface-border bg-surface-card px-3 py-2 text-xs text-content-primary focus:outline-none focus:ring-1 focus:ring-primary-green" />
-              <button type="button" title="Phân loại liên kết" aria-label="Phân loại liên kết" disabled={!canClassify || classification.isPending} onClick={() => classification.mutate()} className={actionClass}><FiList /><span>Phân loại</span></button>
+              <textarea
+                rows={4}
+                value={linksInput}
+                onChange={(event) => setLinksInput(event.target.value)}
+                placeholder="Mỗi URL một dòng..."
+                className="inp min-w-0 flex-1"
+              />
+              <button
+                type="button"
+                disabled={!canClassify || classification.isPending}
+                onClick={() => classification.mutate()}
+                className="btn btn-secondary !h-[2.5rem]"
+              >
+                <Funnel size={16} weight="light" />
+                <span>Phân loại</span>
+              </button>
             </div>
-            {classified.length > 0 && <div className="space-y-2">{classified.map((item) => <div key={item.url} className="rounded-lg border border-surface-border bg-surface-card p-3 text-xs"><p className="truncate text-content-primary">{item.url}</p><p className="mt-1 text-content-muted">{item.category} · {Math.round(item.confidence * 100)}% · {item.reason}</p></div>)}</div>}
+            {classified.length > 0 && (
+              <div className="space-y-2">
+                {classified.map((item) => (
+                  <div key={item.url} className="rounded-lg border border-surface-border bg-surface-card p-3 text-xs">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="truncate text-content-secondary">{item.url}</p>
+                      <span
+                        className={`inline-flex shrink-0 items-center rounded-full border px-2.5 py-0.5 font-medium ${
+                          CATEGORY_CLASSES[item.category] ?? "bg-zinc-800 text-zinc-300 border-zinc-700"
+                        }`}
+                      >
+                        {item.category} {Math.round(item.confidence * 100)}%
+                      </span>
+                    </div>
+                    <p className="mt-1.5 text-content-muted">{item.reason}</p>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </details>
 
-        <details open className="rounded-lg border border-surface-border bg-surface-elevated p-4">
-          <summary className="cursor-pointer text-sm font-semibold text-content-primary">Trích xuất nội dung từ URL</summary>
-          <div className="mt-4 space-y-3">
+        <details open className="group rounded-xl border border-surface-border bg-surface-elevated">
+          <summary className="flex cursor-pointer list-none items-center justify-between p-4 text-sm font-semibold">
+            Trích xuất nội dung từ URL
+            <CaretDown size={16} weight="light" className="text-content-muted transition-transform duration-300 group-open:rotate-180" />
+          </summary>
+          <div className="space-y-3 px-4 pb-4">
             <div className="flex gap-2">
-              <input value={fetchUrl} onChange={(event) => setFetchUrl(event.target.value)} placeholder="https://example.com/article" className="min-w-0 flex-1 rounded-lg border border-surface-border bg-surface-card px-3 py-2 text-sm text-content-primary focus:outline-none focus:ring-1 focus:ring-primary-green" />
-              <button type="button" title="Trích xuất nội dung" aria-label="Trích xuất nội dung" disabled={!canFetch || contentFetch.isPending} onClick={() => contentFetch.mutate()} className={actionClass}><FiSearch /><span>Trích xuất</span></button>
+              <input
+                value={fetchUrl}
+                onChange={(event) => setFetchUrl(event.target.value)}
+                placeholder="https://example.com/article"
+                className="inp min-w-0 flex-1"
+              />
+              <button
+                type="button"
+                disabled={!canFetch || contentFetch.isPending}
+                onClick={() => contentFetch.mutate()}
+                className="btn btn-secondary !h-[2.5rem]"
+              >
+                <DownloadSimple size={16} weight="light" />
+                <span>Trích xuất</span>
+              </button>
             </div>
-            {fetched?.success && <div className="rounded-lg border border-surface-border bg-surface-card p-3 text-xs"><div className="min-w-0"><strong className="text-content-primary">{fetched.title || fetched.url}</strong><p className="mt-1 text-content-muted">{fetched.author || "Không rõ tác giả"}{fetched.published_date ? ` · ${fetched.published_date}` : ""}</p></div><p className="mt-3 line-clamp-5 whitespace-pre-wrap text-content-secondary">{fetched.text_content || fetched.content}</p></div>}
+            {fetched?.success && (
+              <div className="rounded-lg border border-surface-border bg-surface-card p-4 text-xs">
+                <strong className="text-sm">{fetched.title || fetched.url}</strong>
+                <p className="mt-1 text-content-muted">
+                  {fetched.author || "Không rõ tác giả"}
+                  {fetched.published_date ? ` · ${fetched.published_date}` : ""}
+                </p>
+                <p className="mt-3 line-clamp-5 whitespace-pre-wrap leading-relaxed text-content-secondary">
+                  {fetched.text_content || fetched.content}
+                </p>
+              </div>
+            )}
           </div>
         </details>
       </div>

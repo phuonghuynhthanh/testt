@@ -1,14 +1,14 @@
-import { useContext, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { BottomActionHostContext } from "./BottomActionHostContext";
 
-// Anchor page actions above the viewport bottom while leaving the sidebar accessible.
+// Render the fixed full-width action bar used by the editor pages, as in the design preview.
 export const BottomActionBar = ({ children }: { children: ReactNode }) => {
-  const host = useContext(BottomActionHostContext);
-  if (!host) return null;
   return createPortal(
-    <div className="pointer-events-auto mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 rounded-xl border border-surface-border bg-surface-card/95 p-4 shadow-2xl backdrop-blur-md">
-      {children}
-    </div>, host,
+    <div className="fixed inset-x-0 bottom-0 z-30 border-t border-surface-border bg-surface-base/85 backdrop-blur-xl lg:left-[232px]">
+      <div className="mx-auto flex max-w-5xl flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-8">
+        {children}
+      </div>
+    </div>,
+    document.body,
   );
 };

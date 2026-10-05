@@ -18,6 +18,34 @@ auth_app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
 auth_app.include_router(auth_router)
 
 
+# Return profile fields only for valid JWTs and acknowledge stateless logout.
+def test_profile_and_logout(monkeypatch):
+    _configure_auth(monkeypatch)
+    monkeypatch.setattr("config.settings.ADMIN_DISPLAY_NAME", "CMS Admin")
+    monkeypatch.setattr("config.settings.ADMIN_EMAIL", "admin@example.test")
+    from apps.auth.services import create_access_token
+
+    headers = {"Authorization": f"Bearer {create_access_token('cms-admin')}"}
+    with TestClient(auth_app) as client:
+        assert client.get("/auth/me").status_code == 401
+        assert client.post("/auth/logout").status_code == 401
+        assert client.get("/auth/me", headers=headers).json() == {
+            "username": "cms-admin",
+            "name": "CMS Admin",
+            "email": "admin@example.test",
+        }
+        response = client.post("/auth/logout", headers=headers)
+        assert response.status_code == 204 and response.content == b""
+        assert client.get("/auth/me", headers=headers).status_code == 200
+        monkeypatch.setattr("config.settings.ADMIN_DISPLAY_NAME", "")
+        monkeypatch.setattr("config.settings.ADMIN_EMAIL", "")
+        assert client.get("/auth/me", headers=headers).json() == {
+            "username": "cms-admin",
+            "name": "cms-admin",
+            "email": "cms-admin",
+        }
+
+
 # Provide a database-free protected route for JWT behavior tests.
 @auth_app.get("/protected")
 def protected_route(_: str = Depends(require_admin)):

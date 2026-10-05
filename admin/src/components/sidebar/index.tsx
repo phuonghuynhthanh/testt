@@ -1,9 +1,15 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
-import { MdArticle, MdCategory } from "react-icons/md";
-import { IoMdAddCircleOutline } from "react-icons/io";
-import { FaLinkedin } from "react-icons/fa";
-import { FiEye, FiSearch, FiSend } from "react-icons/fi";
+import {
+  Article,
+  PlusCircle,
+  Binoculars,
+  Eye,
+  Tag,
+  PaperPlaneTilt,
+  LinkedinLogo,
+  X,
+} from "@phosphor-icons/react";
 import Logout from "./components/Logout";
 
 interface SidebarProps {
@@ -17,69 +23,55 @@ interface NavItem {
   end?: boolean;
 }
 
-// Render navigation links with active indicators and grouped content sections.
 const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
-  // Handle mobile drawer close on navigation.
-  const handleLinkClick = () => {
-    if (onClose) onClose();
-  };
-
   const contentItems: NavItem[] = [
-    { to: "/blog", label: "Quản lý bài viết", icon: <MdArticle className="text-lg shrink-0" />, end: true },
-    { to: "/blog/create-blog", label: "Tạo bài viết", icon: <IoMdAddCircleOutline className="text-lg shrink-0" /> },
-    { to: "/blog/research", label: "Tìm nguồn tham khảo", icon: <FiSearch className="text-lg shrink-0" /> },
-    { to: "/blog/preview", label: "Xem như công khai", icon: <FiEye className="text-lg shrink-0" /> },
-    { to: "/categories", label: "Danh mục", icon: <MdCategory className="text-lg shrink-0" /> },
+    { to: "/blog", label: "Quản lý bài viết", icon: <Article size={18} weight="light" className="shrink-0" />, end: true },
+    { to: "/blog/create-blog", label: "Tạo bài viết", icon: <PlusCircle size={18} weight="light" className="shrink-0" /> },
+    { to: "/blog/research", label: "Tìm nguồn tham khảo", icon: <Binoculars size={18} weight="light" className="shrink-0" /> },
+    { to: "/blog/preview", label: "Xem như công khai", icon: <Eye size={18} weight="light" className="shrink-0" /> },
+    { to: "/categories", label: "Danh mục", icon: <Tag size={18} weight="light" className="shrink-0" /> },
   ];
 
   const distributionItems: NavItem[] = [
-    { to: "/publications", label: "Xuất bản bài viết", icon: <FiSend className="text-lg shrink-0" /> },
-    { to: "/linkedin", label: "Quản lý LinkedIn", icon: <FaLinkedin className="text-lg shrink-0" /> },
+    { to: "/publications", label: "Xuất bản bài viết", icon: <PaperPlaneTilt size={18} weight="light" className="shrink-0" /> },
+    { to: "/linkedin", label: "Quản lý LinkedIn", icon: <LinkedinLogo size={18} weight="light" className="shrink-0" /> },
   ];
 
-  // Render a navigation link with consistent active styling and accessibility state.
+  // Render one navigation link; the active state comes from aria-current via NavLink.
   const renderNavLink = (item: NavItem) => (
-    <NavLink
-      key={item.to}
-      to={item.to}
-      end={item.end}
-      onClick={handleLinkClick}
-      className={({ isActive }) =>
-        `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 ${
-          isActive
-            ? "bg-surface-elevated text-primary-green border border-primary-green/30 shadow-sm"
-            : "text-content-secondary hover:text-content-primary hover:bg-surface-card border border-transparent"
-        }`
-      }
-    >
+    <NavLink key={item.to} to={item.to} end={item.end} onClick={() => onClose?.()}>
       {item.icon}
-      <span className="truncate">{item.label}</span>
+      <span className="flex-1 truncate">{item.label}</span>
     </NavLink>
   );
 
   return (
-    <aside className="h-full w-64 lg:w-60 bg-surface-card border-r border-surface-border flex flex-col p-4 shadow-xl">
-      <div className="flex-1 space-y-6 overflow-y-auto">
-        <div className="space-y-1.5">
-          <p className="px-3 text-xs font-semibold uppercase tracking-wider text-content-muted">
-            Nội dung
-          </p>
-          <div className="space-y-1">
-            {contentItems.map(renderNavLink)}
-          </div>
+    <aside className="side flex h-full w-[232px] flex-col border-r border-surface-border bg-surface-base">
+      <div className="brand shrink-0">
+        <span className="brand-mark" aria-hidden="true">VQ</span>
+        <div>
+          <b>VietQuant</b>
+          <small>Admin</small>
         </div>
-
-        <div className="space-y-1.5">
-          <p className="px-3 text-xs font-semibold uppercase tracking-wider text-content-muted">
-            Phân phối
-          </p>
-          <div className="space-y-1">
-            {distributionItems.map(renderNavLink)}
-          </div>
-        </div>
+        {onClose && (
+          <button type="button" onClick={onClose} className="ib ml-auto lg:hidden" aria-label="Đóng menu">
+            <X size={18} weight="light" />
+          </button>
+        )}
       </div>
 
-      <div className="mt-auto">
+      <nav className="nav" aria-label="Điều hướng chính">
+        <div className="nav-g">Nội dung</div>
+        {contentItems.map(renderNavLink)}
+        <div className="nav-g">Phân phối</div>
+        {distributionItems.map(renderNavLink)}
+      </nav>
+
+      <div className="shrink-0 space-y-2 border-t border-surface-border p-3">
+        <div className="side-foot !border-0 !p-0">
+          <span className="dot" aria-hidden="true" />
+          <span>VietQuant CMS</span>
+        </div>
         <Logout />
       </div>
     </aside>

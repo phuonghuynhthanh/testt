@@ -1,4 +1,5 @@
 import React from "react";
+import { Pagination } from "../../../shared/ui";
 
 interface LinkedInPaginationProps {
   page: number;
@@ -9,7 +10,7 @@ interface LinkedInPaginationProps {
   onPageChange: (page: number) => void;
 }
 
-// Render customized pagination bar showing page index, record count, and page size selector.
+// Render the shared pager with the LinkedIn list's page-size options.
 export const LinkedInPagination: React.FC<LinkedInPaginationProps> = ({
   page,
   totalPages,
@@ -17,45 +18,17 @@ export const LinkedInPagination: React.FC<LinkedInPaginationProps> = ({
   pageSize,
   onPageSizeChange,
   onPageChange,
-}) => {
-  return (
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 bg-surface-card border-t border-surface-border text-xs text-content-secondary">
-      <div>
-        <span>
-          Trang {page}/{Math.max(1, totalPages)} · {totalItems} bản ghi
-        </span>
-      </div>
-
-      <div className="flex items-center gap-2">
-        <select
-          value={pageSize}
-          onChange={(e) => onPageSizeChange(Number(e.target.value))}
-          className="rounded-lg border border-surface-border bg-surface-elevated px-2.5 py-1 text-xs text-content-primary focus:outline-none"
-        >
-          <option value={5}>5 dòng</option>
-          <option value={10}>10 dòng</option>
-        </select>
-
-        <button
-          type="button"
-          onClick={() => onPageChange(Math.max(1, page - 1))}
-          disabled={page <= 1}
-          className="px-3 py-1 rounded-md border border-surface-border bg-surface-elevated text-content-primary hover:bg-surface-hover disabled:opacity-30 transition-colors"
-        >
-          Trước
-        </button>
-
-        <button
-          type="button"
-          onClick={() => onPageChange(page + 1)}
-          disabled={page >= totalPages}
-          className="px-3 py-1 rounded-md border border-surface-border bg-surface-elevated text-content-primary hover:bg-surface-hover disabled:opacity-30 transition-colors"
-        >
-          Sau
-        </button>
-      </div>
-    </div>
-  );
-};
+}) => (
+  <Pagination
+    page={page}
+    totalPages={totalPages}
+    totalItems={totalItems}
+    itemUnit="bài đăng"
+    pageSize={pageSize}
+    pageSizeOptions={[5, 10, 20]}
+    onPageSizeChange={onPageSizeChange}
+    onPageChange={onPageChange}
+  />
+);
 
 export default LinkedInPagination;

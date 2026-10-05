@@ -1,16 +1,12 @@
-import { BottomActionBar, ConfirmDialog } from "../../../shared/ui";
+import { ConfirmDialog, SectionHeading } from "../../../shared/ui";
+import { Copy, PencilSimple, Sparkle } from "@phosphor-icons/react";
+import LinkedInPostMediaCard from "./LinkedInPostMediaCard";
+import LinkedInSidePanel from "./LinkedInSidePanel";
 import LinkedInWorkspaceCard from "./LinkedInWorkspaceCard";
 import { usePublicationConfig } from "../hooks/usePublicationConfig";
 import { linkedinMediaKey } from "../../../utils/linkedinMedia";
 import type { LinkedInMediaAsset, LinkedInMediaMode, LinkedInMode } from "../../../types/Publication";
 import { apiErrorMessage } from "../../../types/Api";
-import { AIImagePanel } from "../../../shared/media/AIImagePanel";
-
-const STATUS_LABELS = {
-  NOT_SELECTED: "Chưa có bản nháp", DRAFT: "Bản nháp", READY: "Sẵn sàng",
-  PUBLISHING: "Đang đăng bài", PUBLISHED: "Đã đăng", FAILED: "Đăng thất bại",
-  REVIEW_REQUIRED: "Cần kiểm tra trên LinkedIn",
-};
 
 // Compose the LinkedIn editor and image picker for one approved website article.
 export const PublicationConfigWorkspace = ({ blogId }: { blogId: string }) => {
@@ -65,92 +61,134 @@ export const PublicationConfigWorkspace = ({ blogId }: { blogId: string }) => {
     editor.setDirty(true);
   };
 
-  if (editor.isLoading) return <p className="py-10 text-center text-content-muted">Đang tải bản nháp LinkedIn…</p>;
-  if (editor.isError || !pub) return <p className="py-10 text-center text-rose-400">Không thể tải bản nháp LinkedIn. Vui lòng tải lại trang.</p>;
+  if (editor.isLoading) return <p className="py-10 text-center text-xs text-content-muted">Đang tải bản nháp LinkedIn…</p>;
+  if (editor.isError || !pub) return <p className="py-10 text-center text-xs text-rose-400">Không thể tải bản nháp LinkedIn. Vui lòng tải lại trang.</p>;
+
+  const lastErrorMessage = pub.linkedinError ? apiErrorMessage(pub.linkedinError) : undefined;
+  const modes = [
+    ["SUMMARY", "Tóm tắt bằng AI", "Tạo bản tóm tắt để bạn kiểm tra và chỉnh sửa.", Sparkle],
+    ["SAME", "Chuyển nguyên bài", "Chuyển bài website thành văn bản LinkedIn.", Copy],
+    ["CUSTOM", "Tự viết", "Soạn nội dung LinkedIn theo ý bạn.", PencilSimple],
+  ] as const;
 
   return (
-    <div className="space-y-6 pb-48 sm:pb-32">
-      <div className="rounded-xl border border-surface-border bg-surface-card p-5 space-y-4">
-        <h2 className="text-sm font-semibold text-content-primary">1. Chọn cách soạn bài LinkedIn</h2>
-        <div className="grid gap-3 sm:grid-cols-3">
-          {([
-            ["SUMMARY", "Tóm tắt bằng AI", "Tạo bản tóm tắt để bạn kiểm tra và chỉnh sửa."],
-            ["SAME", "Chuyển nguyên bài", "Chuyển bài website thành văn bản LinkedIn."],
-            ["CUSTOM", "Tự viết", "Soạn nội dung LinkedIn theo ý bạn."],
-          ] as const).map(([value, label, description]) => (
-            <label key={value} className={`flex cursor-pointer items-start gap-2 rounded-lg border p-3 text-xs ${mode === value ? "border-primary-green bg-primary-green/10" : "border-surface-border"}`}>
-              <input type="radio" name="linkedin-mode" value={value} checked={mode === value} disabled={locked}
-                onChange={() => { editor.setMode(value as LinkedInMode); editor.setDirty(true); }} />
-              <span><span className="block font-semibold text-content-primary">{label}</span><span className="mt-1 block text-content-muted">{description}</span></span>
-            </label>
-          ))}
+    <div>
+      <div className="grid items-start gap-6 lg:grid-cols-12">
+        <div className="space-y-6 lg:col-span-7">
+          <div className="panel p-4 space-y-4">
+            <SectionHeading title="1. Chọn cách soạn bài LinkedIn" />
+            <div className="grid gap-3 sm:grid-cols-3">
+              {modes.map(([value, label, description, Icon]) => (
+                <button
+                  key={value}
+                  type="button"
+                  disabled={locked}
+                  aria-pressed={mode === value}
+                  onClick={() => { editor.setMode(value as LinkedInMode); editor.setDirty(true); }}
+                  className={`rounded-xl border p-3.5 text-left text-xs transition-all duration-300 ${
+                    mode === value
+                      ? "border-primary-green bg-primary-green/10"
+                      : "border-surface-border bg-surface-elevated hover:border-content-muted/40"
+                  }`}
+                >
+                  <span className="mb-1.5 flex items-center gap-2 text-sm font-semibold">
+                    <Icon size={16} weight="light" className={mode === value ? "text-primary-green" : "text-content-muted"} />
+                    {label}
+                  </span>
+                  <span className="block leading-relaxed text-content-muted">{description}</span>
+                </button>
+              ))}
+            </div>
+            <p className="hint">Đổi cách soạn giữ nguyên nội dung hiện tại. Bạn có thể chỉnh sửa nội dung trước khi đăng.</p>
+
+            <div>
+              <label className="label">Vị trí liên kết website</label>
+              <div className="seg">
+                {(["NONE", "IN_POST"] as const).map((placement) => (
+                  <button
+                    key={placement}
+                    type="button"
+                    disabled={locked}
+                    aria-selected={linkPlacement === placement}
+                    onClick={() => { editor.setLinkPlacement(placement); editor.setDirty(true); }}
+                  >
+                    {placement === "NONE" ? "Không chèn liên kết" : "Chèn liên kết trong bài"}
+                  </button>
+                ))}
+              </div>
+              <p className="hint mt-2">Hệ thống xác định URL bài website khi đăng; nội dung đã duyệt luôn không chứa URL.</p>
+            </div>
+          </div>
+
+          <LinkedInWorkspaceCard
+            content={content}
+            blogId={blogId}
+            linkPlacement={linkPlacement}
+            language={editor.generation.language ?? "vietnamese"}
+            onContentChange={(value) => { editor.setContent(value); editor.setDirty(true); }}
+            isGeneratingDraft={editor.draftMutation.isPending}
+            onGenerateDraft={editor.generateDraft}
+            showGenerateDraft={mode !== "CUSTOM"}
+            showLanguageSelect={mode === "SUMMARY"}
+            generationLanguage={language}
+            onLanguageChange={editor.setLanguage}
+            media={selectedMedia}
+            factCheck={factCheck}
+            factCheckAcknowledged={factCheckAcknowledged}
+            onAcknowledgeFactCheck={(value) => { editor.setFactCheckAcknowledged(value); editor.setDirty(true); }}
+            isPublished={locked}
+          />
+
+          <LinkedInPostMediaCard
+            immutable={locked}
+            mediaMode={mediaMode}
+            onMediaModeChange={changeMediaMode}
+            keywords={keywordInput}
+            onKeywordsChange={editor.setKeywordInput}
+            onSearchMedia={() => editor.searchMediaMutation.mutate(keywordInput.split(/[\n,]+/).map((key) => key.trim()).filter(Boolean))}
+            isSearchingMedia={editor.searchMediaMutation.isPending}
+            onUploadMedia={(files) => editor.uploadMutation.mutate(files)}
+            isUploadingMedia={editor.uploadMutation.isPending}
+            candidates={displayedCandidates}
+            media={selectedMedia}
+            onToggleCandidate={toggleMedia}
+            onMoveMedia={moveMedia}
+            onAltTextChange={updateAltText}
+            onAddAiGeneratedMedia={(item) => {
+              editor.setSuggestions((current) => [item, ...current]);
+              editor.setDirty(true);
+            }}
+            topic=""
+            content={content}
+          />
         </div>
-        <p className="text-xs text-content-muted">Đổi cách soạn giữ nguyên nội dung hiện tại. Bạn có thể chỉnh sửa nội dung trước khi đăng.</p>
-        <div className="flex flex-wrap gap-2">{(["NONE", "IN_POST"] as const).map((placement) => <button key={placement} type="button" disabled={locked} onClick={() => { editor.setLinkPlacement(placement); editor.setDirty(true); }} className={`rounded-lg border px-3 py-2 text-xs ${linkPlacement === placement ? "border-primary-green bg-primary-green/10 text-content-primary" : "border-surface-border text-content-muted"}`}>{placement === "NONE" ? "Không liên kết" : "Trong bài đăng"}</button>)}</div>
-        <p className="text-xs text-content-muted">Hệ thống xác định URL bài website khi đăng; nội dung đã duyệt luôn không chứa URL.</p>
+
+        <aside className="space-y-5 lg:sticky lg:top-20 lg:col-span-5">
+          <LinkedInSidePanel
+            status={pub.linkedinStatus === "NOT_SELECTED" ? undefined : pub.linkedinStatus}
+            lastErrorMessage={lastErrorMessage}
+            publishedLinkUrl={null}
+            showTopicCheck={false}
+            topic=""
+            content={content}
+            mediaMode={mediaMode}
+            media={selectedMedia}
+            requiresFactCheck={factCheck.requiresHumanFactCheck}
+            factCheckAcknowledged={factCheckAcknowledged}
+            immutable={immutable}
+            canSave={canSaveDraft}
+            canPublish={canPublish}
+            canRetry={canRetry}
+            isSaving={editor.saveDraftMutation.isPending}
+            isPublishing={editor.publishMutation.isPending}
+            isRetrying={editor.retryMutation.isPending}
+            onSave={() => editor.saveDraftMutation.mutate()}
+            onPublish={() => editor.setShowConfirmPublish(true)}
+            onRetry={() => editor.setShowConfirmPublish(true)}
+          />
+          <p role="status" className="hint">{guidance}</p>
+        </aside>
       </div>
-
-      <LinkedInWorkspaceCard
-        content={content}
-        blogId={blogId}
-        linkPlacement={linkPlacement}
-        language={editor.generation.language ?? "vietnamese"}
-        onContentChange={(value) => { editor.setContent(value); editor.setDirty(true); }}
-        isGeneratingDraft={editor.draftMutation.isPending}
-        onGenerateDraft={editor.generateDraft}
-        showGenerateDraft={mode !== "CUSTOM"}
-        showLanguageSelect={mode === "SUMMARY"}
-        generationLanguage={language}
-        onLanguageChange={editor.setLanguage}
-        mediaMode={mediaMode}
-        onMediaModeChange={changeMediaMode}
-        candidates={displayedCandidates}
-        selectedMedia={selectedMedia}
-        onToggleMedia={toggleMedia}
-        onMoveMedia={moveMedia}
-        onUpdateAltText={updateAltText}
-        onUploadMedia={(files) => editor.uploadMutation.mutate(files)}
-        isUploading={editor.uploadMutation.isPending}
-        keywordInput={keywordInput}
-        onKeywordChange={editor.setKeywordInput}
-        onSearchMedia={() => editor.searchMediaMutation.mutate(keywordInput.split(/[\n,]+/).map((key) => key.trim()).filter(Boolean))}
-        isSearchingMedia={editor.searchMediaMutation.isPending}
-        factCheck={factCheck}
-        factCheckAcknowledged={factCheckAcknowledged}
-        onAcknowledgeFactCheck={(value) => { editor.setFactCheckAcknowledged(value); editor.setDirty(true); }}
-        isPublished={locked}
-      />
-      {!locked && <AIImagePanel purpose="LINKEDIN" context={content} onUse={(generated) => {
-        editor.setSuggestions((current) => [generated.media, ...current]);
-        editor.setDirty(true);
-      }} />}
-
-      <div className="rounded-xl border border-surface-border bg-surface-card p-5 space-y-2 text-xs">
-        <h2 className="font-semibold text-content-primary">Trạng thái LinkedIn: {STATUS_LABELS[pub.linkedinStatus]}</h2>
-        {pub.linkedinError && <p className="text-rose-400">{apiErrorMessage(pub.linkedinError)}</p>}
-        {pub.linkedinStatus === "REVIEW_REQUIRED" && <p className="text-amber-300">Kết quả đăng chưa rõ ràng. Kiểm tra Trang Doanh nghiệp LinkedIn để tránh đăng trùng.</p>}
-        {pub.linkedinPublishedAt && <p className="text-content-muted">Thời gian đăng: {pub.linkedinPublishedAt}</p>}
-
-      </div>
-
-      <BottomActionBar>
-        <p role="status" className="max-w-md text-xs text-content-muted">{guidance}</p>
-        <div className="flex flex-wrap gap-2">
-          {!immutable && <button type="button" disabled={!canSaveDraft} onClick={() => editor.saveDraftMutation.mutate()}
-            className="rounded-lg border border-surface-border bg-surface-elevated px-4 py-2.5 text-xs font-medium text-content-primary disabled:opacity-40">
-            {editor.saveDraftMutation.isPending ? "Đang lưu…" : "Lưu bản nháp LinkedIn"}
-          </button>}
-          {!immutable && pub.linkedinStatus !== "FAILED" && <button type="button" disabled={!canPublish} onClick={() => editor.setShowConfirmPublish(true)}
-            className="rounded-lg bg-[#0a66c2] px-4 py-2.5 text-xs font-semibold text-white disabled:opacity-40">
-            {editor.publishMutation.isPending ? "Đang đăng…" : "Đăng lên LinkedIn"}
-          </button>}
-          {pub.linkedinStatus === "FAILED" && pub.linkedinError?.retryable === true &&
-            <button type="button" disabled={!canRetry} onClick={() => editor.setShowConfirmPublish(true)}
-              className="rounded-lg bg-rose-600 px-4 py-2.5 text-xs font-semibold text-white disabled:opacity-40">
-              {editor.retryMutation.isPending ? "Đang thử lại…" : "Thử lại LinkedIn"}
-            </button>}
-        </div>
-      </BottomActionBar>
 
       <ConfirmDialog isOpen={editor.showConfirmPublish} title="Xác nhận đăng lên LinkedIn"
         message={`Bài sẽ được đăng công khai lên Trang Doanh nghiệp LinkedIn với ${selectedMedia.length} ảnh${linkPlacement === "NONE" ? ", không đính kèm liên kết website" : " và liên kết do hệ thống thêm khi xuất bản"}. Nội dung website không thay đổi.`}

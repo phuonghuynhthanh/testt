@@ -1,4 +1,5 @@
 import React from "react";
+import { CheckCircle, Clock, XCircle } from "@phosphor-icons/react";
 import type { BlogState } from "../../types/Blog";
 import type { LinkedInPostStatus, LinkedInSourceType } from "../../types/LinkedIn";
 
@@ -6,95 +7,54 @@ type StatusValue = BlogState | LinkedInPostStatus | LinkedInSourceType | string;
 
 interface StatusBadgeProps {
   status: StatusValue;
+  /** "state" renders the icon-based badge used in the blog list table. */
+  variant?: "badge" | "state";
 }
 
-interface BadgeConfig {
-  label: string;
-  classes: string;
-}
-
-// Map each known status or source enum to a human-readable Vietnamese label and semantic theme classes.
-const getBadgeConfig = (status: StatusValue): BadgeConfig => {
-  switch (status) {
-    case "APPROVED":
-      return {
-        label: "Đã duyệt",
-        classes: "bg-emerald-950/40 text-emerald-400 border-emerald-500/30",
-      };
-    case "PUBLISHED":
-      return {
-        label: "Đã đăng",
-        classes: "bg-emerald-950/40 text-emerald-400 border-emerald-500/30",
-      };
-    case "READY":
-      return {
-        label: "Sẵn sàng",
-        classes: "bg-blue-950/40 text-blue-400 border-blue-500/30",
-      };
-    case "PENDING":
-      return {
-        label: "Chờ duyệt",
-        classes: "bg-amber-950/40 text-amber-400 border-amber-500/30",
-      };
-    case "REVIEW_REQUIRED":
-      return {
-        label: "Cần xem xét",
-        classes: "bg-amber-950/40 text-amber-400 border-amber-500/30",
-      };
-    case "PUBLISHING":
-      return {
-        label: "Đang đăng",
-        classes: "bg-cyan-950/40 text-cyan-400 border-cyan-500/30",
-      };
-    case "REJECTED":
-      return {
-        label: "Từ chối",
-        classes: "bg-rose-950/40 text-rose-400 border-rose-500/30",
-      };
-    case "FAILED":
-      return {
-        label: "Thất bại",
-        classes: "bg-rose-950/40 text-rose-400 border-rose-500/30",
-      };
-    case "DRAFT":
-      return {
-        label: "Bản nháp",
-        classes: "bg-zinc-800 text-zinc-300 border-zinc-700",
-      };
-    case "INDEPENDENT_AI":
-      return {
-        label: "AI Độc lập",
-        classes: "bg-purple-950/40 text-purple-300 border-purple-500/30",
-      };
-    case "BLOG_ADAPTATION":
-      return {
-        label: "Chuyển từ Blog",
-        classes: "bg-indigo-950/40 text-indigo-300 border-indigo-500/30",
-      };
-    case "CUSTOM":
-      return {
-        label: "Thủ công",
-        classes: "bg-zinc-800 text-zinc-300 border-zinc-700",
-      };
-    default:
-      return {
-        label: String(status),
-        classes: "bg-zinc-800 text-zinc-400 border-zinc-700",
-      };
-  }
+// Label and Tailwind palette classes per status, matching the design preview exactly.
+const BADGES: Record<string, [string, string]> = {
+  APPROVED: ["Đã duyệt", "bg-emerald-950/40 text-emerald-400 border-emerald-500/30"],
+  PUBLISHED: ["Đã đăng", "bg-emerald-950/40 text-emerald-400 border-emerald-500/30"],
+  READY: ["Sẵn sàng", "bg-blue-950/40 text-blue-400 border-blue-500/30"],
+  PENDING: ["Chờ duyệt", "bg-amber-950/40 text-amber-400 border-amber-500/30"],
+  REVIEW_REQUIRED: ["Cần duyệt tay", "bg-amber-950/40 text-amber-400 border-amber-500/30"],
+  PUBLISHING: ["Đang đăng", "bg-cyan-950/40 text-cyan-400 border-cyan-500/30"],
+  REJECTED: ["Từ chối", "bg-rose-950/40 text-rose-400 border-rose-500/30"],
+  FAILED: ["Thất bại", "bg-rose-950/40 text-rose-400 border-rose-500/30"],
+  DRAFT: ["Bản nháp", "bg-zinc-800 text-zinc-300 border-zinc-700"],
+  INDEPENDENT_AI: ["AI độc lập", "bg-purple-950/40 text-purple-300 border-purple-500/30"],
+  BLOG_ADAPTATION: ["Từ bài blog", "bg-indigo-950/40 text-indigo-300 border-indigo-500/30"],
+  CUSTOM: ["Tự soạn", "bg-zinc-800 text-zinc-300 border-zinc-700"],
 };
 
-// Render a styled status indicator badge with semantic colors and localized label.
-export const StatusBadge: React.FC<StatusBadgeProps> = ({
-  status,
-}) => {
-  const { label, classes } = getBadgeConfig(status);
+const STATE_BADGES: Record<string, { cls: string; label: string; Icon: typeof Clock }> = {
+  PENDING: { cls: "st-pending", label: "Chờ duyệt", Icon: Clock },
+  APPROVED: { cls: "st-approved", label: "Đã duyệt", Icon: CheckCircle },
+  REJECTED: { cls: "st-rejected", label: "Từ chối", Icon: XCircle },
+};
+
+// Render a status or source badge with semantic colors.
+export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, variant = "badge" }) => {
+  const key = String(status);
+  const stateBadge = variant === "state" ? STATE_BADGES[key] : undefined;
+  if (stateBadge) {
+    return (
+      <span className={`st ${stateBadge.cls}`}>
+        <stateBadge.Icon size={14} weight="light" />
+        {stateBadge.label}
+      </span>
+    );
+  }
+
+  const [label, classes] = BADGES[key] ?? [key, "bg-zinc-800 text-zinc-400 border-zinc-700"];
 
   return (
     <span
-      className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium tracking-wide whitespace-nowrap ${classes}`}
+      className={`inline-flex h-6 items-center whitespace-nowrap rounded-md border px-2 text-xs font-medium ${classes}${
+        key === "PUBLISHING" ? " animate-pulse" : ""
+      }`}
     >
-      <span className="w-1.5 h-1.5 rounded-full bg-current mr-1.5 opacity-80" />
+      <span className="mr-1.5 h-1.5 w-1.5 rounded-full bg-current opacity-80" />
       {label}
     </span>
   );

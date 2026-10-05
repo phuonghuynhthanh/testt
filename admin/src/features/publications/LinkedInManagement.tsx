@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { FiPlus } from "react-icons/fi";
-import { FaLinkedin } from "react-icons/fa";
+import { Plus, LinkedinLogo } from "@phosphor-icons/react";
 import { toast } from "react-toastify";
 import {
   deleteLinkedInPost,
@@ -45,7 +44,6 @@ const LinkedInManagement: React.FC = () => {
     placeholderData: keepPreviousData,
   });
 
-  // Step back when the current page disappears (e.g. its last item was deleted).
   const totalPages = Math.max(1, posts.data?.totalPages ?? 1);
   useEffect(() => {
     if (page > totalPages) setPage(totalPages);
@@ -128,18 +126,13 @@ const LinkedInManagement: React.FC = () => {
   };
 
   return (
-    <section className="space-y-5">
+    <section>
       <PageHeader
         title="Quản lý LinkedIn"
-        description="Quản lý bài đăng LinkedIn độc lập; bài chuyển từ Blog được quản lý trực tiếp trong màn hình Blog"
+        description="Quản lý bài đăng LinkedIn độc lập. Bài chuyển từ blog được tạo trong mục Xuất bản bài viết."
         actions={
-          <Link
-            to="/linkedin/new"
-            title="Tạo bài LinkedIn"
-            aria-label="Tạo bài LinkedIn"
-            className="inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-[#0a66c2] px-3.5 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-[#084e96]"
-          >
-            <FiPlus className="w-4 h-4" />
+          <Link to="/linkedin/new" title="Tạo bài LinkedIn" className="btn btn-li btn-lg">
+            <Plus size={16} weight="light" />
             <span>Tạo bài LinkedIn</span>
           </Link>
         }
@@ -147,15 +140,9 @@ const LinkedInManagement: React.FC = () => {
 
       <LinkedInTableToolbar
         status={status}
-        onStatusChange={(s) => {
-          setStatus(s);
-          setPage(1);
-        }}
+        onStatusChange={(s) => { setStatus(s); setPage(1); }}
         sourceType={sourceType}
-        onSourceTypeChange={(st) => {
-          setSourceType(st);
-          setPage(1);
-        }}
+        onSourceTypeChange={(st) => { setSourceType(st); setPage(1); }}
         onResetFilters={handleResetFilters}
         onVerify={() => verify.mutate()}
         isVerifying={verify.isPending}
@@ -174,9 +161,9 @@ const LinkedInManagement: React.FC = () => {
         isSyncing={sync.isPending}
       />
 
-      <div className="bg-surface-card rounded-xl border border-surface-border overflow-hidden shadow-sm">
+      <section className="panel overflow-hidden">
         {posts.isLoading ? (
-          <div className="py-20 text-center text-sm text-content-muted">
+          <div className="py-16 text-center text-sm text-content-muted">
             Đang tải danh sách bài đăng LinkedIn...
           </div>
         ) : posts.isError ? (
@@ -185,53 +172,45 @@ const LinkedInManagement: React.FC = () => {
           </div>
         ) : (posts.data?.items.length ?? 0) === 0 ? (
           <EmptyState
-            icon={<FaLinkedin className="w-6 h-6 text-[#0a66c2]" />}
+            icon={<LinkedinLogo weight="light" size={24} />}
             title="Chưa có bài LinkedIn độc lập"
             description="Tạo bài viết LinkedIn mới từ công cụ AI hoặc nhập nội dung thủ công để xuất bản."
           />
         ) : (
           <>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm min-w-[700px]">
-                <thead className="bg-surface-elevated text-xs font-semibold uppercase tracking-wider text-content-muted border-b border-surface-border">
-                  <tr>
-                    <th className="py-3 px-4">Nội dung</th>
-                    <th className="py-3 px-4">Nguồn</th>
-                    <th className="py-3 px-4">Trạng thái</th>
-                    <th className="py-3 px-4">Cập nhật</th>
-                    <th className="py-3 px-4 text-right">Thao tác</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-surface-border">
-                  {posts.data?.items.map((post) => (
-                    <LinkedInTableRow
-                      key={post.id}
-                      post={post}
-                      onPublish={(id) => publish.mutate(id)}
-                      onRetry={(id) => retry.mutate(id)}
-                      onDelete={(id) => setDeleteTargetId(id)}
-                      isPublishing={publish.isPending}
-                      isRetrying={retry.isPending}
-                    />
-                  ))}
-                </tbody>
-              </table>
+            <div className="hidden grid-cols-[minmax(0,1fr)_8.5rem_8.5rem_6rem_12.5rem] gap-4 border-b border-surface-border bg-surface-elevated/60 px-3 py-2 text-xs font-semibold uppercase tracking-[0.05em] text-content-muted lg:grid">
+              <span>Nội dung</span>
+              <span>Nguồn</span>
+              <span>Trạng thái</span>
+              <span>Cập nhật</span>
+              <span className="text-right">Thao tác</span>
             </div>
+            <ul className="divide-y divide-surface-border">
+              {posts.data?.items.map((post, index) => (
+                <LinkedInTableRow
+                  key={post.id}
+                  post={post}
+                  index={index}
+                  onPublish={(id) => publish.mutate(id)}
+                  onRetry={(id) => retry.mutate(id)}
+                  onDelete={(id) => setDeleteTargetId(id)}
+                  isPublishing={publish.isPending}
+                  isRetrying={retry.isPending}
+                />
+              ))}
+            </ul>
 
             <LinkedInPagination
               page={posts.data?.page ?? page}
               totalPages={posts.data?.totalPages ?? 1}
               totalItems={posts.data?.total}
               pageSize={pageSize}
-              onPageSizeChange={(sz) => {
-                setPageSize(sz);
-                setPage(1);
-              }}
+              onPageSizeChange={(sz) => { setPageSize(sz); setPage(1); }}
               onPageChange={(p) => setPage(p)}
             />
           </>
         )}
-      </div>
+      </section>
 
       <ConfirmDialog
         isOpen={Boolean(deleteTargetId)}

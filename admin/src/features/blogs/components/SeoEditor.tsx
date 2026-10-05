@@ -1,7 +1,6 @@
 import { useState } from "react";
-import { BsStars } from "react-icons/bs";
+import { Sparkle, CircleNotch } from "@phosphor-icons/react";
 import { toast } from "react-toastify";
-
 import InputSeoKeyword from "../../../shared/input/InputSeoKeyword";
 import InputUploadBanner from "../../../shared/input/InputUploadBanner";
 import InputField from "../../../shared/input/InputField";
@@ -24,7 +23,6 @@ interface SeoEditorProps {
   setBannerImage: (file: File) => void;
 }
 
-// Render SEO metadata editor with AI-assisted SEO keyword and description generation.
 const SeoEditor = ({
   onSeoDataChange,
   blogTitle,
@@ -43,14 +41,12 @@ const SeoEditor = ({
     seoDescription: "",
   });
 
-  // Update a single field in the SEO state and notify the parent component.
   const handleFieldChange = (field: keyof IBlogSEO, value: unknown) => {
     const updatedData = { ...seoData, [field]: value };
     setSeoData(updatedData);
     onSeoDataChange(updatedData);
   };
 
-  // Parse comma-separated keywords and append them to the existing list.
   const handleAddKeyword = () => {
     const newKeywords = keywordInput
       .split(",")
@@ -63,13 +59,11 @@ const SeoEditor = ({
     setKeywordInput("");
   };
 
-  // Remove a keyword from the list by its index.
   const handleDeleteKeyword = (index: number) => {
     const updatedKeywords = seoData.seoKeywords.filter((_, i) => i !== index);
     handleFieldChange("seoKeywords", updatedKeywords);
   };
 
-  // Generate SEO keywords and description using the backend OpenAI API.
   const handleGenerateSEO = async () => {
     const targetTitle = seoData.title || blogTitle;
     if (!targetTitle.trim()) {
@@ -110,8 +104,8 @@ const SeoEditor = ({
   };
 
   return (
-    <div className="px-5 space-y-4">
-      <h2 className="text-2xl font-bold my-4 text-primary-white">Trình chỉnh sửa SEO</h2>
+    <div className="space-y-3.5">
+      <h2 className="text-lg font-semibold text-content-primary mb-2">Trình chỉnh sửa SEO</h2>
 
       <InputField
         label="Thẻ tag"
@@ -136,17 +130,23 @@ const SeoEditor = ({
         setBannerImage={setBannerImage}
       />
 
-      <button
-        type="button"
-        disabled={isGeneratingSeo}
-        title={isGeneratingSeo ? "Đang tạo SEO" : "Tạo nội dung SEO bằng AI"}
-        aria-label={isGeneratingSeo ? "Đang tạo SEO" : "Tạo nội dung SEO bằng AI"}
-        className="inline-flex items-center gap-2 rounded-lg bg-purple-700 px-4 py-2.5 text-xs font-semibold text-white hover:bg-purple-800 disabled:opacity-50"
-        onClick={handleGenerateSEO}
-      >
-        <BsStars className={isGeneratingSeo ? "animate-pulse" : ""} />
-        <span>{isGeneratingSeo ? "Đang tạo SEO..." : "Tạo nội dung SEO bằng AI"}</span>
-      </button>
+      <div>
+        <button
+          type="button"
+          disabled={isGeneratingSeo}
+          title={isGeneratingSeo ? "Đang tạo SEO" : "Tạo nội dung SEO bằng AI"}
+          aria-label={isGeneratingSeo ? "Đang tạo SEO" : "Tạo nội dung SEO bằng AI"}
+          className="btn btn-ai"
+          onClick={handleGenerateSEO}
+        >
+          {isGeneratingSeo ? (
+            <CircleNotch size={14} className="animate-spin" />
+          ) : (
+            <Sparkle size={14} weight="light" className="text-purple-300" />
+          )}
+          <span>{isGeneratingSeo ? "Đang tạo SEO..." : "Tạo nội dung SEO bằng AI"}</span>
+        </button>
+      </div>
 
       <InputSeoKeyword
         keywords={seoData.seoKeywords}
@@ -166,13 +166,13 @@ const SeoEditor = ({
       />
 
       <div>
-        <label className="block font-medium text-primary-white mb-1">
+        <label className="label mb-1.5">
           Mô tả SEO
         </label>
         <textarea
           value={seoData.seoDescription}
           onChange={(e) => handleFieldChange("seoDescription", e.target.value)}
-          className="border border-gray-300 bg-primary-black-medium text-primary-white rounded-md p-2 w-full h-24 resize-none"
+          className="inp w-full h-24 resize-none"
           placeholder="Nhập mô tả SEO..."
         />
       </div>

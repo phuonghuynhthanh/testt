@@ -25,7 +25,7 @@ const TextareaField: React.FC<TextareaFieldProps> = ({
 }) => {
   return (
     <div className="flex-1 flex flex-col">
-      <label htmlFor={id} className="text-primary-white font-medium">
+      <label htmlFor={id} className="label mb-1.5 text-xs font-medium text-content-secondary">
         {label}
       </label>
       <textarea
@@ -35,10 +35,8 @@ const TextareaField: React.FC<TextareaFieldProps> = ({
         onChange={handleChange}
         readOnly={readOnly}
         rows={rows}
-        className={`w-full px-4 py-3 rounded border border-gray-700 bg-transparent text-primary-white ${
-          readOnly
-            ? "bg-primary-black-medium cursor-not-allowed text-primary-white"
-            : ""
+        className={`inp w-full rounded-md border border-surface-border bg-surface-base p-3 text-sm text-content-primary placeholder:text-[#8493A8] transition focus:border-primary-green focus:outline-none focus:ring-1 focus:ring-primary-green ${
+          readOnly ? "opacity-55 cursor-not-allowed border-dashed bg-surface-elevated/40" : ""
         }`}
         placeholder={placeholder}
         onKeyDown={onKeyDown}

@@ -1,5 +1,5 @@
 import React from "react";
-import { FiCheckCircle, FiClock } from "react-icons/fi";
+import { CheckCircle, Clock, PlugsConnected, X } from "@phosphor-icons/react";
 import type { LinkedInPostStatus, LinkedInSourceType } from "../../../types/LinkedIn";
 
 interface LinkedInTableToolbarProps {
@@ -32,7 +32,7 @@ const SOURCE_FILTERS: Array<{ value: LinkedInSourceType | ""; label: string }> =
   { value: "CUSTOM", label: "Tự soạn" },
 ];
 
-// Render filter dropdowns, quick clear button, and connection actions for the LinkedIn table.
+// Render filter dropdowns, quick clear button, and connection actions for the LinkedIn list.
 export const LinkedInTableToolbar: React.FC<LinkedInTableToolbarProps> = ({
   status,
   onStatusChange,
@@ -48,12 +48,13 @@ export const LinkedInTableToolbar: React.FC<LinkedInTableToolbarProps> = ({
   const hasFilters = Boolean(status || sourceType);
 
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-surface-card p-3 rounded-xl border border-surface-border">
-      <div className="flex flex-wrap items-center gap-2.5">
+    <div className="mb-5 flex flex-col gap-3 rounded-2xl border border-surface-border bg-surface-card p-3.5 lg:flex-row lg:items-center lg:justify-between">
+      <div className="flex flex-wrap items-center gap-3">
         <select
           value={status}
           onChange={(e) => onStatusChange(e.target.value as LinkedInPostStatus | "")}
-          className="rounded-lg border border-surface-border bg-surface-elevated px-3 py-1.5 text-xs text-content-primary focus:outline-none focus:ring-1 focus:ring-primary-green"
+          aria-label="Lọc theo trạng thái"
+          className="inp sm !w-auto"
         >
           {STATUS_FILTERS.map((item) => (
             <option key={item.value} value={item.value}>
@@ -65,7 +66,8 @@ export const LinkedInTableToolbar: React.FC<LinkedInTableToolbarProps> = ({
         <select
           value={sourceType}
           onChange={(e) => onSourceTypeChange(e.target.value as LinkedInSourceType | "")}
-          className="rounded-lg border border-surface-border bg-surface-elevated px-3 py-1.5 text-xs text-content-primary focus:outline-none focus:ring-1 focus:ring-primary-green"
+          aria-label="Lọc theo nguồn"
+          className="inp sm !w-auto"
         >
           {SOURCE_FILTERS.map((item) => (
             <option key={item.value} value={item.value}>
@@ -75,54 +77,40 @@ export const LinkedInTableToolbar: React.FC<LinkedInTableToolbarProps> = ({
         </select>
 
         {hasFilters && (
-          <button
-            type="button"
-            onClick={onResetFilters}
-            className="text-xs text-content-muted hover:text-content-primary underline px-1 py-1 transition-colors"
-          >
+          <button type="button" onClick={onResetFilters} className="btn btn-ghost !h-9">
+            <X size={14} weight="light" />
             Xóa bộ lọc
           </button>
         )}
       </div>
 
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          title="Kiểm tra kết nối LinkedIn"
-          aria-label="Kiểm tra kết nối LinkedIn"
-          onClick={onVerify}
-          disabled={isVerifying}
-          className="inline-flex h-8 items-center justify-center gap-1.5 rounded-lg border border-surface-border bg-surface-elevated px-2.5 text-xs font-medium text-emerald-400 hover:bg-surface-hover disabled:opacity-50 transition-colors"
-        >
-          <FiCheckCircle className="text-sm" />
-          <span>{isVerifying ? "Đang kiểm tra..." : "Kiểm tra kết nối"}</span>
-        </button>
-
+      <div className="flex flex-wrap items-center gap-3">
         {verified !== null && (
           <span
-            className={`text-[11px] px-2 py-0.5 rounded-full border ${
+            className={`chip ${
               verified
-                ? "bg-emerald-950/40 text-emerald-400 border-emerald-500/30"
-                : "bg-amber-950/40 text-amber-400 border-amber-500/30"
+                ? "!border-emerald-500/30 !bg-emerald-950/40 !text-emerald-400"
+                : "!border-amber-500/30 !bg-amber-950/40 !text-amber-400"
             }`}
           >
-            {verified ? "Đã kết nối" : "Chưa kết nối"}
+            <CheckCircle size={14} weight="light" />
+            {verified ? "Kết nối sẵn sàng đăng bài" : "Chưa kết nối"}
           </span>
         )}
 
+        <button type="button" onClick={onVerify} disabled={isVerifying} className="btn btn-secondary">
+          <PlugsConnected size={16} weight="light" />
+          {isVerifying ? "Đang kiểm tra..." : "Kiểm tra kết nối LinkedIn"}
+        </button>
+
         <button
           type="button"
-          title={showHistory ? "Ẩn lịch sử Company Page" : "Hiện lịch sử Company Page"}
-          aria-label={showHistory ? "Ẩn lịch sử Company Page" : "Hiện lịch sử Company Page"}
           onClick={onToggleHistory}
-          className={`inline-flex h-8 items-center justify-center gap-1.5 rounded-lg border px-2.5 text-xs font-medium transition-colors ${
-            showHistory
-              ? "bg-surface-elevated text-primary-green border-primary-green/40"
-              : "border-surface-border bg-surface-elevated text-content-secondary hover:bg-surface-hover"
-          }`}
+          aria-pressed={showHistory}
+          className="btn btn-secondary"
         >
-          <FiClock className="text-sm" />
-          <span>{showHistory ? "Ẩn lịch sử" : "Lịch sử"}</span>
+          <Clock size={16} weight="light" />
+          {showHistory ? "Ẩn lịch sử Company Page" : "Hiện lịch sử Company Page"}
         </button>
       </div>
     </div>

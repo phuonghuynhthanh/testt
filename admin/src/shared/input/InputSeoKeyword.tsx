@@ -1,6 +1,5 @@
 import React from "react";
-import { IoMdAddCircle } from "react-icons/io";
-import { IoCloseOutline } from "react-icons/io5";
+import { Plus, X } from "@phosphor-icons/react";
 import InputField from "./InputField";
 
 interface InputSeoKeywordProps {
@@ -11,7 +10,6 @@ interface InputSeoKeywordProps {
   handleDeleteKeyword: (index: number) => void;
 }
 
-// Render dynamic SEO keyword chips with entry input and deletion actions.
 const InputSeoKeyword: React.FC<InputSeoKeywordProps> = ({
   keywords,
   keywordInput,
@@ -19,7 +17,6 @@ const InputSeoKeyword: React.FC<InputSeoKeywordProps> = ({
   handleAddKeyword,
   handleDeleteKeyword,
 }) => {
-  // Submit keyword entry when user presses Enter key.
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
       e.preventDefault();
@@ -29,7 +26,7 @@ const InputSeoKeyword: React.FC<InputSeoKeywordProps> = ({
 
   return (
     <div className="space-y-3">
-      <div className="flex items-end gap-2.5">
+      <div className="flex items-end gap-2">
         <div className="flex-1" onKeyDown={handleKeyDown}>
           <InputField
             label="Từ khóa SEO"
@@ -37,7 +34,7 @@ const InputSeoKeyword: React.FC<InputSeoKeywordProps> = ({
             name="seo-key"
             value={keywordInput}
             handleChange={(e) => setKeywordInput(e.target.value)}
-            placeholder='Nhập từ khóa và bấm Thêm (hoặc phân tách bằng dấu phẩy)...'
+            placeholder="Nhập từ khóa và bấm Thêm..."
           />
         </div>
         <button
@@ -45,30 +42,29 @@ const InputSeoKeyword: React.FC<InputSeoKeywordProps> = ({
           onClick={handleAddKeyword}
           title="Thêm từ khóa"
           aria-label="Thêm từ khóa"
-          className="inline-flex h-[38px] items-center gap-1.5 rounded-lg bg-surface-elevated px-3 text-xs font-medium text-content-primary hover:bg-surface-hover hover:text-white border border-surface-border transition-colors"
+          className="btn btn-secondary h-9"
         >
-          <IoMdAddCircle className="text-primary-green text-base" />
+          <Plus size={14} weight="light" className="text-primary-green" />
           <span>Thêm</span>
         </button>
       </div>
 
       {keywords.length > 0 && (
-        <div className="flex flex-wrap gap-2 pt-1">
+        <div className="flex flex-wrap gap-1.5 pt-1">
           {keywords.map((keyword, index) => (
             <span
               key={`${keyword}-${index}`}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-elevated border border-surface-border text-xs text-content-secondary group"
+              className="chip h-6 text-xs text-content-secondary pr-1"
             >
               <span>{keyword}</span>
               <button
                 type="button"
                 onClick={() => handleDeleteKeyword(index)}
-                className="inline-flex items-center gap-1 p-0.5 text-content-muted hover:text-rose-400 transition-colors"
+                className="ib w-4 h-4 rounded text-content-muted hover:text-rose-400"
                 title={`Xóa từ khóa ${keyword}`}
                 aria-label={`Xóa từ khóa ${keyword}`}
               >
-                <IoCloseOutline className="w-3.5 h-3.5" />
-                <span>Xóa</span>
+                <X size={12} weight="light" />
               </button>
             </span>
           ))}

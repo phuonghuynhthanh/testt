@@ -17,6 +17,7 @@ from sqlalchemy import (
 from slugify import slugify
 
 from apps.core.date_time import DateTime
+from apps.core.text import normalize_search
 from apps.core.urls import canonical_blog_url
 
 LEGACY_CATEGORY_NAMES = {
@@ -67,7 +68,8 @@ def retire_comment_links(engine) -> None:
         )
 
 
-# Upgrade an earlier local publication table and create Web-only rows for legacy Blogs.
+# Upgrade an earlier local publication table and create Web-only rows for
+# legacy Blogs.
 def apply(engine) -> None:
     inspector = inspect(engine)
     if (
@@ -75,7 +77,9 @@ def apply(engine) -> None:
         or "blogs" not in inspector.get_table_names()
     ):
         return
-    columns = {column["name"] for column in inspector.get_columns("post_publications")}
+    columns = {
+        column["name"] for column in inspector.get_columns("post_publications")
+    }
     if "linkedin_generation" not in columns:
         with engine.begin() as connection:
             connection.execute(
@@ -91,7 +95,8 @@ def apply(engine) -> None:
                 )
             )
 
-    # Create the independent table for upgrades that predate its SQLAlchemy model import.
+    # Create the independent table for upgrades that predate its SQLAlchemy
+    # model import.
     metadata = MetaData()
     linkedin_posts = Table(
         "linkedin_posts",
@@ -107,7 +112,12 @@ def apply(engine) -> None:
         Column("status", String, nullable=False),
         Column("provider_post_id", String),
         Column("published_link_url", String),
-        Column("link_comment_status", String, nullable=False, default="NOT_REQUESTED"),
+        Column(
+            "link_comment_status",
+            String,
+            nullable=False,
+            default="NOT_REQUESTED",
+        ),
         Column("provider_comment_id", String),
         Column("link_comment_error", JSON),
         Column("link_comment_published_at", SQLDateTime),
@@ -122,41 +132,96 @@ def apply(engine) -> None:
     # Create categories before adding the Blog foreign key on legacy databases.
     metadata = MetaData()
     categories = Table(
-        "categories", metadata,
-        Column("id", String, primary_key=True), Column("name", String, nullable=False),
-        Column("slug", String, nullable=False, unique=True), Column("created_at", SQLDateTime),
-        Column("modified_at", SQLDateTime), Column("deleted_at", SQLDateTime),
+        "categories",
+        metadata,
+        Column("id", String, primary_key=True),
+        Column("name", String, nullable=False),
+        Column("slug", String, nullable=False, unique=True),
+        Column("created_at", SQLDateTime),
+        Column("modified_at", SQLDateTime),
+        Column("deleted_at", SQLDateTime),
     )
     metadata.create_all(engine, tables=[categories])
 
-    # Add recoverable local state and topic metadata without discarding existing content.
+    # Add recoverable local state and topic metadata without discarding
+    # existing content.
     inspector = inspect(engine)
     with engine.begin() as connection:
-        linkedin_columns = {column["name"] for column in inspector.get_columns("linkedin_posts")}
-        publication_columns = {column["name"] for column in inspector.get_columns("post_publications")}
-        publication_placement_added = "linkedin_link_placement" not in publication_columns
+        linkedin_columns = {
+            column["name"]
+            for column in inspector.get_columns("linkedin_posts")
+        }
+        publication_columns = {
+            column["name"]
+            for column in inspector.get_columns("post_publications")
+        }
+        publication_placement_added = (
+            "linkedin_link_placement" not in publication_columns
+        )
         post_placement_added = "link_placement" not in linkedin_columns
         if publication_placement_added:
-            connection.execute(text("ALTER TABLE post_publications ADD COLUMN linkedin_link_placement VARCHAR NOT NULL DEFAULT 'NONE'"))
+            connection.execute(
+                text(
+                    "ALTER TABLE post_publications ADD COLUMN linkedin_link_placement VARCHAR NOT NULL DEFAULT 'NONE'"
+                )
+            )
         if post_placement_added:
-            connection.execute(text("ALTER TABLE linkedin_posts ADD COLUMN link_placement VARCHAR NOT NULL DEFAULT 'NONE'"))
+            connection.execute(
+                text(
+                    "ALTER TABLE linkedin_posts ADD COLUMN link_placement VARCHAR NOT NULL DEFAULT 'NONE'"
+                )
+            )
         if "published_link_url" not in linkedin_columns:
-            connection.execute(text("ALTER TABLE linkedin_posts ADD COLUMN published_link_url VARCHAR"))
+            connection.execute(
+                text(
+                    "ALTER TABLE linkedin_posts ADD COLUMN published_link_url VARCHAR"
+                )
+            )
         if "link_comment_status" not in linkedin_columns:
-            connection.execute(text("ALTER TABLE linkedin_posts ADD COLUMN link_comment_status VARCHAR NOT NULL DEFAULT 'NOT_REQUESTED'"))
+            connection.execute(
+                text(
+                    "ALTER TABLE linkedin_posts ADD COLUMN link_comment_status VARCHAR NOT NULL DEFAULT 'NOT_REQUESTED'"
+                )
+            )
         if "provider_comment_id" not in linkedin_columns:
-            connection.execute(text("ALTER TABLE linkedin_posts ADD COLUMN provider_comment_id VARCHAR"))
+            connection.execute(
+                text(
+                    "ALTER TABLE linkedin_posts ADD COLUMN provider_comment_id VARCHAR"
+                )
+            )
         if "link_comment_error" not in linkedin_columns:
-            connection.execute(text("ALTER TABLE linkedin_posts ADD COLUMN link_comment_error JSON"))
+            connection.execute(
+                text(
+                    "ALTER TABLE linkedin_posts ADD COLUMN link_comment_error JSON"
+                )
+            )
         if "link_comment_published_at" not in linkedin_columns:
-            connection.execute(text("ALTER TABLE linkedin_posts ADD COLUMN link_comment_published_at TIMESTAMP"))
+            connection.execute(
+                text(
+                    "ALTER TABLE linkedin_posts ADD COLUMN link_comment_published_at TIMESTAMP"
+                )
+            )
         if "topic" not in linkedin_columns:
-            connection.execute(text("ALTER TABLE linkedin_posts ADD COLUMN topic VARCHAR"))
+            connection.execute(
+                text("ALTER TABLE linkedin_posts ADD COLUMN topic VARCHAR")
+            )
         if "deleted_at" not in linkedin_columns:
-            connection.execute(text("ALTER TABLE linkedin_posts ADD COLUMN deleted_at TIMESTAMP"))
-        blog_columns = {column["name"] for column in inspector.get_columns("blogs")}
+            connection.execute(
+                text(
+                    "ALTER TABLE linkedin_posts ADD COLUMN deleted_at TIMESTAMP"
+                )
+            )
+        blog_columns = {
+            column["name"] for column in inspector.get_columns("blogs")
+        }
+        if "search_text" not in blog_columns:
+            connection.execute(
+                text("ALTER TABLE blogs ADD COLUMN search_text VARCHAR")
+            )
         if "deleted_at" not in blog_columns:
-            connection.execute(text("ALTER TABLE blogs ADD COLUMN deleted_at TIMESTAMP"))
+            connection.execute(
+                text("ALTER TABLE blogs ADD COLUMN deleted_at TIMESTAMP")
+            )
         if "category_id" not in blog_columns:
             connection.execute(
                 text(
@@ -164,11 +229,16 @@ def apply(engine) -> None:
                 )
             )
 
-    # Backfill the authoritative placement once while preserving future choices.
+    # Backfill the authoritative placement once while preserving future
+    # choices.
     if publication_placement_added or post_placement_added:
         metadata = MetaData()
-        publications = Table("post_publications", metadata, autoload_with=engine)
-        linkedin_posts = Table("linkedin_posts", metadata, autoload_with=engine)
+        publications = Table(
+            "post_publications", metadata, autoload_with=engine
+        )
+        linkedin_posts = Table(
+            "linkedin_posts", metadata, autoload_with=engine
+        )
         with engine.begin() as connection:
             if publication_placement_added:
                 connection.execute(
@@ -192,22 +262,67 @@ def apply(engine) -> None:
                         .values(link_placement=placement or "NONE")
                     )
 
-    # Backfill all historical values and seed every category from the removed enum.
+    # Backfill all historical values and seed every category from the removed
+    # enum.
     metadata = MetaData()
     blogs = Table("blogs", metadata, autoload_with=engine)
     publications = Table("post_publications", metadata, autoload_with=engine)
     with engine.begin() as connection:
-        category_rows = connection.execute(select(blogs.c.category)).scalars().all() if "category" in blogs.c else []
+        category_rows = (
+            connection.execute(select(blogs.c.category)).scalars().all()
+            if "category" in blogs.c
+            else []
+        )
+        # Fill missing search values without changing historical timestamps.
+        if all(name in blogs.c for name in ("title", "link_post", "tag")):
+            for row in connection.execute(
+                select(
+                    blogs.c.id, blogs.c.title, blogs.c.link_post, blogs.c.tag
+                ).where(blogs.c.search_text.is_(None))
+            ).all():
+                connection.execute(
+                    blogs.update()
+                    .where(blogs.c.id == row.id)
+                    .values(
+                        search_text=normalize_search(
+                            " ".join(
+                                [
+                                    row.title or "",
+                                    row.link_post or "",
+                                    row.tag or "",
+                                ]
+                            )
+                        )
+                    )
+                )
         now = DateTime.now()
-        names = LEGACY_CATEGORY_NAMES | {str(value).strip() for value in category_rows if value}
+        names = LEGACY_CATEGORY_NAMES | {
+            str(value).strip() for value in category_rows if value
+        }
         for name in names:
             slug = slugify(name, separator="-")
-            existing = connection.execute(select(categories.c.id).where(categories.c.slug == slug)).scalar_one_or_none()
+            existing = connection.execute(
+                select(categories.c.id).where(categories.c.slug == slug)
+            ).scalar_one_or_none()
             category_id = existing or str(uuid4())
             if not existing:
-                connection.execute(categories.insert().values(id=category_id, name=name, slug=slug, created_at=now, modified_at=now))
+                connection.execute(
+                    categories.insert().values(
+                        id=category_id,
+                        name=name,
+                        slug=slug,
+                        created_at=now,
+                        modified_at=now,
+                    )
+                )
             if "category" in blogs.c and "category_id" in blogs.c:
-                connection.execute(blogs.update().where(blogs.c.category == name, blogs.c.category_id.is_(None)).values(category_id=category_id))
+                connection.execute(
+                    blogs.update()
+                    .where(
+                        blogs.c.category == name, blogs.c.category_id.is_(None)
+                    )
+                    .values(category_id=category_id)
+                )
         missing_ids = (
             connection.execute(
                 select(blogs.c.id)
@@ -238,7 +353,8 @@ def apply(engine) -> None:
                     for blog_id in missing_ids
                 ],
             )
-        # Copy legacy LinkedIn records once; leave old columns until a later verified cleanup.
+        # Copy legacy LinkedIn records once; leave old columns until a later
+        # verified cleanup.
         legacy_rows = (
             connection.execute(
                 select(publications).where(
@@ -310,7 +426,8 @@ def apply(engine) -> None:
                 .values(linkedin_record_id=record_id)
             )
 
-        # Normalize canonical URLs only on legacy Blog schemas that own SEO data.
+        # Normalize canonical URLs only on legacy Blog schemas that own SEO
+        # data.
         if "link_post" in blogs.c and "seo" in blogs.c:
             for blog_id, link_post, seo in connection.execute(
                 select(blogs.c.id, blogs.c.link_post, blogs.c.seo)
@@ -330,7 +447,8 @@ def apply(engine) -> None:
 
     retire_comment_links(engine)
 
-    # Retrofit the real foreign key on PostgreSQL databases upgraded by an earlier draft.
+    # Retrofit the real foreign key on PostgreSQL databases upgraded by an
+    # earlier draft.
     inspector = inspect(engine)
     has_category_fk = any(
         foreign_key.get("referred_table") == "categories"

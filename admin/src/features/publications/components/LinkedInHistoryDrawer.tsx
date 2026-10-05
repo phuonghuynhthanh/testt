@@ -1,8 +1,7 @@
 import React from "react";
-import { FaLinkedin } from "react-icons/fa";
-import { FiRefreshCw } from "react-icons/fi";
+import { ClockCounterClockwise, ArrowsClockwise } from "@phosphor-icons/react";
 import type { LinkedInHistory } from "../../../types/LinkedIn";
-import { formatCmsDate } from "../../../utils/date";
+import { formatCmsDateOnly } from "../../../utils/date";
 
 interface LinkedInHistoryDrawerProps {
   showHistory: boolean;
@@ -27,56 +26,51 @@ export const LinkedInHistoryDrawer: React.FC<LinkedInHistoryDrawerProps> = ({
   if (!showHistory) return null;
 
   return (
-    <div className="bg-surface-card rounded-xl border border-surface-border p-4 space-y-3">
-      <div className="flex items-center justify-between pb-2 border-b border-surface-border">
-        <h3 className="font-semibold text-content-primary text-xs flex items-center gap-2">
-          <FaLinkedin className="text-[#0a66c2]" />
-          <span>Lịch sử Company Page</span>
+    <div className="pop-in mb-5 rounded-2xl border border-surface-border bg-surface-card p-4">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <h3 className="flex items-center gap-2 text-xs font-semibold">
+          <ClockCounterClockwise size={16} weight="light" className="text-[#6cb4f5]" />
+          Lịch sử Company Page
         </h3>
         <button
           type="button"
           onClick={onSync}
           disabled={isSyncing}
-          title={isSyncing ? "Đang đồng bộ lịch sử" : "Đồng bộ lịch sử LinkedIn"}
-          aria-label={isSyncing ? "Đang đồng bộ lịch sử" : "Đồng bộ lịch sử LinkedIn"}
-          className="inline-flex h-7 items-center gap-1.5 rounded-md border border-surface-border bg-surface-elevated px-2 text-xs font-medium text-cyan-400 hover:bg-surface-hover disabled:opacity-50"
+          title="Đồng bộ lịch sử LinkedIn"
+          className="btn btn-secondary !h-8"
         >
-          <FiRefreshCw className={`w-3 h-3 ${isSyncing ? "animate-spin" : ""}`} />
-          <span>{isSyncing ? "Đang đồng bộ..." : "Đồng bộ"}</span>
+          <ArrowsClockwise size={14} weight="light" className={isSyncing ? "animate-spin" : ""} />
+          {isSyncing ? "Đang đồng bộ..." : "Đồng bộ lịch sử"}
         </button>
       </div>
 
       {isLoading ? (
-        <p className="text-xs text-content-muted py-2 text-center">Đang tải lịch sử...</p>
+        <p className="py-2 text-center text-xs text-content-muted">Đang tải lịch sử...</p>
       ) : isError ? (
-        <p className="text-xs text-amber-400 bg-amber-950/20 p-2.5 rounded-lg border border-amber-500/20">
+        <p className="rounded border border-amber-500/20 bg-amber-950/20 p-2 text-xs text-amber-400">
           {errorMessage || "Không thể tải lịch sử."}
         </p>
       ) : (historyData?.items.length ?? 0) === 0 ? (
-        <p className="text-xs text-content-muted py-2 text-center">
+        <p className="py-2 text-center text-xs text-content-muted">
           Chưa có dữ liệu lịch sử bài đăng nào.
         </p>
       ) : (
-        <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
-          {historyData?.items.map((item) => (
-            <article
+        <ul className="space-y-2">
+          {historyData?.items.slice(0, 5).map((item) => (
+            <li
               key={item.providerPostId}
-              className="bg-surface-elevated/50 p-2.5 rounded-lg border border-surface-border/60 text-xs space-y-1"
+              className="rounded-lg border border-surface-border bg-surface-elevated px-3 py-2.5 text-xs"
             >
-              <strong className="text-content-primary font-medium block">
-                {item.topic}
-              </strong>
-              <p className="text-content-secondary line-clamp-2 leading-relaxed">
-                {item.content}
-              </p>
-              {item.publishedAt && (
-                <span className="text-[11px] text-content-muted block">
-                  Đăng lúc: {formatCmsDate(item.publishedAt)}
-                </span>
-              )}
-            </article>
+              <div className="flex justify-between gap-3">
+                <strong className="truncate">{item.topic}</strong>
+                {item.publishedAt && (
+                  <span className="shrink-0 text-content-muted">{formatCmsDateOnly(item.publishedAt)}</span>
+                )}
+              </div>
+              <p className="mt-1 truncate text-content-muted">{item.content}</p>
+            </li>
           ))}
-        </div>
+        </ul>
       )}
     </div>
   );

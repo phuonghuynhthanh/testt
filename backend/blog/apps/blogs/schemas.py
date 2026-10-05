@@ -1,9 +1,16 @@
 from datetime import datetime
 from enum import Enum
 from typing import List, Literal, Optional
+from zoneinfo import ZoneInfo
 
 from apps.core.language import PostLanguage
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    field_validator,
+    model_validator,
+)
 
 
 class BlogState(str, Enum):
@@ -17,6 +24,54 @@ class BlogCreateAction(str, Enum):
 
     SAVE_PENDING = "SAVE_PENDING"
     PUBLISH_NOW = "PUBLISH_NOW"
+
+
+class BlogStateUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    state: BlogState
+    modifiedAt: datetime | None = None
+
+    # Convert offset-bearing undo timestamps into Vietnam database wall time.
+    @field_validator("modifiedAt")
+    @classmethod
+    def normalize_modified_at(cls, value):
+        if value is not None and value.tzinfo is not None:
+            return value.astimezone(ZoneInfo("Asia/Ho_Chi_Minh")).replace(
+                tzinfo=None
+            )
+        return value
+
+
+class BulkStateItem(BlogStateUpdate):
+    id: str = Field(min_length=1)
+
+
+class BulkStateRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    items: list[BulkStateItem] = Field(min_length=1, max_length=100)
+
+    # Reject ambiguous repeated IDs before opening a transaction.
+    @model_validator(mode="after")
+    def unique_ids(self):
+        if len({item.id for item in self.items}) != len(self.items):
+            raise ValueError("Blog IDs must be unique")
+        return self
+
+
+class BulkIdsRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    ids: list[str] = Field(min_length=1, max_length=100)
+
+    # Reject empty or repeated IDs at the request boundary.
+    @field_validator("ids")
+    @classmethod
+    def unique_ids(cls, value):
+        if any(not item.strip() for item in value) or len(set(value)) != len(
+            value
+        ):
+            raise ValueError("Blog IDs must be non-empty and unique")
+        return value
 
 
 class SEOSchema(BaseModel):
@@ -216,7 +271,9 @@ class FetchContentRequest(BaseModel):
     Request body cho endpoint /blog/fetch-content
     """
 
-    url: str = Field(..., min_length=1, description="URL cần fetch và extract nội dung")
+    url: str = Field(
+        ..., min_length=1, description="URL cần fetch và extract nội dung"
+    )
     include_metadata: Optional[bool] = Field(
         True, description="Có bao gồm metadata (author, date, etc.) hay không"
     )

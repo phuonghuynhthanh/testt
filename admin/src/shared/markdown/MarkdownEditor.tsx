@@ -38,7 +38,7 @@ import {
   type CodeBlockEditorDescriptor,
 } from "@mdxeditor/editor";
 import "@mdxeditor/editor/style.css";
-import { MdFileUpload } from "react-icons/md";
+import { UploadSimple } from "@phosphor-icons/react";
 import { toast } from "react-toastify";
 import { uploadFileImage } from "../../services/file/handleFile";
 import "../../styles/MarkdownEditor.css";
@@ -48,11 +48,11 @@ import { Prec } from "@codemirror/state";
 
 // Override the editor's built-in light syntax colors with readable dark-surface highlights.
 const CODE_HIGHLIGHT = Prec.highest(syntaxHighlighting(HighlightStyle.define([
-  { tag: tags.comment, color: "#B8C0CC" },
+  { tag: tags.comment, color: "#94A3B8" },
   { tag: [tags.keyword, tags.operator, tags.bool, tags.number], color: "#67E8F9" },
   { tag: [tags.string, tags.character, tags.regexp], color: "#BEF264" },
   { tag: [tags.name, tags.propertyName], color: "#FDBA74" },
-  { tag: tags.punctuation, color: "#E2E8F0" },
+  { tag: tags.punctuation, color: "#CBD5E1" },
   { tag: tags.invalid, color: "#FDA4AF" },
 ])));
 
@@ -144,8 +144,8 @@ const PlainCodeEditor: CodeBlockEditorDescriptor["Editor"] = ({
   const { setCode } = useCodeBlockEditorContext();
 
   return (
-    <div className="my-6 overflow-hidden rounded-xl border border-white/10 bg-[#121212]">
-      <div className="border-b border-white/10 px-3 py-1.5 text-xs uppercase tracking-wide text-content-muted">
+    <div className="my-6 overflow-hidden rounded-lg border border-surface-border bg-surface-card">
+      <div className="border-b border-surface-border px-3 py-1.5 font-mono text-xs uppercase tracking-wide text-content-muted">
         {language || "text"}
       </div>
       <textarea
@@ -219,7 +219,7 @@ const UploadImageButton = ({ onUploadFiles }: MarkdownToolbarProps) => {
         aria-label="Tải lên hình ảnh"
         onClick={() => inputRef.current?.click()}
       >
-        <MdFileUpload />
+        <UploadSimple size={16} weight="light" />
         <span>Tải ảnh</span>
       </button>
       <input

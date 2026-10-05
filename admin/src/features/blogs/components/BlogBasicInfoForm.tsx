@@ -1,10 +1,8 @@
 import type { ChangeEvent, Dispatch, SetStateAction } from "react";
-
 import InputField from "../../../shared/input/InputField";
 import type { IBlogData } from "../../../types/Blog";
 import { useQuery } from "@tanstack/react-query";
 import { listCategories } from "../../../services/category/handleCategory";
-
 import { formatCmsDate } from "../../../utils/date";
 import { BlogBannerPicker } from "../../../shared/media/BlogBannerPicker";
 
@@ -22,7 +20,6 @@ interface BlogBasicInfoFormProps {
   onBannerBusyChange: (busy: boolean) => void;
 }
 
-// Render basic blog metadata inputs and banner image upload.
 const BlogBasicInfoForm = ({
   blogData,
   bannerImage,
@@ -40,16 +37,24 @@ const BlogBasicInfoForm = ({
   });
 
   return (
-    <div className="py-6 space-y-4">
+    <div className="py-2 space-y-3.5">
       {blogData.modified_at && (
         <div className="flex items-center justify-end text-xs text-content-muted">
-          <span>Cập nhật lần cuối: <strong className="text-content-secondary font-medium">{formatCmsDate(blogData.modified_at)}</strong></span>
+          <span>
+            Cập nhật lần cuối: <strong className="mono text-content-secondary font-medium">{formatCmsDate(blogData.modified_at)}</strong>
+          </span>
         </div>
       )}
-      <BlogBannerPicker file={bannerImage} objectKey={blogData.banner_url} context={`${blogData.title}\n${blogContent}`}
-        disabled={disabled || bannerBusy} onBusyChange={onBannerBusyChange}
-        onFileChange={(file) => { onBannerUse(""); setBannerImage(file); }} onUse={onBannerUse} />
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+      <BlogBannerPicker
+        file={bannerImage}
+        objectKey={blogData.banner_url}
+        context={`${blogData.title}\n${blogContent}`}
+        disabled={disabled || bannerBusy}
+        onBusyChange={onBannerBusyChange}
+        onFileChange={(file) => { onBannerUse(""); setBannerImage(file); }}
+        onUse={onBannerUse}
+      />
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <InputField
           label="Thẻ tag"
           id="tag"
@@ -59,7 +64,9 @@ const BlogBasicInfoForm = ({
           placeholder="Nhập thẻ tag..."
         />
         <div className="flex flex-1 flex-col">
-          <label htmlFor="category" className="text-xs font-medium text-content-secondary mb-1.5">Danh mục</label>
+          <label htmlFor="category" className="label mb-1.5">
+            Danh mục
+          </label>
           <input
             list="blog-update-categories"
             id="category"
@@ -67,10 +74,12 @@ const BlogBasicInfoForm = ({
             value={blogData.category}
             onChange={onFieldChange}
             placeholder="Chọn hoặc nhập danh mục mới..."
-            className="w-full rounded-lg border border-surface-border bg-surface-elevated px-3.5 py-2 text-sm text-content-primary placeholder-content-muted focus:border-primary-green focus:outline-none focus:ring-1 focus:ring-primary-green transition"
+            className="inp w-full"
           />
           <datalist id="blog-update-categories">
-            {categories.data?.items.map((category) => <option key={category.id} value={category.name} />)}
+            {categories.data?.items.map((category) => (
+              <option key={category.id} value={category.name} />
+            ))}
           </datalist>
         </div>
       </div>

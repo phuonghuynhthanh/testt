@@ -1,8 +1,10 @@
 """Admin category CRUD."""
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from typing import Literal
 from pydantic import BaseModel, Field
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy import func, select
 
 from apps.auth.services import require_admin
 from apps.blogs.models import Blog
@@ -21,36 +23,89 @@ class CategoryInput(BaseModel):
 
 # List active categories in a bounded stable order.
 @router.get("")
-def list_categories(page: int = Query(1, ge=1), pageSize: int = Query(20, ge=1, le=100), _: str = Depends(require_admin)):
+def list_categories(
+    page: int = Query(1, ge=1),
+    pageSize: int = Query(20, ge=1, le=100),
+    _: str = Depends(require_admin),
+    sort: Literal["modified", "name"] = "name",
+    dir: Literal["asc", "desc"] = "asc",
+):
     query = Category.filter(Category.deleted_at.is_(None))
     total = query.count()
-    items = query.order_by(Category.name, Category.id).offset((page - 1) * pageSize).limit(pageSize).all()
-    return {"items": [{"id": item.id, "name": item.name, "slug": item.slug, "createdAt": item.created_at, "modifiedAt": item.modified_at} for item in items], "page": page, "pageSize": pageSize, "total": total, "totalPages": (total + pageSize - 1) // pageSize}
+    column = Category.modified_at if sort == "modified" else Category.name
+    items = (
+        query.order_by(
+            column.desc() if dir == "desc" else column.asc(),
+            Category.id.desc() if dir == "desc" else Category.id.asc(),
+        )
+        .offset((page - 1) * pageSize)
+        .limit(pageSize)
+        .all()
+    )
+    with BlogServices.get_db_session() as session:
+        counts = dict(
+            session.execute(
+                select(Blog.category_id, func.count(Blog.id))
+                .where(
+                    Blog.deleted_at.is_(None),
+                    Blog.category_id.in_([item.id for item in items]),
+                )
+                .group_by(Blog.category_id)
+            ).all()
+        )
+    return {
+        "items": [
+            {
+                "id": item.id,
+                "name": item.name,
+                "slug": item.slug,
+                "createdAt": item.created_at,
+                "modifiedAt": item.modified_at,
+                "usageCount": counts.get(item.id, 0),
+            }
+            for item in items
+        ],
+        "page": page,
+        "pageSize": pageSize,
+        "total": total,
+        "totalPages": (total + pageSize - 1) // pageSize,
+    }
 
 
 # Create or restore a category through the shared Blog persistence resolver.
 @router.post("")
-def create_category(data: CategoryInput, _: str = Depends(require_admin)):
-    category = BlogServices.resolve_category(data.name)
+def create_category(
+    data: CategoryInput, _: str = Depends(require_admin), strict: bool = False
+):
+    category = BlogServices.resolve_category(data.name, strict=strict)
     return {"id": category.id, "name": category.name, "slug": category.slug}
 
 
-# Rename an active category and keep its slug and denormalized Blog label aligned.
+# Rename an active category and keep its slug and denormalized Blog label
+# aligned.
 @router.put("/{category_id}")
-def update_category(category_id: str, data: CategoryInput, _: str = Depends(require_admin)):
+def update_category(
+    category_id: str, data: CategoryInput, _: str = Depends(require_admin)
+):
     name = data.name.strip()
     slug = BlogServices._category_slug(name)
     with BlogServices.get_db_session() as session:
-        category = session.query(Category).filter(
-            Category.id == category_id, Category.deleted_at.is_(None)
-        ).first()
+        category = (
+            session.query(Category)
+            .filter(Category.id == category_id, Category.deleted_at.is_(None))
+            .first()
+        )
         if not category:
             raise HTTPException(status_code=404, detail="Category not found")
-        conflict = session.query(Category).filter(
-            Category.slug == slug, Category.id != category_id
-        ).first()
+        conflict = (
+            session.query(Category)
+            .filter(Category.slug == slug, Category.id != category_id)
+            .first()
+        )
         if conflict:
-            raise HTTPException(status_code=409, detail="Category slug already exists")
+            raise HTTPException(
+                status_code=409, detail="Category slug already exists"
+            )
         category.name, category.slug = name, slug
         session.query(Blog).filter(Blog.category_id == category_id).update(
             {Blog.category: name}, synchronize_session=False
@@ -59,7 +114,9 @@ def update_category(category_id: str, data: CategoryInput, _: str = Depends(requ
             session.commit()
         except IntegrityError as error:
             session.rollback()
-            raise HTTPException(status_code=409, detail="Category slug already exists") from error
+            raise HTTPException(
+                status_code=409, detail="Category slug already exists"
+            ) from error
         session.refresh(category)
         return category
 

@@ -7,10 +7,12 @@ from types import SimpleNamespace
 import re
 
 from fastapi import HTTPException
-from sqlalchemy import update
+from sqlalchemy import select, update
 
 from apps.linkedin_posts.exceptions import LinkedInError
 from apps.linkedin_posts.models import LinkedInPost
+from apps.blogs.models import Blog
+from apps.publications.models import BlogPublication
 from apps.linkedin_posts.schemas import (
     IndependentDraftRequest,
     LinkedInLinkPlacement,
@@ -53,7 +55,7 @@ class LinkedInPostService:
 
     # Return a stable API record without provider credentials.
     @staticmethod
-    def serialize(post: LinkedInPost) -> dict:
+    def serialize(post: LinkedInPost, blog_link: dict | None = None) -> dict:
         return {
             "id": post.id,
             "content": post.content,
@@ -77,7 +79,40 @@ class LinkedInPostService:
             "deletedAt": post.deleted_at,
             "createdAt": post.created_at,
             "modifiedAt": post.modified_at,
+            "blogId": blog_link["blogId"] if blog_link else None,
+            "blogTitle": blog_link["blogTitle"] if blog_link else None,
         }
+
+    # Resolve active Blog links for an entire page using one association query.
+    @staticmethod
+    def blog_links(posts) -> dict:
+        ids = [
+            post.id for post in posts if post.source_type == "BLOG_ADAPTATION"
+        ]
+        if not ids:
+            return {}
+        with DatabaseManager.session as session:
+            rows = session.execute(
+                select(BlogPublication.linkedin_record_id, Blog.id, Blog.title)
+                .join(Blog, BlogPublication.blog_id == Blog.id)
+                .where(
+                    BlogPublication.linkedin_record_id.in_(ids),
+                    Blog.deleted_at.is_(None),
+                )
+            ).all()
+            return {
+                row.linkedin_record_id: {
+                    "blogId": row.id,
+                    "blogTitle": row.title,
+                }
+                for row in rows
+            }
+
+    # Enrich one detailed post without performing a provider request.
+    @classmethod
+    def get_serialized(cls, post_id: str):
+        post = cls.get(post_id)
+        return cls.serialize(post, cls.blog_links([post]).get(post.id))
 
     # Load one local record or use FastAPI's standard not-found response.
     @staticmethod
@@ -93,17 +128,40 @@ class LinkedInPostService:
 
     # Return all local history without any provider call.
     @classmethod
-    def list(cls, page: int = 1, page_size: int = 20, status: str | None = None, source_type: str | None = None) -> dict:
+    def list(
+        cls,
+        page: int = 1,
+        page_size: int = 20,
+        status: str | None = None,
+        source_type: str | None = None,
+    ) -> dict:
         query = LinkedInPost.filter(LinkedInPost.deleted_at.is_(None))
         if status:
             query = query.filter(LinkedInPost.status == status)
         if source_type:
             query = query.filter(LinkedInPost.source_type == source_type)
         total = query.count()
-        posts = query.order_by(LinkedInPost.modified_at.desc(), LinkedInPost.id.desc()).offset((page - 1) * page_size).limit(page_size).all()
-        return {"items": [cls.serialize(post) for post in posts], "page": page, "pageSize": page_size, "total": total, "totalPages": (total + page_size - 1) // page_size}
+        posts = (
+            query.order_by(
+                LinkedInPost.modified_at.desc(), LinkedInPost.id.desc()
+            )
+            .offset((page - 1) * page_size)
+            .limit(page_size)
+            .all()
+        )
+        links = cls.blog_links(posts)
+        return {
+            "items": [
+                cls.serialize(post, links.get(post.id)) for post in posts
+            ],
+            "page": page,
+            "pageSize": page_size,
+            "total": total,
+            "totalPages": (total + page_size - 1) // page_size,
+        }
 
-    # Generate an independent preview and intentionally do not create a LinkedInPost.
+    # Generate an independent preview and intentionally do not create a
+    # LinkedInPost.
     @classmethod
     async def generate_draft(cls, data: IndependentDraftRequest) -> dict:
         provider = GeminiLinkedInProvider(
@@ -148,7 +206,8 @@ class LinkedInPostService:
         }[mode]
         if not expected[0] <= len(media) <= expected[1]:
             raise HTTPException(
-                status_code=422, detail="Selected media does not match mediaMode"
+                status_code=422,
+                detail="Selected media does not match mediaMode",
             )
         for item in media:
             if item.get("provider") == "upload":
@@ -199,7 +258,8 @@ class LinkedInPostService:
             )
         return LinkedInPost.update(post_id, **values)
 
-    # Validate local LinkedIn configuration before a one-request publish is persisted.
+    # Validate local LinkedIn configuration before a one-request publish is
+    # persisted.
     @staticmethod
     async def validate_configuration() -> None:
         verifier = OrganizationVerifier(
@@ -244,7 +304,9 @@ class LinkedInPostService:
             cls._validate_media(
                 (
                     values.get("mediaMode", post.media_mode).value
-                    if hasattr(values.get("mediaMode", post.media_mode), "value")
+                    if hasattr(
+                        values.get("mediaMode", post.media_mode), "value"
+                    )
                     else values.get("mediaMode", post.media_mode)
                 ),
                 values.get("media", post.media or []),
@@ -257,7 +319,9 @@ class LinkedInPostService:
                     "topic": values.get("topic", post.topic),
                     "media_mode": (
                         values.get("mediaMode", post.media_mode).value
-                        if hasattr(values.get("mediaMode", post.media_mode), "value")
+                        if hasattr(
+                            values.get("mediaMode", post.media_mode), "value"
+                        )
                         else values.get("mediaMode", post.media_mode)
                     ),
                     "media": values.get("media", post.media),
@@ -265,13 +329,39 @@ class LinkedInPostService:
                     "generation": values.get("generation", post.generation),
                     "source_type": (
                         values.get("sourceType", post.source_type).value
-                        if hasattr(values.get("sourceType", post.source_type), "value")
+                        if hasattr(
+                            values.get("sourceType", post.source_type), "value"
+                        )
                         else values.get("sourceType", post.source_type)
                     ),
                     "link_placement": (
-                        values.get("linkPlacement", getattr(post, "link_placement", LinkedInLinkPlacement.NONE.value)).value
-                        if hasattr(values.get("linkPlacement", getattr(post, "link_placement", LinkedInLinkPlacement.NONE.value)), "value")
-                        else values.get("linkPlacement", getattr(post, "link_placement", LinkedInLinkPlacement.NONE.value))
+                        values.get(
+                            "linkPlacement",
+                            getattr(
+                                post,
+                                "link_placement",
+                                LinkedInLinkPlacement.NONE.value,
+                            ),
+                        ).value
+                        if hasattr(
+                            values.get(
+                                "linkPlacement",
+                                getattr(
+                                    post,
+                                    "link_placement",
+                                    LinkedInLinkPlacement.NONE.value,
+                                ),
+                            ),
+                            "value",
+                        )
+                        else values.get(
+                            "linkPlacement",
+                            getattr(
+                                post,
+                                "link_placement",
+                                LinkedInLinkPlacement.NONE.value,
+                            ),
+                        )
                     ),
                     "status": LinkedInPostStatus.READY.value,
                     "published_link_url": None,
@@ -280,7 +370,8 @@ class LinkedInPostService:
             )
         )
 
-    # Soft-delete only local content; the external Company Page post is intentionally untouched.
+    # Soft-delete only local content; the external Company Page post is
+    # intentionally untouched.
     @classmethod
     def delete(cls, post_id: str) -> None:
         post = cls.get(post_id)
@@ -292,13 +383,16 @@ class LinkedInPostService:
         post = cls.get(post_id, include_deleted=True)
         return cls.serialize(LinkedInPost.update(post.id, deleted_at=None))
 
-    # Resolve ordered Pexels and administrator uploads into byte-validated images.
+    # Resolve ordered Pexels and administrator uploads into byte-validated
+    # images.
     @staticmethod
     async def _images(post: LinkedInPost) -> list[tuple[object, str]]:
         service = PexelsService(settings.PEXELS_API_KEY)
         try:
             images = []
-            for item in sorted(post.media or [], key=lambda value: value["order"]):
+            for item in sorted(
+                post.media or [], key=lambda value: value["order"]
+            ):
                 if item.get("provider") == "upload":
                     upload = UploadedMedia.model_validate(item)
                     try:
@@ -307,42 +401,61 @@ class LinkedInPostService:
                             settings.MEDIA_MAX_UPLOAD_MB * 1024 * 1024,
                         )
                     except HTTPException as error:
-                        raise LinkedInError("invalid_image", str(error.detail)) from error
-                    images.append((validate_image_bytes(content), upload.altText))
+                        raise LinkedInError(
+                            "invalid_image", str(error.detail)
+                        ) from error
+                    images.append(
+                        (validate_image_bytes(content), upload.altText)
+                    )
                 else:
                     candidate = PexelsCandidate.model_validate(item)
-                    images.append((await service.download(candidate), candidate.altText))
+                    images.append(
+                        (await service.download(candidate), candidate.altText)
+                    )
             return images
         finally:
             if service._owns_client:
                 await service.client.aclose()
 
-    # Search Pexels from explicitly requested terms without changing saved media.
+    # Search Pexels from explicitly requested terms without changing saved
+    # media.
     @staticmethod
-    async def suggest_media(post_id: str, keywords: list[str] | None = None) -> dict:
+    async def suggest_media(
+        post_id: str, keywords: list[str] | None = None
+    ) -> dict:
         post = LinkedInPostService.get(post_id)
         selected = post.media or []
         terms = keywords or [
-            term for item in selected for term in item.get("searchKeywords", [])
+            term
+            for item in selected
+            for term in item.get("searchKeywords", [])
         ]
         if not terms:
-            raise HTTPException(status_code=422, detail="Media keywords are required")
+            raise HTTPException(
+                status_code=422, detail="Media keywords are required"
+            )
         service = PexelsService(settings.PEXELS_API_KEY)
         try:
             return {
-                "items": [item.model_dump() for item in await service.search(terms)]
+                "items": [
+                    item.model_dump() for item in await service.search(terms)
+                ]
             }
         finally:
             if service._owns_client:
                 await service.client.aclose()
 
-    # Atomically claim a publish so concurrent requests cannot both call LinkedIn.
+    # Atomically claim a publish so concurrent requests cannot both call
+    # LinkedIn.
     @staticmethod
     def _claim_publish(post: LinkedInPost) -> bool:
         with DatabaseManager.engine.begin() as connection:
             result = connection.execute(
                 update(LinkedInPost)
-                .where(LinkedInPost.id == post.id, LinkedInPost.status == post.status)
+                .where(
+                    LinkedInPost.id == post.id,
+                    LinkedInPost.status == post.status,
+                )
                 .values(
                     status=LinkedInPostStatus.PUBLISHING.value,
                     last_error=None,
@@ -364,7 +477,10 @@ class LinkedInPostService:
         try:
             return canonical_site_url()
         except ValueError as error:
-            raise HTTPException(status_code=422, detail="DOMAIN_URL is required for LinkedIn links") from error
+            raise HTTPException(
+                status_code=422,
+                detail="DOMAIN_URL is required for LinkedIn links",
+            ) from error
 
     # Localize the link label using persisted generation metadata.
     @staticmethod
@@ -382,7 +498,9 @@ class LinkedInPostService:
 
     # Place the link before trailing hashtags without changing stored copy.
     @classmethod
-    def _publish_content(cls, post: LinkedInPost, target_url: str | None) -> str:
+    def _publish_content(
+        cls, post: LinkedInPost, target_url: str | None
+    ) -> str:
         if (
             getattr(post, "link_placement", "NONE") != "IN_POST"
             or not target_url
@@ -455,21 +573,30 @@ class LinkedInPostService:
         modified = post.modified_at
         if modified and modified.tzinfo is None:
             modified = modified.replace(tzinfo=timezone.utc)
-        if modified and datetime.now(timezone.utc) - modified >= timedelta(minutes=5):
+        if modified and datetime.now(timezone.utc) - modified >= timedelta(
+            minutes=5
+        ):
             post = LinkedInPost.update(
                 post.id,
                 status=LinkedInPostStatus.REVIEW_REQUIRED.value,
-                last_error={"code": "ambiguous_publish", "duplicateRisk": True},
+                last_error={
+                    "code": "ambiguous_publish",
+                    "duplicateRisk": True,
+                },
             )
         return cls.serialize(post)
 
-    # Publish exactly the stored reviewed content after atomically committing PUBLISHING.
+    # Publish exactly the stored reviewed content after atomically committing
+    # PUBLISHING.
     @classmethod
     async def publish(
         cls, post_id: str, *, retry: bool = False, link_url: str | None = None
     ) -> dict:
         post = cls.get(post_id)
-        if post.status == LinkedInPostStatus.PUBLISHED.value or post.provider_post_id:
+        if (
+            post.status == LinkedInPostStatus.PUBLISHED.value
+            or post.provider_post_id
+        ):
             return cls.serialize(post)
         if post.status == LinkedInPostStatus.PUBLISHING.value:
             return cls._publishing_state(post)
@@ -480,7 +607,8 @@ class LinkedInPostService:
             )
         if retry and post.status != LinkedInPostStatus.FAILED.value:
             raise HTTPException(
-                status_code=409, detail="Only failed LinkedIn posts can be retried"
+                status_code=409,
+                detail="Only failed LinkedIn posts can be retried",
             )
         if not retry and post.status == LinkedInPostStatus.FAILED.value:
             raise HTTPException(
@@ -541,7 +669,10 @@ class LinkedInPostService:
             post = LinkedInPost.update(
                 post.id,
                 status=LinkedInPostStatus.REVIEW_REQUIRED.value,
-                last_error={"code": "ambiguous_publish", "duplicateRisk": True},
+                last_error={
+                    "code": "ambiguous_publish",
+                    "duplicateRisk": True,
+                },
             )
         finally:
             await publisher.linkedin.close()

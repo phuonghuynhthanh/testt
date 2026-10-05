@@ -23,7 +23,7 @@ const SelectField: React.FC<SelectFieldProps> = ({
 }) => {
   return (
     <div className="flex-1 flex flex-col">
-      <label htmlFor={id} className="text-primary-white font-medium">
+      <label htmlFor={id} className="label mb-1.5 text-xs font-medium text-content-secondary">
         {label}
       </label>
       <select
@@ -32,8 +32,8 @@ const SelectField: React.FC<SelectFieldProps> = ({
         value={value}
         onChange={onChange}
         disabled={disabled}
-        className={`border border-gray-300 rounded-md p-2 mt-1 bg-primary-black-light text-primary-white first-line: focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-          disabled ? "bg-gray-100 cursor-not-allowed" : ""
+        className={`sel h-9 w-full rounded-md border border-surface-border bg-surface-base px-3 text-sm text-content-primary transition focus:border-primary-green focus:outline-none focus:ring-1 focus:ring-primary-green ${
+          disabled ? "opacity-55 cursor-not-allowed bg-surface-elevated/40" : ""
         }`}
       >
         {placeholder && (

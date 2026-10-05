@@ -1,6 +1,6 @@
 import React, { type ReactNode, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import { IoCloseOutline } from "react-icons/io5";
+import { X } from "@phosphor-icons/react";
 
 interface ModalProps {
   isOpen: boolean;
@@ -10,16 +10,14 @@ interface ModalProps {
   ariaLabel: string;
 }
 
-// Render an accessible modal dialog portal with dark backdrop and refined surface boundaries.
 const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children, className = "", ariaLabel }) => {
   const panelRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
-  // Capture the trigger before portal children can claim focus.
+
   if (isOpen && !previousFocusRef.current) {
     previousFocusRef.current = document.activeElement as HTMLElement | null;
   }
 
-  // Move focus into the dialog and restore it when the dialog closes.
   useEffect(() => {
     if (isOpen) {
       const panel = panelRef.current;
@@ -34,7 +32,6 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children, className = ""
     }
   }, [isOpen]);
 
-  // Close on Escape and keep keyboard focus inside the active dialog.
   const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     if (event.key === "Escape") {
       event.preventDefault();
@@ -67,7 +64,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children, className = ""
 
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/75 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/65 backdrop-blur-sm transition-opacity"
       onClick={(event) => {
         onClose();
         event.stopPropagation();
@@ -80,8 +77,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children, className = ""
       <div
         ref={panelRef}
         tabIndex={-1}
-        className={`relative w-full max-h-[90vh] overflow-y-auto bg-surface-card bg-opacity-100 rounded-2xl shadow-2xl border border-surface-border text-content-primary ${className || "max-w-2xl p-6"}`}
-        style={{ backgroundColor: "#1A1A1A" }}
+        className={`pop-in relative w-full max-h-[90vh] overflow-y-auto bg-surface-card rounded-xl border border-surface-border text-content-primary shadow-2xl ${className || "max-w-2xl p-6"}`}
         onClick={(event) => {
           event.stopPropagation();
         }}
@@ -89,12 +85,11 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children, className = ""
         <button
           type="button"
           onClick={onClose}
-          className="absolute top-4 right-4 inline-flex items-center gap-1.5 rounded-lg bg-surface-elevated/50 px-2 py-1.5 text-xs font-medium text-content-muted hover:bg-surface-elevated hover:text-content-primary transition-colors focus:outline-none focus:ring-2 focus:ring-primary-green"
+          className="ib absolute top-3.5 right-3.5 text-content-muted hover:text-content-primary hover:bg-surface-elevated"
           title="Đóng cửa sổ"
           aria-label="Đóng cửa sổ"
         >
-          <IoCloseOutline className="w-5 h-5" />
-          <span>Đóng</span>
+          <X size={18} weight="light" />
         </button>
 
         <div className="w-full">

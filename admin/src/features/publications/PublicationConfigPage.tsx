@@ -1,8 +1,9 @@
 import { Link, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { ArrowLeft, ArrowUpRight, Eye } from "@phosphor-icons/react";
 import { getBlogDetail } from "../../services/blog/handleBlog";
 import { DOMAIN_WEBSITE } from "../../config/config";
-import { PageHeader } from "../../shared/ui";
+import { BlogThumbnail, PageHeader, SectionHeading } from "../../shared/ui";
 import PublicationConfigWorkspace from "./components/PublicationConfigWorkspace";
 
 // Permit LinkedIn adaptation only after the source website article has been approved.
@@ -14,27 +15,68 @@ const PublicationConfigPage = () => {
     enabled: Boolean(blogId),
   });
   const blog = blogQuery.data;
-  if (blogQuery.isLoading) return <p className="py-16 text-center text-content-muted">Đang tải bài nguồn…</p>;
-  if (blogQuery.isError || !blog) return <p className="py-16 text-center text-rose-400">Không thể tải bài nguồn. <Link to="/blog" className="underline">Quay về quản lý bài viết</Link></p>;
-  if (blog.state !== "APPROVED") return (
-    <div className="space-y-3 rounded-xl border border-amber-500/30 p-6 text-sm text-amber-300">
-      <p>Bài website chưa được duyệt. Duyệt bài trong quản lý bài viết trước khi tạo bài LinkedIn.</p>
-      <Link to="/blog" className="underline">Quay về quản lý bài viết</Link>
-    </div>
-  );
+
+  if (blogQuery.isLoading) {
+    return <p className="py-16 text-center text-xs text-content-muted">Đang tải bài nguồn…</p>;
+  }
+
+  if (blogQuery.isError || !blog) {
+    return (
+      <div className="py-16 text-center space-y-3">
+        <p className="text-xs text-rose-400">Không thể tải bài nguồn.</p>
+        <Link to="/blog" className="btn btn-secondary">Quay về quản lý bài viết</Link>
+      </div>
+    );
+  }
+
+  if (blog.state !== "APPROVED") {
+    return (
+      <div className="panel space-y-3 border-amber-500/30 p-5 text-xs text-amber-300">
+        <p>Bài website chưa được duyệt. Duyệt bài trong quản lý bài viết trước khi tạo bài LinkedIn.</p>
+        <Link to="/blog" className="btn btn-secondary">Quay về quản lý bài viết</Link>
+      </div>
+    );
+  }
+
   const websiteUrl = DOMAIN_WEBSITE ? `${DOMAIN_WEBSITE}/blog/${encodeURIComponent(blog.link_post)}` : undefined;
+
   return (
-    <section className="mx-auto max-w-5xl space-y-6">
-      <Link to="/publications" className="text-xs text-content-muted hover:text-primary-green">← Quay lại Xuất bản bài viết</Link>
-      <PageHeader title="Đăng LinkedIn từ bài website" description="Chuyển bài đã duyệt thành bài LinkedIn, chọn ảnh và tùy chọn đính kèm liên kết." />
-      <div className="rounded-xl border border-surface-border bg-surface-card p-5 space-y-2">
-        <p className="text-xs text-content-muted">Bài nguồn · Đã duyệt và hiển thị trên website</p>
-        <h2 className="text-base font-semibold text-content-primary">{blog.title}</h2>
-        <div className="flex flex-wrap gap-4 text-xs text-primary-green">
-          <Link to={`/blog/detail/${blogId}`}>Xem chi tiết bài nguồn</Link>
-          {websiteUrl && <a href={websiteUrl} target="_blank" rel="noopener noreferrer">Xem bài trên website ↗</a>}
+    <section className="mx-auto max-w-[1096px]">
+      <Link to="/publications" className="btn btn-ghost mb-5">
+        <ArrowLeft size={16} weight="light" />
+        <span>Quay lại Xuất bản bài viết</span>
+      </Link>
+
+      <PageHeader
+        title="Soạn bài LinkedIn từ blog"
+        description="Biên soạn, kiểm tra tính xác thực và đăng bài trực tiếp lên LinkedIn."
+      />
+
+      <div className="panel mb-6 p-4 space-y-4">
+        <SectionHeading title="Bài viết nguồn" />
+        <div className="flex items-center gap-3.5">
+          <BlogThumbnail bannerUrl={blog.banner_url} title={blog.title} size="md" />
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold">{blog.title}</p>
+            <p className="mt-0.5 text-[11px] text-content-muted">
+              {blog.category} · /{blog.link_post}
+            </p>
+          </div>
+          <div className="ml-auto flex shrink-0 items-center gap-2">
+            {websiteUrl && (
+              <a href={websiteUrl} target="_blank" rel="noopener noreferrer" className="btn btn-ghost !h-8">
+                <ArrowUpRight size={14} weight="light" />
+                Xem trên website
+              </a>
+            )}
+            <Link to={`/blog/detail/${blogId}`} className="btn btn-ghost !h-8">
+              <Eye size={14} weight="light" />
+              Xem bài
+            </Link>
+          </div>
         </div>
       </div>
+
       <PublicationConfigWorkspace key={blogId} blogId={blogId} />
     </section>
   );
