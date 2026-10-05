@@ -1,0 +1,64 @@
+# Production stack (also used for local production trials).
+# Run: docker compose -p quantvn --env-file .env.production -f compose.prod.yaml up -d --build
+name: quantvn
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DATABASE_NAME}
+      POSTGRES_USER: ${DATABASE_USERNAME}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    mem_limit: 256m
+    logging: &logging
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+  minio:
+    image: minio/minio:RELEASE.2025-07-23T15-54-02Z
+    restart: unless-stopped
+    command: server /data
+    # Loopback only: browsers fetch images from presigned URLs signed for MINIO_PUBLIC_ENDPOINT.
+    ports:
+      - "127.0.0.1:${MINIO_HOST_PORT:-9000}:9000"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY}
+    volumes:
+      - minio_data:/data
+    mem_limit: 256m
+    logging: *logging
+
+  api:
+    # On the VPS the image is loaded with docker load (never built there: disk is tight).
+    image: ${API_IMAGE:-quantvn-api}
+    build: .
+    restart: unless-stopped
+    env_file: .env.production
+    environment:
+      # Service names resolve on the compose network; override localhost values.
+      DATABASE_HOST: postgres
+      DATABASE_PORT: "5432"
+      MINIO_ENDPOINT: minio:9000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_started
+    # Loopback only: expose publicly through a reverse proxy, never directly.
+    ports:
+      - "127.0.0.1:${API_HOST_PORT:-8010}:8000"
+    mem_limit: 512m
+    logging: *logging
+
+volumes:
+  postgres_data:
+  minio_data:

@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { FiPlus } from "react-icons/fi";
 import { FaLinkedin } from "react-icons/fa";
 import { toast } from "react-toastify";
@@ -26,7 +26,7 @@ import LinkedInHistoryDrawer from "./components/LinkedInHistoryDrawer";
 const LinkedInManagement: React.FC = () => {
   const client = useQueryClient();
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
+  const [pageSize, setPageSize] = useState(10);
   const [status, setStatus] = useState<LinkedInPostStatus | "">("");
   const [sourceType, setSourceType] = useState<LinkedInSourceType | "">("");
   const [showHistory, setShowHistory] = useState(false);
@@ -42,7 +42,14 @@ const LinkedInManagement: React.FC = () => {
         ...(status ? { status } : {}),
         ...(sourceType ? { sourceType } : {}),
       }),
+    placeholderData: keepPreviousData,
   });
+
+  // Step back when the current page disappears (e.g. its last item was deleted).
+  const totalPages = Math.max(1, posts.data?.totalPages ?? 1);
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
 
   const history = useQuery({
     queryKey: ["linkedin-history", 10],

@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { FiArrowRight } from "react-icons/fi";
 import { getClientBlogs } from "../../../services/blog/handleBlog";
 import { listCategories } from "../../../services/category/handleCategory";
@@ -12,13 +12,17 @@ const PublicBlogPreview: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState("ALL");
   const [readingSlug, setReadingSlug] = useState<string | null>(null);
 
-  const blogsQuery = useQuery({
+  // The backend pages by "blogs already loaded"; next_req is null on the last batch.
+  const blogsQuery = useInfiniteQuery({
     queryKey: ["client-blogs", { category: selectedCategory }],
-    queryFn: () =>
+    initialPageParam: 0,
+    queryFn: ({ pageParam }) =>
       getClientBlogs({
-        num_of_blogs: 0,
+        num_of_blogs: pageParam,
         category: selectedCategory === "ALL" ? undefined : selectedCategory,
       }),
+    getNextPageParam: (lastPage, allPages) =>
+      lastPage.next_req ? allPages.reduce((sum, p) => sum + p.blogs.length, 0) : undefined,
   });
 
   const categoriesQuery = useQuery({
@@ -26,7 +30,10 @@ const PublicBlogPreview: React.FC = () => {
     queryFn: () => listCategories(),
   });
 
-  const items = useMemo(() => blogsQuery.data?.blogs ?? [], [blogsQuery.data?.blogs]);
+  const items = useMemo(
+    () => blogsQuery.data?.pages.flatMap((p) => p.blogs) ?? [],
+    [blogsQuery.data?.pages],
+  );
 
   return (
     <section className="space-y-6">
@@ -66,6 +73,7 @@ const PublicBlogPreview: React.FC = () => {
           description="Các bài viết sau khi được duyệt sẽ hiển thị trên giao diện này cho khách truy cập."
         />
       ) : (
+        <>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {items.map((blog) => (
             <button
@@ -111,6 +119,19 @@ const PublicBlogPreview: React.FC = () => {
             </button>
           ))}
         </div>
+        {blogsQuery.hasNextPage && (
+          <div className="flex justify-center">
+            <button
+              type="button"
+              onClick={() => blogsQuery.fetchNextPage()}
+              disabled={blogsQuery.isFetchingNextPage}
+              className="inline-flex h-9 items-center rounded-lg border border-surface-border bg-surface-card px-4 text-xs font-medium text-content-primary transition-colors hover:bg-surface-elevated disabled:opacity-50"
+            >
+              {blogsQuery.isFetchingNextPage ? "Đang tải..." : "Xem thêm bài viết"}
+            </button>
+          </div>
+        )}
+        </>
       )}
 
       <PublicArticleReaderModal

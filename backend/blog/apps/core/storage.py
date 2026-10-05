@@ -185,6 +185,19 @@ class StorageService:
                 response.close()
                 response.release_conn()
 
+    # Sign URLs for the public MinIO host when it differs from the internal one (fixed region avoids a network call).
+    @classmethod
+    def _get_signing_client(cls) -> Minio:
+        if not settings.MINIO_PUBLIC_ENDPOINT:
+            return cls._get_client()
+        return Minio(
+            settings.MINIO_PUBLIC_ENDPOINT,
+            access_key=settings.MINIO_ACCESS_KEY,
+            secret_key=settings.MINIO_SECRET_KEY,
+            secure=settings.MINIO_PUBLIC_SECURE,
+            region=settings.MINIO_REGION or "us-east-1",
+        )
+
     # Create a short-lived download URL without exposing MinIO credentials to browsers.
     @classmethod
     def presigned_image_url(cls, object_key: str) -> str:
@@ -194,7 +207,7 @@ class StorageService:
         try:
             cls.initialize()
             cls._get_client().stat_object(settings.MINIO_BUCKET, safe_key)
-            return cls._get_client().presigned_get_object(
+            return cls._get_signing_client().presigned_get_object(
                 settings.MINIO_BUCKET,
                 safe_key,
                 expires=timedelta(minutes=15),

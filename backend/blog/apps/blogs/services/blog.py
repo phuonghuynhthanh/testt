@@ -306,7 +306,7 @@ class BlogServices:
             )
 
     @classmethod
-    def get_blogs_for_admin(cls, state: Optional[str] = None, category: Optional[str] = None, page: int = 1, page_size: int = 20) -> dict:
+    def get_blogs_for_admin(cls, state: Optional[str] = None, category: Optional[str] = None, page: int = 1, page_size: int = 20, search: Optional[str] = None) -> dict:
         query = select(
             Blog.id,
             Blog.tag,
@@ -325,6 +325,10 @@ class BlogServices:
             query = query.filter(Blog.state == state)
         if category is not None:
             query = query.filter(Blog.category == category)
+        # Match title or slug case-insensitively; autoescape keeps LIKE wildcards literal.
+        if search and search.strip():
+            term = search.strip()
+            query = query.filter(or_(Blog.title.icontains(term, autoescape=True), Blog.link_post.icontains(term, autoescape=True)))
 
         query = query.order_by(desc(Blog.modified_at), desc(Blog.id))
 

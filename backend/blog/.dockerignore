@@ -100,4 +100,7 @@ Makefile
 *.temp
 
 /scripts
-/vn
+/vn.env.*
+!.env.example
+!.env.*.example
+compose*.yaml

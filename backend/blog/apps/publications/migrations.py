@@ -20,12 +20,12 @@ from apps.core.date_time import DateTime
 from apps.core.urls import canonical_blog_url
 
 LEGACY_CATEGORY_NAMES = {
-    "INVESTMENT_INSIGHTS",
-    "FOREIGN_INVESTMENT",
-    "KNOWLEDGE_BASE",
-    "TUTORIALS",
-    "CAREER",
-    "NEWS",
+    "Nhận định đầu tư",
+    "Đầu tư nước ngoài",
+    "Kiến thức nền tảng",
+    "Hướng dẫn",
+    "Nghề nghiệp",
+    "Tin tức",
 }
 
 

@@ -1,6 +1,7 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useDebouncedValue } from "../../../hook/useDebouncedValue";
 import { FiPlus } from "react-icons/fi";
 import { toast } from "react-toastify";
 import {
@@ -21,6 +22,8 @@ import {
 import BlogTableToolbar from "./components/BlogTableToolbar";
 import BlogTableRow from "./components/BlogTableRow";
 
+const PAGE_SIZE = 10;
+
 // Manage article list, status filtering, search queries, quick approval, and deletion.
 const BlogManagement: React.FC = () => {
   const client = useQueryClient();
@@ -30,16 +33,26 @@ const BlogManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
 
+  const search = useDebouncedValue(searchTerm.trim());
+
   const blogs = useQuery({
-    queryKey: ["blogs", { page, pageSize: 20, state, category }],
+    queryKey: ["blogs", { page, pageSize: PAGE_SIZE, state, category, search }],
     queryFn: () =>
       getListBlogs({
         page,
-        pageSize: 20,
+        pageSize: PAGE_SIZE,
         ...(state ? { state } : {}),
         ...(category ? { category } : {}),
+        ...(search ? { search } : {}),
       }),
+    placeholderData: keepPreviousData,
   });
+
+  // Step back when the current page disappears (e.g. its last item was deleted).
+  const totalPages = Math.max(1, blogs.data?.totalPages ?? 1);
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
 
   const categories = useQuery({
     queryKey: ["categories", { page: 1, pageSize: 100 }],
@@ -95,16 +108,13 @@ const BlogManagement: React.FC = () => {
     setPage(1);
   };
 
-  const filteredItems = useMemo(() => {
-    const items = blogs.data?.items ?? [];
-    if (!searchTerm.trim()) return items;
-    const lower = searchTerm.trim().toLowerCase();
-    return items.filter(
-      (b) =>
-        b.title.toLowerCase().includes(lower) ||
-        (b.link_post && b.link_post.toLowerCase().includes(lower))
-    );
-  }, [blogs.data?.items, searchTerm]);
+  const filteredItems = blogs.data?.items ?? [];
+
+  // Search is applied by the backend, so a new term restarts at the first page.
+  const handleSearch = (value: string) => {
+    setSearchTerm(value);
+    setPage(1);
+  };
 
   return (
     <section className="space-y-5">
@@ -131,7 +141,7 @@ const BlogManagement: React.FC = () => {
         onSelectCategory={handleSelectCategory}
         categories={categories.data?.items ?? []}
         searchTerm={searchTerm}
-        onSearchChange={setSearchTerm}
+        onSearchChange={handleSearch}
         totalItems={blogs.data?.total ?? filteredItems.length}
       />
 

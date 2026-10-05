@@ -41,8 +41,8 @@ const Login: React.FC = () => {
     <div className="min-h-screen w-screen flex flex-col items-center justify-center bg-surface-base px-4 py-12">
       <div className="w-full max-w-md flex flex-col items-center">
         <img
-          src={assets.logoVnBrokersText}
-          alt="Vietnam Business Brokers"
+          src={assets.logoVietQuant}
+          alt="VietQuant"
           className="h-20 w-auto mb-8 object-contain"
         />
 
@@ -52,7 +52,7 @@ const Login: React.FC = () => {
               Đăng nhập hệ thống
             </h1>
             <p className="text-sm text-content-muted mt-1.5">
-              Hệ thống quản trị nội dung CMS Quant-VN
+              Hệ thống quản trị nội dung CMS VietQuant
             </p>
           </div>
 

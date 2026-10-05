@@ -58,11 +58,12 @@ def get_blog_list_for_client(
 def get_admin_blog_list(
     state: Optional[str] = None,
     category: Optional[str] = None,
+    search: Optional[str] = Query(None, max_length=100),
     page: int = Query(1, ge=1),
     pageSize: int = Query(20, ge=1, le=100),
     _: str = Depends(require_admin),
 ):
-    return BlogServices.get_blogs_for_admin(state, category, page, pageSize)
+    return BlogServices.get_blogs_for_admin(state, category, page, pageSize, search)
 
 
 # Return one Blog record for CMS editing.

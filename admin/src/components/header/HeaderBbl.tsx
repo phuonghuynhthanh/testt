@@ -29,8 +29,8 @@ const HeaderMbl = ({ onToggleSidebar, isSidebarOpen }: HeaderMblProps) => {
       {/* Logo - Center */}
       <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center">
         <img
-          src={assets.logoVnBrokersText}
-          alt="Vietnam Business Brokers"
+          src={assets.logoVietQuant}
+          alt="VietQuant"
           className="h-12 w-auto"
         />
       </div>

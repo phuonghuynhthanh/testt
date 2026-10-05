@@ -32,9 +32,8 @@ export const LinkedInPagination: React.FC<LinkedInPaginationProps> = ({
           onChange={(e) => onPageSizeChange(Number(e.target.value))}
           className="rounded-lg border border-surface-border bg-surface-elevated px-2.5 py-1 text-xs text-content-primary focus:outline-none"
         >
+          <option value={5}>5 dòng</option>
           <option value={10}>10 dòng</option>
-          <option value={20}>20 dòng</option>
-          <option value={50}>50 dòng</option>
         </select>
 
         <button

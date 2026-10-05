@@ -1,5 +1,5 @@
-import logoVnBrokersText from "./logo.png";
+import logoVietQuant from "./logo.png";
 
 export const assets = {
-  logoVnBrokersText,
+  logoVietQuant,
 };

@@ -1,6 +1,7 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { useDebouncedValue } from "../../hook/useDebouncedValue";
 import { FiSend, FiSearch } from "react-icons/fi";
 import { getListBlogs } from "../../services/blog/handleBlog";
 import { apiErrorMessage } from "../../types/Api";
@@ -13,31 +14,34 @@ import {
 } from "../../shared/ui";
 
 
+const PAGE_SIZE = 10;
+
 // List approved website articles available for LinkedIn adaptation.
 const PublicationManagement: React.FC = () => {
   const [page, setPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
 
+  const search = useDebouncedValue(searchTerm.trim());
+
   const blogs = useQuery({
-    queryKey: ["publication-blogs", { page, pageSize: 20, state: "APPROVED" }],
+    queryKey: ["publication-blogs", { page, pageSize: PAGE_SIZE, state: "APPROVED", search }],
     queryFn: () =>
       getListBlogs({
         page,
-        pageSize: 20,
+        pageSize: PAGE_SIZE,
         state: "APPROVED",
+        ...(search ? { search } : {}),
       }),
+    placeholderData: keepPreviousData,
   });
 
-  const filteredItems = useMemo(() => {
-    const items = (blogs.data?.items ?? []).filter((blog) => blog.state === "APPROVED");
-    if (!searchTerm.trim()) return items;
-    const lower = searchTerm.trim().toLowerCase();
-    return items.filter(
-      (b) =>
-        b.title.toLowerCase().includes(lower) ||
-        (b.category && b.category.toLowerCase().includes(lower))
-    );
-  }, [blogs.data?.items, searchTerm]);
+  // Step back when the current page disappears (e.g. its last item was deleted).
+  const totalPages = Math.max(1, blogs.data?.totalPages ?? 1);
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
+
+  const filteredItems = blogs.data?.items ?? [];
 
   return (
     <section className="space-y-5">
@@ -58,8 +62,11 @@ const PublicationManagement: React.FC = () => {
           <input
             type="text"
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Tìm theo bài viết hoặc danh mục..."
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              setPage(1);
+            }}
+            placeholder="Tìm theo tiêu đề hoặc đường dẫn..."
             className="w-full rounded-lg border border-surface-border bg-surface-elevated pl-8 pr-3 py-1.5 text-xs text-content-primary placeholder-content-muted focus:outline-none focus:ring-1 focus:ring-primary-green"
           />
           <FiSearch className="absolute left-2.5 top-1/2 -translate-y-1/2 text-content-muted text-xs pointer-events-none" />

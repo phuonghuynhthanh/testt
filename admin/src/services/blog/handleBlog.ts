@@ -3,7 +3,7 @@ import getAxiosClient from "../../lib/axios/axiosClient";
 import type { PaginatedResponse } from "../../types/Api";
 import type { BlogCreateInput, BlogState, BlogUpdateInput, ClassifyLinksResponse, FetchContentResponse, IBlogData, IBlogItemData, LinkReference } from "../../types/Blog";
 
-export interface BlogListParams { page: number; pageSize: number; state?: BlogState; category?: string; }
+export interface BlogListParams { page: number; pageSize: number; state?: BlogState; category?: string; search?: string; }
 
 // Fetch one backend-paginated Blog page; filters stay in the query key at call sites.
 export const getListBlogs = async (params: BlogListParams): Promise<PaginatedResponse<IBlogItemData>> => (await getAxiosClient().get("/blog/admin/blogs", { params })).data;

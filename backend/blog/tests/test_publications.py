@@ -371,10 +371,10 @@ def test_publication_migration_preserves_legacy_linkedin_data(tmp_path):
     assert row[1:4] == ("Legacy reviewed content", "PUBLISHED", "urn:li:share:1")
     assert json.loads(row[4]) == {"checked": True}
     assert categories == {
-        "INVESTMENT_INSIGHTS",
-        "FOREIGN_INVESTMENT",
-        "KNOWLEDGE_BASE",
-        "TUTORIALS",
-        "CAREER",
-        "NEWS",
+        "Nhận định đầu tư",
+        "Đầu tư nước ngoài",
+        "Kiến thức nền tảng",
+        "Hướng dẫn",
+        "Nghề nghiệp",
+        "Tin tức",
     }

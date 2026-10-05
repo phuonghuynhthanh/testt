@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import React, { useEffect, useState } from "react";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { FiPlus, FiEdit2, FiTrash2, FiFolder } from "react-icons/fi";
 import { toast } from "react-toastify";
 import Modal from "../../shared/Popup/Modal";
@@ -20,7 +20,7 @@ import {
   Pagination,
 } from "../../shared/ui";
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 10;
 
 // Manage categories with backend pagination, editing modal, and soft-delete confirmation.
 const CategoryManagement: React.FC = () => {
@@ -34,7 +34,14 @@ const CategoryManagement: React.FC = () => {
   const categories = useQuery({
     queryKey: ["categories", { page, pageSize: PAGE_SIZE }],
     queryFn: () => listCategories({ page, pageSize: PAGE_SIZE }),
+    placeholderData: keepPreviousData,
   });
+
+  // Step back when the current page disappears (e.g. its last item was deleted).
+  const totalPages = Math.max(1, categories.data?.totalPages ?? 1);
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
 
   // Invalidate and refetch cached category queries.
   const refresh = () => client.invalidateQueries({ queryKey: ["categories"] });

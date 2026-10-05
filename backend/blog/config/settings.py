@@ -40,6 +40,11 @@ MINIO_REGION = os.getenv("MINIO_REGION", "").strip()
 MINIO_AUTO_CREATE_BUCKET = os.getenv(
     "MINIO_AUTO_CREATE_BUCKET", "false"
 ).strip().lower() in {"1", "true", "yes"}
+# Browser-reachable MinIO host used only to sign image URLs (empty = same as MINIO_ENDPOINT).
+MINIO_PUBLIC_ENDPOINT = os.getenv("MINIO_PUBLIC_ENDPOINT", "").strip()
+MINIO_PUBLIC_SECURE = os.getenv(
+    "MINIO_PUBLIC_SECURE", os.getenv("MINIO_SECURE", "true")
+).strip().lower() in {"1", "true", "yes"}
 MEDIA_MAX_UPLOAD_MB = int(os.getenv("MEDIA_MAX_UPLOAD_MB", "10"))
 
 # genimi
