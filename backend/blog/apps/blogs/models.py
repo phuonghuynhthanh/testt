@@ -5,7 +5,6 @@ from config.database import FastModel
 from apps.core.date_time import DateTime as CustomDateTime
 from sqlalchemy.dialects.postgresql import JSON
 
-
 class Blog(FastModel):
     __tablename__ = "blogs"
 
@@ -17,22 +16,16 @@ class Blog(FastModel):
     content = Column(String, nullable=False)
     seo = Column(JSON, nullable=False)
     category = Column(String, nullable=False, default="All")
-    category_id = Column(
-        String, ForeignKey("categories.id"), nullable=True, index=True
-    )
+    category_id = Column(String, ForeignKey("categories.id"), nullable=True, index=True)
     state = Column(String, nullable=False)
     search_text = Column(String, nullable=True)
     deleted_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=CustomDateTime.now)
-    modified_at = Column(
-        DateTime, default=CustomDateTime.now, onupdate=CustomDateTime.now
-    )
+    modified_at = Column(DateTime, default=CustomDateTime.now, onupdate=CustomDateTime.now)
 
 
 # Keep the normalized search index current for all ORM persistence paths.
 @event.listens_for(Blog, "before_insert")
 @event.listens_for(Blog, "before_update")
 def update_search_text(mapper, connection, blog):
-    blog.search_text = normalize_search(
-        " ".join([blog.title or "", blog.link_post or "", blog.tag or ""])
-    )
+    blog.search_text = normalize_search(" ".join([blog.title or "", blog.link_post or "", blog.tag or ""]))

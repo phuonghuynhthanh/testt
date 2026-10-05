@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Sparkle, FileText, FloppyDisk, PaperPlaneTilt } from "@phosphor-icons/react";
+import { Sparkle, FileText, FloppyDisk, PaperPlaneTilt, X } from "@phosphor-icons/react";
 import { toast } from "react-toastify";
 import { apiErrorMessage } from "../../../types/Api";
 import type { IBlogData, SEO } from "../../../types/Blog";
-import { createBlogPost, generateBlogDraft } from "../../../services/blog/handleBlog";
+import { createBlogPost, generateBlogDraft, getBlogDetail, updateBlog as updateBlogRequest } from "../../../services/blog/handleBlog";
 import { createCategory, listCategories } from "../../../services/category/handleCategory";
-import { PageHeader, ConfirmDialog, BottomActionBar } from "../../../shared/ui";
+import { PageHeader, ConfirmDialog, BottomActionBar, StatusBadge } from "../../../shared/ui";
 import BlogSeoCollapse from "./BlogSeoCollapse";
 import BlogContentEditorCard from "./BlogContentEditorCard";
 import BlogBasicFieldsCard from "./BlogBasicFieldsCard";
@@ -20,7 +20,9 @@ const EMPTY_BLOG: IBlogData = {
 };
 
 // Coordinate new blog authoring with AI generation, live preview, and draft/publication saving.
-const BlogCreate: React.FC = () => {
+// With a blogId the same editor loads and updates that article instead of creating one.
+const BlogCreate: React.FC<{ blogId?: string }> = ({ blogId }) => {
+  const editing = Boolean(blogId);
   const navigate = useNavigate();
   const client = useQueryClient();
   const [source, setSource] = useState<"manual" | "ai">("ai");
@@ -32,6 +34,22 @@ const BlogCreate: React.FC = () => {
   const [confirmRegenerate, setConfirmRegenerate] = useState(false);
   const [confirmPublish, setConfirmPublish] = useState(false);
   const [confirmSeo, setConfirmSeo] = useState(false);
+
+  const detail = useQuery({
+    queryKey: ["blogDetail", blogId],
+    queryFn: () => getBlogDetail(blogId as string),
+    enabled: editing,
+    retry: false,
+    refetchOnWindowFocus: false,
+  });
+
+  // Load the stored article into the editor once.
+  useEffect(() => {
+    if (!detail.data) return;
+    setBlog({ ...detail.data, seo: { ...detail.data.seo, keywords: [...new Set(detail.data.seo.keywords)] } });
+    setSource("manual");
+    setDirty(false);
+  }, [detail.data]);
 
   const categories = useQuery({
     queryKey: ["categories", { page: 1, pageSize: 100 }],
@@ -57,6 +75,15 @@ const BlogCreate: React.FC = () => {
     setBlog((prev) => ({ ...prev, seo: { ...prev.seo, [field]: value } }));
     setDirty(true);
   };
+
+  // Apply a title suggested on the research page once, then clear the hand-over.
+  useEffect(() => {
+    const prefill = sessionStorage.getItem("vq-prefill-title");
+    if (!prefill) return;
+    sessionStorage.removeItem("vq-prefill-title");
+    setBlog((prev) => ({ ...prev, title: prefill, link_post: prefill, seo: { ...prev.seo, title: prefill } }));
+    setDirty(true);
+  }, []);
 
   const formValid = Boolean(blog.title.trim() && blog.category.trim() && blog.content.trim());
 
@@ -106,14 +133,26 @@ const BlogCreate: React.FC = () => {
 
   const save = useMutation({
     mutationFn: async (mode: "SAVE_PENDING" | "PUBLISH_NOW") => {
+      if (blogId) {
+        const saved = await updateBlogRequest({
+          id: blogId,
+          tag: blog.tag,
+          title: blog.title,
+          banner_url: blog.banner_url,
+          category: blog.category,
+          seo: { title: blog.seo.title, description: blog.seo.description, keywords: blog.seo.keywords, author: blog.seo.author },
+          content: blog.content,
+        }, image);
+        return { saved: { id: blogId, ...saved }, mode };
+      }
       const saved = await createBlogPost(blog, image, mode);
       return { saved, mode };
     },
     onSuccess: async ({ saved, mode }) => {
       setDirty(false);
       await client.invalidateQueries({ queryKey: ["blogs"] });
-      toast.success(mode === "PUBLISH_NOW" ? "Đã lưu và đăng bài viết thành công." : "Đã lưu bài viết ở trạng thái chờ duyệt.");
-      navigate(`/blog/detail/${saved.id}`);
+      toast.success(editing ? "Cập nhật bài viết thành công." : mode === "PUBLISH_NOW" ? "Đã lưu và đăng bài viết thành công." : "Đã lưu bài viết ở trạng thái chờ duyệt.");
+      if (!editing) navigate(`/blog/detail/${saved.id}`);
     },
     onError: (e) => toast.error(apiErrorMessage(e)),
   });
@@ -129,13 +168,28 @@ const BlogCreate: React.FC = () => {
   };
 
   return (
-    <section className="space-y-6 pb-40 sm:pb-28 max-w-[968px] mx-auto">
+    <section className="space-y-6 pb-10 max-w-[968px] mx-auto">
+      {editing && detail.isLoading && (
+        <p className="py-16 text-center text-sm text-content-muted">Đang tải bài viết...</p>
+      )}
+      {editing && detail.isError && (
+        <div className="space-y-4 py-16 text-center">
+          <p className="text-sm text-rose-400">Không tìm thấy bài viết cần chỉnh sửa.</p>
+          <Link to="/blog" className="btn btn-secondary">Quay lại danh sách</Link>
+        </div>
+      )}
+
       <PageHeader
-        title="Tạo bài viết mới"
-        description="Soạn thảo bài viết mới hoặc tạo nhanh từ AI. Bài viết sau khi lưu sẽ ở trạng thái chờ duyệt."
+        title={editing ? "Chỉnh sửa bài viết" : "Tạo bài viết mới"}
+        description={
+          editing
+            ? "Cập nhật nội dung, ảnh bìa và SEO."
+            : "Soạn thảo bài viết mới hoặc tạo nhanh bản nháp thông minh bằng trợ lý AI"
+        }
+        actions={editing && detail.data?.state ? <StatusBadge status={detail.data.state} /> : undefined}
       />
 
-      <div className="seg self-start">
+      {!editing && <div className="seg self-start">
         <button
           type="button"
           onClick={() => setSource("ai")}
@@ -149,15 +203,36 @@ const BlogCreate: React.FC = () => {
           <FileText size={14} weight="light" />
           <span>Viết thủ công</span>
         </button>
-      </div>
+      </div>}
 
       <BottomActionBar>
         <div className="flex items-center gap-2 text-xs">
-          <span className="font-semibold">{formValid ? "Bài viết đã sẵn sàng" : "Đang soạn thảo bài viết"}</span>
+          <span className="font-semibold">
+            {editing ? "Chỉnh sửa bài viết" : formValid ? "Bài viết đã sẵn sàng" : "Đang soạn thảo bài viết"}
+          </span>
           <span className="hidden text-content-muted sm:inline">
-            {dirty ? "Có thay đổi chưa lưu." : "Lưu chờ duyệt hoặc đăng ngay lên website."}
+            {editing
+              ? "Thay đổi chỉ được áp dụng sau khi lưu."
+              : dirty ? "Có thay đổi chưa lưu." : "Lưu chờ duyệt hoặc đăng ngay lên website."}
           </span>
         </div>
+        {editing ? (
+          <div className="flex items-center gap-3">
+            <Link to={`/blog/detail/${blogId}`} className="btn btn-secondary">
+              <X size={16} weight="light" />
+              <span>Đóng</span>
+            </Link>
+            <button
+              type="button"
+              disabled={!formValid || save.isPending || bannerBusy}
+              onClick={() => save.mutate("SAVE_PENDING")}
+              className="btn btn-primary"
+            >
+              <FloppyDisk size={16} weight="light" />
+              <span>{save.isPending ? "Đang lưu..." : "Lưu thay đổi"}</span>
+            </button>
+          </div>
+        ) : (
         <div className="flex flex-wrap items-center gap-3">
           <button
             type="button"
@@ -178,6 +253,7 @@ const BlogCreate: React.FC = () => {
             <span>Lưu & Đăng bài</span>
           </button>
         </div>
+        )}
       </BottomActionBar>
 
       <BlogBasicFieldsCard

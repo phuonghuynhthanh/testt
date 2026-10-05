@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, PencilSimple, LinkedinLogo, Trash, Tag, Folder, Globe } from "@phosphor-icons/react";
+import { ArrowLeft, Check, PencilSimple, LinkedinLogo, Trash, Tag, Folder, Globe } from "@phosphor-icons/react";
 import { toast } from "react-toastify";
-import { getBlogDetail, deleteBlog } from "../../../services/blog/handleBlog";
+import { getBlogDetail, deleteBlog, patchBlogState } from "../../../services/blog/handleBlog";
 import { formatCmsDate } from "../../../utils/date";
 import { apiErrorMessage } from "../../../types/Api";
 import { StatusBadge, ConfirmDialog, BlogThumbnail } from "../../../shared/ui";
@@ -28,6 +28,16 @@ export const BlogDetailPage: React.FC = () => {
       toast.success("Đã chuyển bài viết vào thùng rác thành công.");
       queryClient.invalidateQueries({ queryKey: ["blogs"] });
       navigate("/blog");
+    },
+    onError: (err) => toast.error(apiErrorMessage(err)),
+  });
+
+  const approveMutation = useMutation({
+    mutationFn: () => patchBlogState(blogId, "APPROVED"),
+    onSuccess: () => {
+      toast.success("Đã duyệt bài viết thành công.");
+      queryClient.invalidateQueries({ queryKey: ["blogs"] });
+      queryClient.invalidateQueries({ queryKey: ["blogDetail", blogId] });
     },
     onError: (err) => toast.error(apiErrorMessage(err)),
   });
@@ -70,6 +80,18 @@ export const BlogDetailPage: React.FC = () => {
         </Link>
 
         <div className="flex flex-wrap items-center gap-2.5">
+          {blog.state === "PENDING" && (
+            <button
+              type="button"
+              onClick={() => approveMutation.mutate()}
+              disabled={approveMutation.isPending}
+              className="btn btn-outline"
+            >
+              <Check size={16} weight="light" />
+              <span>Duyệt bài</span>
+            </button>
+          )}
+
           {blog.state === "APPROVED" && (
             <Link
               to={`/publications/${blogId}`}
@@ -105,7 +127,7 @@ export const BlogDetailPage: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-12">
+      <div className="grid items-start gap-6 lg:grid-cols-12">
         <div className="space-y-6 lg:col-span-8">
           <div className="panel overflow-hidden">
             <div className="space-y-4 p-6">
@@ -158,7 +180,7 @@ export const BlogDetailPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="space-y-6 lg:col-span-4">
+        <div className="space-y-6 lg:sticky lg:top-20 lg:col-span-4">
           <div className="panel p-5">
             <h3 className="mb-2 border-b border-surface-border pb-2.5 text-sm font-semibold">Thông tin hệ thống</h3>
             <div className="text-xs">

@@ -11,11 +11,7 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 # Return the configured profile for the authenticated administrator.
 @router.get("/me")
 def current_admin(username: str = Depends(require_admin)):
-    return {
-        "username": username,
-        "name": settings.ADMIN_DISPLAY_NAME or username,
-        "email": settings.ADMIN_EMAIL or username,
-    }
+    return {"username": username, "name": settings.ADMIN_DISPLAY_NAME or username, "email": settings.ADMIN_EMAIL or username}
 
 
 # Acknowledge client-side JWT removal without persisting server sessions.
@@ -27,9 +23,7 @@ def logout(_: str = Depends(require_admin)):
 # Exchange the configured administrator credential for a short-lived JWT.
 @router.post("/login", response_model=TokenResponse)
 @limiter.limit(settings.RATE_LIMIT_LOGIN)
-def login(
-    request: Request, response: Response, credentials: LoginRequest
-) -> TokenResponse:
+def login(request: Request, response: Response, credentials: LoginRequest) -> TokenResponse:
     authenticate(credentials.username, credentials.password)
     return TokenResponse(
         access_token=create_access_token(settings.ADMIN_USERNAME),

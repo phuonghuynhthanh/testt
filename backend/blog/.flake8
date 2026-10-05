@@ -1,0 +1,4 @@
+[flake8]
+# Legacy modules contain long prompt/SQL strings; line length is left to the formatter.
+extend-ignore = E501, E203, W503
+exclude = .venv,__pycache__

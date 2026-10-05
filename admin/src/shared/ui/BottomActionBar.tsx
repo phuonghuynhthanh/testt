@@ -1,14 +1,10 @@
 import type { ReactNode } from "react";
-import { createPortal } from "react-dom";
 
-// Render the fixed full-width action bar used by the editor pages, as in the design preview.
+// Render the editor action bar pinned under the top bar so it never covers the editing area.
 export const BottomActionBar = ({ children }: { children: ReactNode }) => {
-  return createPortal(
-    <div className="fixed inset-x-0 bottom-0 z-30 border-t border-surface-border bg-surface-base/85 backdrop-blur-xl lg:left-[232px]">
-      <div className="mx-auto flex max-w-5xl flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-8">
-        {children}
-      </div>
-    </div>,
-    document.body,
+  return (
+    <div className="sticky top-14 z-20 -mt-2 flex flex-col gap-3 rounded-xl border border-surface-border bg-surface-base/90 px-4 py-2.5 backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between">
+      {children}
+    </div>
   );
 };

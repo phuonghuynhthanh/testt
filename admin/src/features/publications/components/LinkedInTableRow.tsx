@@ -59,6 +59,11 @@ export const LinkedInTableRow: React.FC<LinkedInTableRowProps> = ({
           {title}
         </Link>
         <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-content-muted">{first}</p>
+        {post.blogId && (
+          <Link to={`/blog/detail/${post.blogId}`} className="mt-1 inline-block max-w-full truncate text-[11px] text-cyan-400 hover:underline">
+            Bài blog: {post.blogTitle || post.blogId}
+          </Link>
+        )}
       </div>
 
       <div>

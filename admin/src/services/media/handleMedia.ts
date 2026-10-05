@@ -26,6 +26,10 @@ export const generateAIImage = async (data: {
   altText?: string;
 }) => (await getAxiosClient().post<GeneratedAIImage>("/media/ai/generate", data)).data;
 
+// Search Pexels for banner candidates without attaching anything.
+export const searchPexelsBanners = async (keywords: string[]) =>
+  (await getAxiosClient().post<{ items: PexelsCandidate[] }>("/media/pexels/search", keywords)).data.items;
+
 // Import an explicitly selected Pexels candidate before changing the article banner.
 export const importPexelsBanner = async (candidate: PexelsCandidate) =>
   (await getAxiosClient().post<UploadedMedia>("/media/pexels/import", candidate)).data;

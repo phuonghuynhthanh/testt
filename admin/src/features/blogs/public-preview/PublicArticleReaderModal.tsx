@@ -9,6 +9,7 @@ import MarkdownContent from "../../../shared/markdown/MarkdownContent";
 interface PublicArticleReaderModalProps {
   slug: string | null;
   onClose: () => void;
+  onOpen?: (slug: string) => void;
 }
 
 // Resolve a stored banner key to a displayable URL.
@@ -22,6 +23,7 @@ const resolveBanner = (url: string): string => {
 export const PublicArticleReaderModal: React.FC<PublicArticleReaderModalProps> = ({
   slug,
   onClose,
+  onOpen,
 }) => {
   const detailQuery = useQuery({
     queryKey: ["public-blog-detail", slug],
@@ -77,6 +79,24 @@ export const PublicArticleReaderModal: React.FC<PublicArticleReaderModalProps> =
             )}
 
             <MarkdownContent content={blog.content || "Chưa có nội dung văn bản."} />
+
+            {blog.related_blogs && blog.related_blogs.length > 0 && (
+              <div className="mt-8 border-t border-surface-border pt-5">
+                <h3 className="mb-3 text-sm font-semibold">Bài viết liên quan</h3>
+                <div className="grid gap-3 sm:grid-cols-3">
+                  {blog.related_blogs.map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => onOpen?.(item.link_post || item.id)}
+                      className="rounded-xl border border-surface-border bg-surface-elevated p-3 text-left text-xs font-medium transition-colors hover:border-primary-green/40"
+                    >
+                      <span className="line-clamp-3">{item.title}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </article>
         )}
       </div>

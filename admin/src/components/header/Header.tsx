@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { List, CaretRight, SignOut } from "@phosphor-icons/react";
-import { clearAuthSession } from "../../lib/cookies/handleCookie";
-import { toast } from "react-toastify";
+import { getAdminProfile } from "../../services/user/handleAuth.";
+import { useLogout } from "../../hook/useLogout";
 
 interface HeaderProps {
   onToggleSidebar?: () => void;
@@ -56,7 +57,9 @@ const getBreadcrumbs = (pathname: string): CrumbItem[] => {
 
 const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
   const location = useLocation();
-  const navigate = useNavigate();
+  const profile = useQuery({ queryKey: ["admin-profile"], queryFn: getAdminProfile, staleTime: 5 * 60_000 });
+  const displayName = profile.data?.name || profile.data?.username || "Quản trị viên";
+  const initials = displayName.split(/\s+/).filter(Boolean).slice(-2).map((part) => part[0]).join("").toUpperCase() || "AD";
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -72,15 +75,7 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleLogout = () => {
-    try {
-      clearAuthSession();
-      toast.success("Đăng xuất thành công");
-      navigate("/login");
-    } catch {
-      toast.error("Đã xảy ra lỗi. Vui lòng thử lại sau.");
-    }
-  };
+  const handleLogout = useLogout();
 
   return (
     <header className="top justify-between">
@@ -120,14 +115,14 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
             className="avatar"
             aria-label="Menu tài khoản"
           >
-            AD
+            {initials}
           </button>
 
           {menuOpen && (
             <div className="pop-in absolute right-0 top-10 z-50 w-52 rounded-lg border border-surface-border bg-surface-card p-1.5 shadow-2xl shadow-black/50">
               <div className="px-3 py-2 border-b border-surface-border mb-1">
-                <p className="text-xs font-semibold text-content-primary">Quản trị viên</p>
-                <p className="text-[11px] text-content-muted truncate">admin@vietquant.vn</p>
+                <p className="text-xs font-semibold text-content-primary truncate">{displayName}</p>
+                <p className="text-[11px] text-content-muted truncate">{profile.data?.email ?? ""}</p>
               </div>
               <button
                 type="button"

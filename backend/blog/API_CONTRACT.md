@@ -413,7 +413,7 @@ The frontend replaces its selected banner only after import succeeds and later s
 - **Headers**: `Content-Type: multipart/form-data`
 - **Form Fields**:
   - `blog_data` *(string, required)*: Chuỗi JSON đại diện cho model `BlogCreate`.
-  - `image` *(binary file, optional)*: File ảnh banner (JPG, PNG, WebP, GIF). Giới hạn lấy từ `MEDIA_MAX_UPLOAD_MB`; cấu hình mặc định hiện tại là **10 MB**.
+  - `image` *(binary file, optional)*: File ảnh banner (JPG, PNG, WebP, GIF). Giới hạn lấy từ `MEDIA_MAX_UPLOAD_MB`; cấu hình mặc định hiện tại là **20 MB**.
   - `action` *(string, optional, enum: `SAVE_PENDING`, `PUBLISH_NOW`, default: `SAVE_PENDING`)*.
 - **Cấu trúc JSON trong `blog_data`**:
 ```json
@@ -760,7 +760,7 @@ true
 - **Query Parameters**:
   - `link_blog` *(string, optional, default: "")*: Thư mục lưu trữ theo slug bài viết (ví dụ: `bai-viet-so-1`).
 - **Form Fields**:
-  - `image` *(binary file, required)*: Định dạng hỗ trợ: JPEG, PNG, WebP, GIF. Giới hạn lấy từ `MEDIA_MAX_UPLOAD_MB`; cấu hình mặc định hiện tại là **10 MB**.
+  - `image` *(binary file, required)*: Định dạng hỗ trợ: JPEG, PNG, WebP, GIF. Giới hạn lấy từ `MEDIA_MAX_UPLOAD_MB`; cấu hình mặc định hiện tại là **20 MB**.
 - **Response (201 Created)**: Trả về chuỗi `object_key` lưu trữ trong MinIO S3:
 ```json
 "bai-viet-so-1/4a2b918c-391a-4938-bdf2-f8314e1a0210.png"
@@ -1434,7 +1434,7 @@ true
 - **Auth**: Admin (`Bearer <token>`)
 - **Headers**: `Content-Type: multipart/form-data`
 - **Form Fields**:
-  - `image` *(binary file, required)*: JPEG, PNG hoặc GIF; giới hạn bởi `MEDIA_MAX_UPLOAD_MB`, mặc định 10 MB.
+  - `image` *(binary file, required)*: JPEG, PNG hoặc GIF; giới hạn bởi `MEDIA_MAX_UPLOAD_MB`, mặc định 20 MB.
 - **Response (201 Created)**:
 ```json
 {
@@ -1460,7 +1460,7 @@ true
 | **401 Unauthorized** | Thiếu header `Authorization` hoặc token hết hạn | Chuyển hướng người dùng về trang `/login`, xóa token cũ trong localStorage/cookies |
 | **404 Not Found** | Không tìm thấy ID bài viết / danh mục | Hiển thị màn hình 404 hoặc thông báo không tìm thấy bản ghi |
 | **409 Conflict** | Sửa bài đăng đang xuất bản, slug trùng, hoặc retry sai trạng thái | Không cho phép bấm nút chỉnh sửa/retry khi trạng thái không hợp lệ |
-| **413 Request Entity Too Large** | Ảnh upload vượt quá giới hạn `MEDIA_MAX_UPLOAD_MB` (mặc định 10 MB) | Lấy giới hạn của môi trường bàn giao và chặn file vượt giới hạn trước khi upload |
+| **413 Request Entity Too Large** | Ảnh upload vượt quá giới hạn `MEDIA_MAX_UPLOAD_MB` (mặc định 20 MB) | Lấy giới hạn của môi trường bàn giao và chặn file vượt giới hạn trước khi upload |
 | **415 Unsupported Media Type** | File LinkedIn không phải JPEG/PNG/GIF, MIME sai hoặc chữ ký byte không hợp lệ | Kiểm tra mime-type file ở client trước khi submit |
 | **422 Unprocessable Entity** | Thiếu trường bắt buộc hoặc sai format Pydantic | Đánh dấu đỏ (highlight) các trường input bị lỗi dựa theo mảng `loc` trong response |
 | **429 Too Many Requests** | Vượt giới hạn API rate limit của LinkedIn / Gemini | Thông báo người dùng chờ vài phút trước khi thực hiện lại tác vụ AI / xuất bản |
@@ -1526,10 +1526,12 @@ Item của `GET /linkedin/posts` và response `GET /linkedin/posts/{id}` thêm `
 
 ### CSV và tìm ảnh banner
 
-`GET /blog/admin/export.csv` nhận `state`, `category`, `search`, `sort`, `dir` giống list; xuất tối đa 5.000 dòng theo cùng thứ tự. Response `text/csv; charset=utf-8`, BOM UTF-8, filename `blogs.csv`, cột `Tiêu đề, Slug, Danh mục, Trạng thái, Cập nhật`. Text có ký tự đầu kích hoạt formula được thêm dấu nháy đơn để mở an toàn trong spreadsheet.
+`GET /blog/admin/export.csv` nhận `state`, `category`, `search`, `sort`, `dir` giống list; xuất tối đa 5.000 dòng theo cùng thứ tự. Response `text/csv; charset=utf-8`, BOM UTF-8, filename `blogs.csv`, header `X-Truncated: true` khi có hơn 5.000 dòng khớp bộ lọc, cột `Tiêu đề, Slug, Danh mục, Trạng thái, Cập nhật`. Text có ký tự đầu kích hoạt formula được thêm dấu nháy đơn để mở an toàn trong spreadsheet.
 
 `POST /media/pexels/search` nhận array keywords, trả `{items: PexelsCandidate[]}` cùng service/xử lý lỗi của `/linkedin/media/search`, dùng AI limiter. Không tự tải hoặc gắn ảnh vào bài.
 
 ### Migration và phạm vi
 
 Startup migration thêm cột nullable `blogs.search_text` và backfill title + slug + tag bằng helper Unicode không phụ thuộc Postgres `unaccent`. Migration idempotent và giữ timestamp cũ. Mọi create/update qua ORM cập nhật search tự động. Không sửa default `quantity` hay lỗi category của `next_req`; không thêm alias `by-blog` hoặc SEO gộp vì API hiện tại đã hỗ trợ các luồng đó.
+
+`GET /blog/link/{slug}` giới hạn `limit` trong 1..12. `POST /blog/{id}/restore` giữ hành vi cũ (cập nhật `modified_at`); chỉ `POST /blog/admin/bulk-restore` giữ nguyên `modified_at` để undo.

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { CaretDown, DownloadSimple, Funnel, Lightbulb, Plus, MagnifyingGlass } from "@phosphor-icons/react";
+import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import {
   classifyBlogLinks,
@@ -18,6 +19,10 @@ const TAG_CLASSES: Record<string, string> = {
   SPAM: "chip !border-rose-500/30 !bg-rose-950/40 !text-rose-300",
 };
 
+// Vietnamese labels for reference tags and link categories.
+const TAG_LABELS: Record<string, string> = { NORMAL: "Bình thường", ADS: "Quảng cáo", SPAM: "Rác" };
+const CATEGORY_LABELS: Record<string, string> = { organic: "Tự nhiên", ad: "Quảng cáo", spam: "Rác", duplicate: "Trùng lặp" };
+
 // Badge classes per link classification category.
 const CATEGORY_CLASSES: Record<string, string> = {
   organic: "bg-emerald-950/40 text-emerald-400 border-emerald-500/30",
@@ -28,6 +33,7 @@ const CATEGORY_CLASSES: Record<string, string> = {
 
 // Render the standalone workspace for searching and assessing blog references.
 const BlogResearchTools = () => {
+  const navigate = useNavigate();
   const [keyword, setKeyword] = useState("");
   const [language, setLanguage] = useState<"vietnamese" | "english">("vietnamese");
   const [titles, setTitles] = useState<string[]>([]);
@@ -126,9 +132,19 @@ const BlogResearchTools = () => {
                 {titles.map((item) => (
                   <span
                     key={item}
-                    className="inline-flex items-center gap-2 rounded-lg border border-purple-500/30 bg-purple-950/20 px-3 py-1 text-xs text-purple-200"
+                    className="inline-flex items-center gap-2 rounded-lg border border-purple-500/30 bg-purple-950/20 py-1 pl-3 pr-1 text-xs text-purple-200"
                   >
                     {item}
+                    <button
+                      type="button"
+                      className="rounded-md bg-purple-500/20 px-2 py-1 text-[11px] font-semibold hover:bg-purple-500/30"
+                      onClick={() => {
+                        sessionStorage.setItem("vq-prefill-title", item);
+                        navigate("/blog/create-blog");
+                      }}
+                    >
+                      Tạo bài
+                    </button>
                   </span>
                 ))}
               </div>
@@ -144,7 +160,7 @@ const BlogResearchTools = () => {
                       </a>
                       <p className="mt-1 truncate text-content-muted">{item.url}</p>
                     </div>
-                    <span className={TAG_CLASSES[item.tag] ?? "chip"}>{item.tag}</span>
+                    <span className={TAG_CLASSES[item.tag] ?? "chip"}>{TAG_LABELS[item.tag] ?? item.tag}</span>
                     <button
                       type="button"
                       onClick={() => queueReference(item.url)}
@@ -195,7 +211,7 @@ const BlogResearchTools = () => {
                           CATEGORY_CLASSES[item.category] ?? "bg-zinc-800 text-zinc-300 border-zinc-700"
                         }`}
                       >
-                        {item.category} {Math.round(item.confidence * 100)}%
+                        {CATEGORY_LABELS[item.category] ?? item.category} {Math.round(item.confidence * 100)}%
                       </span>
                     </div>
                     <p className="mt-1.5 text-content-muted">{item.reason}</p>

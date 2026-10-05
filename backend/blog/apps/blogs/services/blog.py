@@ -578,18 +578,6 @@ class BlogServices:
                 session.rollback()
                 raise
 
-    # Restore a single Blog through the same transaction logic used by bulk undo.
-    @classmethod
-    def restore_blog(cls, blog_id: str):
-        result = cls.bulk_delete_restore(
-            schemas.BulkIdsRequest(ids=[blog_id]), restore=True
-        )
-        if result["notFound"]:
-            raise HTTPException(
-                status_code=404, detail="Không tìm thấy bài viết"
-            )
-        return Blog.get(blog_id)
-
     # Keep legacy load-more URLs while carrying an explicitly customized limit.
     @classmethod
     def get_blog_for_client(

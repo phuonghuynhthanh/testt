@@ -1,21 +1,10 @@
 import React from "react";
 import { SignOut } from "@phosphor-icons/react";
-import { useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
-import { clearAuthSession } from "../../../lib/cookies/handleCookie";
+import { useLogout } from "../../../hook/useLogout";
 
+// Render the sidebar sign-out button.
 const Logout: React.FC = () => {
-  const navigate = useNavigate();
-
-  const handleLogout = () => {
-    try {
-      clearAuthSession();
-      toast.success("Đăng xuất thành công");
-      navigate("/login");
-    } catch {
-      toast.error("Đã xảy ra lỗi. Vui lòng thử lại sau.");
-    }
-  };
+  const handleLogout = useLogout();
 
   return (
     <button

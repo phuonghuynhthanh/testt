@@ -3,18 +3,7 @@ import io
 import json
 from typing import List, Literal, Optional
 
-from fastapi import (
-    APIRouter,
-    Depends,
-    File,
-    Form,
-    HTTPException,
-    Query,
-    Request,
-    Response,
-    UploadFile,
-    status,
-)
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, Response, UploadFile, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import StreamingResponse
 from pydantic import ValidationError
@@ -23,6 +12,7 @@ from apps.auth.services import require_admin
 from apps.core.rate_limit import limiter
 from config import settings
 from apps.blogs import schemas
+from apps.blogs.models import Blog
 from apps.blogs.services.blog import BlogServices
 from apps.blogs.services.reference_search import ReferenceSearchService
 from apps.openai.services.gemini_ai import GeminiAiService
@@ -31,23 +21,15 @@ router = APIRouter(prefix="/blog", tags=["Blogs"])
 
 
 # Validate multipart JSON through the same friendly boundary as regular request bodies.
-def _parse_blog_payload(
-    value: str, schema: type[schemas.BlogCreate] | type[schemas.BlogUpdate]
-):
+def _parse_blog_payload(value: str, schema: type[schemas.BlogCreate] | type[schemas.BlogUpdate]):
     try:
         return schema.model_validate(json.loads(value))
     except json.JSONDecodeError as error:
-        raise HTTPException(
-            status_code=422,
-            detail="Dữ liệu bài viết không hợp lệ. Vui lòng kiểm tra và thử lại.",
-        ) from error
+        raise HTTPException(status_code=422, detail="Dữ liệu bài viết không hợp lệ. Vui lòng kiểm tra và thử lại.") from error
     except ValidationError as error:
-        raise RequestValidationError(
-            [
-                {**item, "loc": ("body", "blog_data", *item["loc"])}
-                for item in error.errors()
-            ]
-        ) from error
+        raise RequestValidationError([
+            {**item, "loc": ("body", "blog_data", *item["loc"])} for item in error.errors()
+        ]) from error
 
 
 # Return approved Blog summaries for the public landing page.
@@ -88,9 +70,7 @@ def get_admin_blog_list(
     dir: Literal["asc", "desc"] = "desc",
     include: Literal["linkedin"] | None = None,
 ):
-    return BlogServices.get_blogs_for_admin(
-        state, category, page, pageSize, search, sort, dir, include
-    )
+    return BlogServices.get_blogs_for_admin(state, category, page, pageSize, search, sort, dir, include)
 
 
 # Count filtered Blogs regardless of the selected state tab.
@@ -119,9 +99,8 @@ def export_blogs(
     dir: Literal["asc", "desc"] = "desc",
     _: str = Depends(require_admin),
 ):
-    items = BlogServices.get_blogs_for_admin(
-        state, category, 1, 5000, search, sort, dir
-    )["items"]
+    result = BlogServices.get_blogs_for_admin(state, category, 1, 5000, search, sort, dir)
+    items = result["items"]
 
     # Emit a BOM for Excel and neutralize spreadsheet formulas in text fields.
     def csv_rows():
@@ -160,7 +139,11 @@ def export_blogs(
     return StreamingResponse(
         csv_rows(),
         media_type="text/csv",
-        headers={"Content-Disposition": 'attachment; filename="blogs.csv"'},
+        # Tell clients when the 5000-row export cap hid matching Blogs.
+        headers={
+            "Content-Disposition": 'attachment; filename="blogs.csv"',
+            "X-Truncated": "true" if result["total"] > len(items) else "false",
+        },
     )
 
 
@@ -221,14 +204,8 @@ def get_blog_by_id(
     description="Lấy nội dung bài viết theo đường dẫn link_post.",
     status_code=status.HTTP_200_OK,
 )
-def get_blog_content_by_link_post(
-    link_post: str,
-    limit: Optional[int] = 4,
-    related: Literal["category"] | None = None,
-):
-    return BlogServices.get_blog_by_url(
-        link_post=link_post, limit=limit, related=related
-    )
+def get_blog_content_by_link_post(link_post: str, limit: int = Query(4, ge=1, le=12), related: Literal["category"] | None = None):
+    return BlogServices.get_blog_by_url(link_post=link_post, limit=limit, related=related)
 
 
 # Change one Blog state through JSON while keeping multipart edits available.
@@ -265,14 +242,10 @@ def create_blog(
     blog_data: str = Form(...),
     _: str = Depends(require_admin),
     image: UploadFile = File(None),
-    action: schemas.BlogCreateAction = Form(
-        schemas.BlogCreateAction.SAVE_PENDING
-    ),
+    action: schemas.BlogCreateAction = Form(schemas.BlogCreateAction.SAVE_PENDING),
 ):
     blog_data = _parse_blog_payload(blog_data, schemas.BlogCreate)
-    return BlogServices.create_blog(
-        blog_data=blog_data, image=image, action=action
-    )
+    return BlogServices.create_blog(blog_data=blog_data, image=image, action=action)
 
 
 # Update an existing Blog under administrator authorization.
@@ -312,7 +285,11 @@ def delete_blog(
 # Restore a soft-deleted Blog without touching its preserved media.
 @router.post("/{blog_id}/restore")
 def restore_blog(blog_id: str, _: str = Depends(require_admin)):
-    return BlogServices.restore_blog(blog_id)
+    blog = Blog.get(blog_id)
+    if not blog or not blog.deleted_at:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Không tìm thấy bài viết")
+    return Blog.update(blog.id, deleted_at=None)
 
 
 # Generate Blog markdown for the CMS administrator.
@@ -326,8 +303,7 @@ def restore_blog(blog_id: str, _: str = Depends(require_admin)):
 async def generate_blog_draft(
     request: Request,
     response: Response,
-    data: schemas.GenerateBlogData,
-    _: str = Depends(require_admin),
+    data: schemas.GenerateBlogData, _: str = Depends(require_admin)
 ):
     return await BlogServices.ai_generate_blog_markdown_with_title(
         data.title, data.category, language=data.language
@@ -370,9 +346,7 @@ async def ai_generate_blog_list_title(
     language: str = Query("vietnamese", enum=["vietnamese", "english"]),
     _: str = Depends(require_admin),
 ):
-    return await GeminiAiService.generate_list_title(
-        keyword, quantity, language
-    )
+    return await GeminiAiService.generate_list_title(keyword, quantity, language)
 
 
 # Check whether a Blog slug is already used.

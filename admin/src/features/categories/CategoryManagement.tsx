@@ -157,6 +157,7 @@ const CategoryManagement: React.FC = () => {
                 <thead className="border-b border-surface-border bg-surface-elevated/60 text-xs font-semibold uppercase tracking-[0.05em] text-content-muted">
                   <tr>
                     <th className="px-3 py-2">Tên danh mục</th>
+                    <th className="px-3 py-2">Đang dùng</th>
                     <th className="px-3 py-2">Ngày cập nhật</th>
                     <th className="px-3 py-2 text-right">Thao tác</th>
                   </tr>
@@ -167,6 +168,7 @@ const CategoryManagement: React.FC = () => {
                       <td className="px-3 py-2 font-medium text-content-primary">
                         {item.name}
                       </td>
+                      <td className="px-3 py-2 text-xs text-content-muted">{item.usageCount ?? 0} bài viết</td>
                       <td className="whitespace-nowrap px-3 py-2 text-xs text-content-muted">
                         {item.modifiedAt || item.modified_at
                           ? formatCmsDateOnly(item.modifiedAt ?? item.modified_at!)
@@ -255,7 +257,7 @@ const CategoryManagement: React.FC = () => {
       <ConfirmDialog
         isOpen={Boolean(deleteTarget)}
         title="Xác nhận xóa danh mục"
-        message={`Danh mục "${deleteTarget?.name}" sẽ được xóa khỏi danh sách sử dụng nhưng không bị xóa vĩnh viễn khỏi cơ sở dữ liệu.`}
+        message={`Danh mục "${deleteTarget?.name}" sẽ được xóa khỏi danh sách sử dụng nhưng không bị xóa vĩnh viễn khỏi cơ sở dữ liệu.${deleteTarget?.usageCount ? ` Hiện có ${deleteTarget.usageCount} bài viết đang dùng danh mục này.` : ""}`}
         confirmLabel="Xóa danh mục"
         cancelLabel="Hủy"
         variant="danger"

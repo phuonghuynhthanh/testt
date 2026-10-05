@@ -57,7 +57,7 @@ const InputUploadBanner: React.FC<InputUploadBannerProps> = ({
   disabled = false,
   showPreview = true,
 }) => {
-  const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2 MB
+  const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20 MB, matches MEDIA_MAX_UPLOAD_MB
   const [isDragging, setIsDragging] = useState(false);
   const inputId = useId();
 
@@ -69,7 +69,7 @@ const InputUploadBanner: React.FC<InputUploadBannerProps> = ({
       return;
     }
     if (file.size > MAX_FILE_SIZE) {
-      toast.info("Tệp quá lớn. Kích thước tối đa là 2MB.");
+      toast.info("Tệp quá lớn. Kích thước tối đa là 20MB.");
       return;
     }
     setBannerImage(file);
@@ -105,7 +105,7 @@ const InputUploadBanner: React.FC<InputUploadBannerProps> = ({
       >
         <UploadSimple size={30} weight="light" className="text-content-muted" />
         <span className="text-sm font-medium">Chọn tệp ảnh từ thiết bị</span>
-        <span className="hint">JPEG, PNG, WebP hoặc GIF, tối đa 2MB</span>
+        <span className="hint">JPEG, PNG, WebP hoặc GIF, tối đa 20MB</span>
         <input
           type="file"
           accept="image/jpeg,image/png,image/webp,image/gif"

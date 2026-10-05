@@ -16,26 +16,20 @@ DATABASES = {
 
 # Standalone CMS administrator and JWT settings; secrets must stay backend-only.
 ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "").strip()
-ADMIN_DISPLAY_NAME = (
-    os.getenv("ADMIN_DISPLAY_NAME", "").strip() or ADMIN_USERNAME
-)
-ADMIN_EMAIL = os.getenv("ADMIN_EMAIL", "").strip() or ADMIN_USERNAME
 ADMIN_PASSWORD_HASH = os.getenv("ADMIN_PASSWORD_HASH", "")
+ADMIN_DISPLAY_NAME = os.getenv("ADMIN_DISPLAY_NAME", "").strip() or ADMIN_USERNAME
+ADMIN_EMAIL = os.getenv("ADMIN_EMAIL", "").strip() or ADMIN_USERNAME
 JWT_SECRET = os.getenv("JWT_SECRET", "")
 JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
 JWT_EXPIRE_MINUTES = int(os.getenv("JWT_EXPIRE_MINUTES", "480"))
 
 # Per-IP API throttling; trust forwarded headers only behind a controlled proxy.
-RATE_LIMIT_ENABLED = os.getenv(
-    "RATE_LIMIT_ENABLED", "true"
-).strip().lower() in {"1", "true", "yes"}
+RATE_LIMIT_ENABLED = os.getenv("RATE_LIMIT_ENABLED", "true").strip().lower() in {"1", "true", "yes"}
 RATE_LIMIT_DEFAULT = os.getenv("RATE_LIMIT_DEFAULT", "120/minute")
 RATE_LIMIT_LOGIN = os.getenv("RATE_LIMIT_LOGIN", "5/minute")
 RATE_LIMIT_AI = os.getenv("RATE_LIMIT_AI", "10/minute")
 RATE_LIMIT_WRITE = os.getenv("RATE_LIMIT_WRITE", "30/minute")
-RATE_LIMIT_TRUST_PROXY = os.getenv(
-    "RATE_LIMIT_TRUST_PROXY", "false"
-).strip().lower() in {"1", "true", "yes"}
+RATE_LIMIT_TRUST_PROXY = os.getenv("RATE_LIMIT_TRUST_PROXY", "false").strip().lower() in {"1", "true", "yes"}
 RATE_LIMIT_STORAGE_URI = os.getenv("RATE_LIMIT_STORAGE_URI", "memory://")
 
 # MinIO storage used by Blog and the media upload endpoint.
@@ -43,11 +37,7 @@ MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT", "").strip()
 MINIO_ACCESS_KEY = os.getenv("MINIO_ACCESS_KEY", "")
 MINIO_SECRET_KEY = os.getenv("MINIO_SECRET_KEY", "")
 MINIO_BUCKET = os.getenv("MINIO_BUCKET", "cms-media").strip()
-MINIO_SECURE = os.getenv("MINIO_SECURE", "true").strip().lower() in {
-    "1",
-    "true",
-    "yes",
-}
+MINIO_SECURE = os.getenv("MINIO_SECURE", "true").strip().lower() in {"1", "true", "yes"}
 MINIO_REGION = os.getenv("MINIO_REGION", "").strip()
 MINIO_AUTO_CREATE_BUCKET = os.getenv(
     "MINIO_AUTO_CREATE_BUCKET", "false"
@@ -57,7 +47,7 @@ MINIO_PUBLIC_ENDPOINT = os.getenv("MINIO_PUBLIC_ENDPOINT", "").strip()
 MINIO_PUBLIC_SECURE = os.getenv(
     "MINIO_PUBLIC_SECURE", os.getenv("MINIO_SECURE", "true")
 ).strip().lower() in {"1", "true", "yes"}
-MEDIA_MAX_UPLOAD_MB = int(os.getenv("MEDIA_MAX_UPLOAD_MB", "10"))
+MEDIA_MAX_UPLOAD_MB = int(os.getenv("MEDIA_MAX_UPLOAD_MB", "20"))
 
 # genimi
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")

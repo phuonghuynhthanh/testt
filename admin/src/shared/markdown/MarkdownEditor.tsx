@@ -56,7 +56,7 @@ const CODE_HIGHLIGHT = Prec.highest(syntaxHighlighting(HighlightStyle.define([
   { tag: tags.invalid, color: "#FDA4AF" },
 ])));
 
-const MAX_SIZE = 2 * 1024 * 1024;
+const MAX_SIZE = 20 * 1024 * 1024;
 const MATH_BLOCK_LANGUAGE = "latex-math";
 // Multi-line display math: $$\n ... \n$$
 const MARKDOWN_MATH_BLOCK_REGEX =
@@ -344,7 +344,7 @@ const MarkdownEditor = forwardRef<MDXEditorMethods, MarkdownEditorProps>(
     // Upload images through the existing file service after validating size.
     const handleImageUpload = async (file: File): Promise<string> => {
       if (file.size > MAX_SIZE) {
-        toast.warning("Kích thước tệp vượt quá 2MB");
+        toast.warning("Kích thước tệp vượt quá 20MB");
         return "";
       }
 

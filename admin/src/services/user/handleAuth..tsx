@@ -1,5 +1,6 @@
 import axios from "axios";
 import { API_SERVICES } from "../../config/config";
+import getAxiosClient from "../../lib/axios/axiosClient";
 
 interface ILoginResponse {
   access_token: string;
@@ -27,4 +28,15 @@ export const handleLogin = async (
     }
     throw error;
   }
+};
+
+export interface AdminProfile { username: string; name: string; email: string; }
+
+// Load the display profile of the signed-in administrator.
+export const getAdminProfile = async (): Promise<AdminProfile> =>
+  (await getAxiosClient().get("/auth/me")).data;
+
+// Tell the backend the session ended; the stateless JWT is discarded client-side.
+export const handleLogoutRequest = async (): Promise<void> => {
+  await getAxiosClient().post("/auth/logout");
 };

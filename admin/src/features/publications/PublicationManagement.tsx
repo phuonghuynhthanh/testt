@@ -29,6 +29,7 @@ const PublicationManagement: React.FC = () => {
         page,
         pageSize: PAGE_SIZE,
         state: "APPROVED",
+        include: "linkedin",
         ...(search ? { search } : {}),
       }),
     placeholderData: keepPreviousData,
@@ -94,7 +95,7 @@ const PublicationManagement: React.FC = () => {
           <>
             <div className="hidden grid-cols-[minmax(0,1fr)_9rem_11rem] gap-4 border-b border-surface-border bg-surface-elevated/60 px-3 py-2 text-xs font-semibold uppercase tracking-[0.05em] text-content-muted md:grid">
               <span>Bài viết</span>
-              <span>Trạng thái</span>
+              <span>LinkedIn</span>
               <span className="text-right">Thao tác</span>
             </div>
             <ul className="divide-y divide-surface-border">
@@ -115,7 +116,11 @@ const PublicationManagement: React.FC = () => {
                     </div>
                   </div>
                   <div>
-                    <StatusBadge status={blog.state} />
+                    {blog.linkedinPost ? (
+                      <StatusBadge status={blog.linkedinPost.status} />
+                    ) : (
+                      <span className="text-xs text-content-muted">Chưa có bài LinkedIn</span>
+                    )}
                   </div>
                   <div className="md:text-right">
                     <Link
@@ -124,7 +129,7 @@ const PublicationManagement: React.FC = () => {
                       className="btn btn-li"
                     >
                       <PaperPlaneTilt weight="light" size={14} />
-                      <span>Tạo bài LinkedIn</span>
+                      <span>{blog.linkedinPost ? "Mở bài LinkedIn" : "Tạo bài LinkedIn"}</span>
                     </Link>
                   </div>
                 </li>

@@ -3,16 +3,7 @@
 import json
 from pathlib import Path
 
-from fastapi import (
-    APIRouter,
-    Depends,
-    HTTPException,
-    Query,
-    Request,
-    Response,
-    UploadFile,
-    status,
-)
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, UploadFile, status
 
 from apps.auth.services import require_admin
 from apps.linkedin_posts.exceptions import LinkedInError
@@ -37,8 +28,7 @@ router = APIRouter(prefix="/linkedin", tags=["LinkedIn"])
 TOPIC_PROPOSAL_ATTEMPTS = 3
 
 
-# Normalize topics for deterministic recent-history and in-batch duplicate
-# checks.
+# Normalize topics for deterministic recent-history and in-batch duplicate checks.
 def _normalized_topic(value: str) -> str:
     return " ".join(value.strip().casefold().split())
 
@@ -57,8 +47,7 @@ def preview_post(
 async def generate_draft(
     request: Request,
     response: Response,
-    data: IndependentDraftRequest,
-    _: str = Depends(require_admin),
+    data: IndependentDraftRequest, _: str = Depends(require_admin)
 ):
     try:
         return await LinkedInPostService.generate_draft(data)
@@ -68,13 +57,7 @@ async def generate_draft(
 
 # Return bounded standalone LinkedIn records without calling the provider.
 @router.get("/posts")
-def list_posts(
-    page: int = Query(1, ge=1),
-    pageSize: int = Query(20, ge=1, le=100),
-    status: str | None = None,
-    sourceType: str | None = None,
-    _: str = Depends(require_admin),
-):
+def list_posts(page: int = Query(1, ge=1), pageSize: int = Query(20, ge=1, le=100), status: str | None = None, sourceType: str | None = None, _: str = Depends(require_admin)):
     return LinkedInPostService.list(page, pageSize, status, sourceType)
 
 
@@ -87,12 +70,7 @@ def get_post(post_id: str, _: str = Depends(require_admin)):
 # Save reviewed content or explicitly persist and publish it in one request.
 @router.post("/posts")
 @limiter.limit(settings.RATE_LIMIT_AI)
-async def create_post(
-    request: Request,
-    response: Response,
-    data: LinkedInPostCreate,
-    _: str = Depends(require_admin),
-):
+async def create_post(request: Request, response: Response, data: LinkedInPostCreate, _: str = Depends(require_admin)):
     return await LinkedInPostService.create(data)
 
 
@@ -118,75 +96,42 @@ def restore_post(post_id: str, _: str = Depends(require_admin)):
 
 # Return exactly the provider-first history passed into AI generation.
 @router.get("/history/recent")
-async def recent_history(
-    limit: int = Query(5, ge=1, le=50), _: str = Depends(require_admin)
-):
+async def recent_history(limit: int = Query(5, ge=1, le=50), _: str = Depends(require_admin)):
     try:
-        return {
-            "source": "linkedin",
-            "items": [
-                item.model_dump(mode="json")
-                for item in await LinkedInHistoryService().recent(limit)
-            ],
-        }
+        return {"source": "linkedin", "items": [item.model_dump(mode="json") for item in await LinkedInHistoryService().recent(limit)]}
     except LinkedInError as error:
         raise _http_error(error) from error
 
 
-# Explicitly refresh the read-only provider view; no deletion state is
-# inferred.
+# Explicitly refresh the read-only provider view; no deletion state is inferred.
 @router.post("/history/sync")
 async def sync_history(_: str = Depends(require_admin)):
     try:
-        return {
-            "source": "linkedin",
-            "items": [
-                item.model_dump(mode="json")
-                for item in await LinkedInHistoryService().recent(50)
-            ],
-        }
+        return {"source": "linkedin", "items": [item.model_dump(mode="json") for item in await LinkedInHistoryService().recent(50)]}
     except LinkedInError as error:
         raise _http_error(error) from error
 
 
-# Propose fresh topics from real recent Company Page content without
-# persistence.
+# Propose fresh topics from real recent Company Page content without persistence.
 @router.post("/ai/propose-topics")
 @limiter.limit(settings.RATE_LIMIT_AI)
-async def propose_topics(
-    request: Request,
-    response: Response,
-    data: TopicProposalRequest,
-    _: str = Depends(require_admin),
-):
+async def propose_topics(request: Request, response: Response, data: TopicProposalRequest, _: str = Depends(require_admin)):
     try:
         history = await LinkedInHistoryService().recent(data.recentLimit)
     except LinkedInError as error:
         raise _http_error(error) from error
-    # Keep this deliberately small: Gemini receives the source guideline plus
-    # live history.
+    # Keep this deliberately small: Gemini receives the source guideline plus live history.
     from apps.core.language import language_instruction
     from apps.linkedin_posts.services.gemini import GeminiLinkedInProvider
-
-    provider = GeminiLinkedInProvider(
-        settings.GEMINI_API_KEY or "", settings.GEMINI_MODEL
-    )
+    provider = GeminiLinkedInProvider(settings.GEMINI_API_KEY or "", settings.GEMINI_MODEL)
     try:
-        seen = {
-            _normalized_topic(item.topic) for item in history if item.topic
-        }
+        seen = {_normalized_topic(item.topic) for item in history if item.topic}
         topics = []
-        system_prompt = (
-            Path(__file__).parent / "prompts" / "system.md"
-        ).read_text(encoding="utf-8")
-        # Retry only structured-output duplication and stop after the fixed
-        # attempt budget.
+        system_prompt = (Path(__file__).parent / "prompts" / "system.md").read_text(encoding="utf-8")
+        # Retry only structured-output duplication and stop after the fixed attempt budget.
         for _attempt in range(TOPIC_PROPOSAL_ATTEMPTS):
             remaining = data.count - len(topics)
-            audience = (
-                data.targetAudience
-                or "Infer the most suitable audience from topic, VietQuant guidance, and recent feed history."
-            )
+            audience = data.targetAudience or "Infer the most suitable audience from topic, VietQuant guidance, and recent feed history."
             prompt = (
                 language_instruction(data.language)
                 + "\n"
@@ -206,26 +151,8 @@ async def propose_topics(
                     ensure_ascii=False,
                 )
             )
-            payload = await provider._request(
-                system_prompt,
-                prompt,
-                {
-                    "type": "object",
-                    "properties": {
-                        "topics": {
-                            "type": "array",
-                            "minItems": remaining,
-                            "maxItems": remaining,
-                            "items": {"type": "string"},
-                        }
-                    },
-                    "required": ["topics"],
-                },
-                "propose topics",
-            )
-            values = (
-                payload.get("topics", []) if isinstance(payload, dict) else []
-            )
+            payload = await provider._request(system_prompt, prompt, {"type": "object", "properties": {"topics": {"type": "array", "minItems": remaining, "maxItems": remaining, "items": {"type": "string"}}}, "required": ["topics"]}, "propose topics")
+            values = payload.get("topics", []) if isinstance(payload, dict) else []
             for value in values if isinstance(values, list) else []:
                 topic = " ".join(str(value).strip().split())
                 normalized = _normalized_topic(topic)
@@ -237,10 +164,7 @@ async def propose_topics(
             if len(topics) == data.count:
                 break
         if len(topics) < data.count:
-            raise HTTPException(
-                status_code=422,
-                detail="AI did not return enough distinct fresh topics",
-            )
+            raise HTTPException(status_code=422, detail="AI did not return enough distinct fresh topics")
         return {"topics": topics, "historySource": "linkedin"}
     except LinkedInError as error:
         raise _http_error(error) from error
@@ -252,39 +176,26 @@ async def propose_topics(
 # Publish an existing reviewed post without generating or selecting new media.
 @router.post("/posts/{post_id}/publish")
 @limiter.limit(settings.RATE_LIMIT_AI)
-async def publish_post(
-    request: Request,
-    response: Response,
-    post_id: str,
-    _: str = Depends(require_admin),
-):
+async def publish_post(request: Request, response: Response, post_id: str, _: str = Depends(require_admin)):
     return await LinkedInPostService.publish(post_id)
 
 
 # Retry only a safely failed provider operation.
 @router.post("/posts/{post_id}/retry")
 @limiter.limit(settings.RATE_LIMIT_AI)
-async def retry_post(
-    request: Request,
-    response: Response,
-    post_id: str,
-    _: str = Depends(require_admin),
-):
+async def retry_post(request: Request, response: Response, post_id: str, _: str = Depends(require_admin)):
     return await LinkedInPostService.publish(post_id, retry=True)
 
 
 # Suggest reviewable media for a saved post without replacing selected assets.
 @router.post("/posts/{post_id}/media/suggest")
 async def suggest_post_media(
-    post_id: str,
-    keywords: list[str] | None = None,
-    _: str = Depends(require_admin),
+    post_id: str, keywords: list[str] | None = None, _: str = Depends(require_admin)
 ):
     return await LinkedInPostService.suggest_media(post_id, keywords)
 
 
-# Construct the configured organization verifier without exposing
-# configuration.
+# Construct the configured organization verifier without exposing configuration.
 def _verifier() -> OrganizationVerifier:
     return OrganizationVerifier(
         settings.LINKEDIN_ACCESS_TOKEN,
@@ -295,20 +206,14 @@ def _verifier() -> OrganizationVerifier:
     )
 
 
-# Convert a provider exception into a credential-safe operational HTTP
-# response.
+# Convert a provider exception into a credential-safe operational HTTP response.
 def _http_error(error: LinkedInError) -> HTTPException:
     code = (
         status.HTTP_429_TOO_MANY_REQUESTS
         if error.code == "rate_limited"
         else (
             status.HTTP_503_SERVICE_UNAVAILABLE
-            if error.code
-            in {
-                "linkedin_unavailable",
-                "network_error",
-                "provider_history_unavailable",
-            }
+            if error.code in {"linkedin_unavailable", "network_error", "provider_history_unavailable"}
             else status.HTTP_422_UNPROCESSABLE_ENTITY
         )
     )
@@ -327,17 +232,12 @@ async def verify_organization(_: str = Depends(require_admin)):
         await verifier.linkedin.close()
 
 
-# Search Pexels without returning its API key or fetching arbitrary client
-# URLs.
+# Search Pexels without returning its API key or fetching arbitrary client URLs.
 @router.post("/media/search")
 async def search_media(keywords: list[str], _: str = Depends(require_admin)):
     service = PexelsService(settings.PEXELS_API_KEY)
     try:
-        return {
-            "items": [
-                item.model_dump() for item in await service.search(keywords)
-            ]
-        }
+        return {"items": [item.model_dump() for item in await service.search(keywords)]}
     except LinkedInError as error:
         raise _http_error(error) from error
     finally:
@@ -352,12 +252,7 @@ async def search_media(keywords: list[str], _: str = Depends(require_admin)):
     response_model=UploadedMedia,
 )
 @limiter.limit(settings.RATE_LIMIT_WRITE)
-def upload_media(
-    request: Request,
-    response: Response,
-    image: UploadFile,
-    _: str = Depends(require_admin),
-):
+def upload_media(request: Request, response: Response, image: UploadFile, _: str = Depends(require_admin)):
     if image.content_type not in {"image/jpeg", "image/png", "image/gif"}:
         raise HTTPException(
             status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
@@ -385,12 +280,7 @@ def upload_media(
         )
     file_name = Path(image.filename or "Ảnh tải lên").name
     object_key = StorageService.upload_image(image, folder="linkedin")
-    alt_text = (
-        " ".join(
-            Path(file_name).stem.replace("_", " ").replace("-", " ").split()
-        )
-        or "Ảnh tải lên"
-    )
+    alt_text = " ".join(Path(file_name).stem.replace("_", " ").replace("-", " ").split()) or "Ảnh tải lên"
     return UploadedMedia(
         objectKey=object_key,
         fileName=file_name,

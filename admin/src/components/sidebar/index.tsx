@@ -10,7 +10,9 @@ import {
   LinkedinLogo,
   X,
 } from "@phosphor-icons/react";
+import { useQuery } from "@tanstack/react-query";
 import Logout from "./components/Logout";
+import { getBlogCounts } from "../../services/blog/handleBlog";
 
 interface SidebarProps {
   onClose?: () => void;
@@ -38,10 +40,15 @@ const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
   ];
 
   // Render one navigation link; the active state comes from aria-current via NavLink.
+  // Unfiltered counts feed the pending badge; invalidated with every ["blogs"] mutation.
+  const counts = useQuery({ queryKey: ["blogs", "counts", "sidebar"], queryFn: () => getBlogCounts(), staleTime: 30_000 });
+  const pending = counts.data?.PENDING ?? 0;
+
   const renderNavLink = (item: NavItem) => (
     <NavLink key={item.to} to={item.to} end={item.end} onClick={() => onClose?.()}>
       {item.icon}
       <span className="flex-1 truncate">{item.label}</span>
+      {item.to === "/blog" && pending > 0 && <span className="count mono">{pending}</span>}
     </NavLink>
   );
 

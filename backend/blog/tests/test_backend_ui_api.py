@@ -566,6 +566,7 @@ def test_csv_export(api):
     )
     assert response.status_code == 200
     assert response.content.startswith(b"\xef\xbb\xbf")
+    assert response.headers["x-truncated"] == "false"
     rows = list(csv.reader(io.StringIO(response.content.decode("utf-8-sig"))))
     assert rows[0] == ["Tiêu đề", "Slug", "Danh mục", "Trạng thái", "Cập nhật"]
     assert [row[0] for row in rows[1:]] == ["'=danger", "Báo cáo"]

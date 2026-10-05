@@ -1,10 +1,10 @@
-import React, { useMemo, useState } from "react";
-import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import React, { useEffect, useState } from "react";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { ArrowRight } from "@phosphor-icons/react";
-import { getClientBlogs } from "../../../services/blog/handleBlog";
+import { getListBlogs } from "../../../services/blog/handleBlog";
 import { listCategories } from "../../../services/category/handleCategory";
 import { apiErrorMessage } from "../../../types/Api";
-import { PageHeader, EmptyState, BlogThumbnail } from "../../../shared/ui";
+import { PageHeader, EmptyState, BlogThumbnail, Pagination } from "../../../shared/ui";
 import PublicArticleReaderModal from "./PublicArticleReaderModal";
 
 // Render public blog feed simulation as seen by unauthenticated guest visitors.
@@ -12,17 +12,20 @@ const PublicBlogPreview: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState("ALL");
   const [readingSlug, setReadingSlug] = useState<string | null>(null);
 
-  // The backend pages by "blogs already loaded"; next_req is null on the last batch.
-  const blogsQuery = useInfiniteQuery({
-    queryKey: ["client-blogs", { category: selectedCategory }],
-    initialPageParam: 0,
-    queryFn: ({ pageParam }) =>
-      getClientBlogs({
-        num_of_blogs: pageParam,
-        category: selectedCategory === "ALL" ? undefined : selectedCategory,
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 6;
+
+  // Approved articles are what visitors see; page numbers come from the admin list totals.
+  const blogsQuery = useQuery({
+    queryKey: ["public-preview", { category: selectedCategory, page }],
+    queryFn: () =>
+      getListBlogs({
+        page,
+        pageSize: PAGE_SIZE,
+        state: "APPROVED",
+        ...(selectedCategory === "ALL" ? {} : { category: selectedCategory }),
       }),
-    getNextPageParam: (lastPage, allPages) =>
-      lastPage.next_req ? allPages.reduce((sum, p) => sum + p.blogs.length, 0) : undefined,
+    placeholderData: keepPreviousData,
   });
 
   const categoriesQuery = useQuery({
@@ -30,10 +33,11 @@ const PublicBlogPreview: React.FC = () => {
     queryFn: () => listCategories(),
   });
 
-  const items = useMemo(
-    () => blogsQuery.data?.pages.flatMap((p) => p.blogs) ?? [],
-    [blogsQuery.data?.pages],
-  );
+  const items = blogsQuery.data?.items ?? [];
+  const totalPages = Math.max(1, blogsQuery.data?.totalPages ?? 1);
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
 
   return (
     <section>
@@ -43,7 +47,10 @@ const PublicBlogPreview: React.FC = () => {
         actions={
           <select
             value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
+            onChange={(e) => {
+              setSelectedCategory(e.target.value);
+              setPage(1);
+            }}
             aria-label="Danh mục"
             className="inp sm !w-auto"
           >
@@ -107,8 +114,7 @@ const PublicBlogPreview: React.FC = () => {
                     </h3>
 
                     <p className="line-clamp-2 text-xs leading-relaxed text-content-muted">
-                      {blog.seo?.description ||
-                        `Bài viết về ${blog.title.toLowerCase()} từ đội ngũ VietQuant.`}
+                      {`Bài viết về ${blog.title.toLowerCase()} từ đội ngũ VietQuant.`}
                     </p>
                   </div>
 
@@ -121,24 +127,23 @@ const PublicBlogPreview: React.FC = () => {
             ))}
           </div>
 
-          {blogsQuery.hasNextPage && (
-            <div className="mt-8 flex justify-center">
-              <button
-                type="button"
-                onClick={() => blogsQuery.fetchNextPage()}
-                disabled={blogsQuery.isFetchingNextPage}
-                className="btn btn-secondary lg"
-              >
-                {blogsQuery.isFetchingNextPage ? "Đang tải..." : "Xem thêm bài viết"}
-              </button>
-            </div>
-          )}
+          <div className="panel mt-6">
+            <Pagination
+              page={blogsQuery.data?.page ?? page}
+              totalPages={totalPages}
+              totalItems={blogsQuery.data?.total}
+              itemUnit="bài viết"
+              pageSize={PAGE_SIZE}
+              onPageChange={setPage}
+            />
+          </div>
         </>
       )}
 
       <PublicArticleReaderModal
         slug={readingSlug}
         onClose={() => setReadingSlug(null)}
+        onOpen={setReadingSlug}
       />
     </section>
   );

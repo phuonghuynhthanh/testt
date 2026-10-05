@@ -2,8 +2,7 @@ import { useState, type FormEvent } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { MagnifyingGlass } from "@phosphor-icons/react";
 import { toast } from "react-toastify";
-import { searchLinkedInMedia } from "../../services/linkedin/handleLinkedIn";
-import { importPexelsBanner } from "../../services/media/handleMedia";
+import { importPexelsBanner, searchPexelsBanners } from "../../services/media/handleMedia";
 import { apiErrorMessage } from "../../types/Api";
 import type { PexelsCandidate } from "../../types/Publication";
 
@@ -15,7 +14,7 @@ export const PexelsImagePanel = ({ onUse, onBusyChange, disabled = false }: {
   const [keywords, setKeywords] = useState("");
   const [importingId, setImportingId] = useState<string | null>(null);
   const search = useMutation({
-    mutationFn: () => searchLinkedInMedia(keywords.split(/[,\n]+/).map((key) => key.trim()).filter(Boolean).slice(0, 5)),
+    mutationFn: () => searchPexelsBanners(keywords.split(/[,\n]+/).map((key) => key.trim()).filter(Boolean).slice(0, 5)),
   });
 
   const searchImages = (event: FormEvent) => {

@@ -46,6 +46,9 @@ export interface IBlogItemData
   id: string;
   state: BlogState;
   modified_at: string;
+  created_at?: string;
+  /** Present when the list is requested with include=linkedin. */
+  linkedinPost?: { id: string; status: string } | null;
 }
 
 export interface IBlogUpdateData extends IBlogData {
