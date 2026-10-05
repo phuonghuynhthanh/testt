@@ -382,6 +382,7 @@ const BlogManagement: React.FC = () => {
           selectedCount={selected.size}
           onBulkApprove={() => void changeState([...selected], "APPROVED")}
           onBulkReject={() => void changeState([...selected], "REJECTED")}
+          onBulkUnpublish={() => void changeState([...selected], "PENDING")}
           onBulkDelete={() => setDeleteIds([...selected])}
           onClearSelection={() => setSelected(new Set())}
         />
@@ -467,6 +468,7 @@ const BlogManagement: React.FC = () => {
                       onToggleSelect={toggleSelect}
                       onOpen={setDrawerId}
                       onApprove={(id) => void changeState([id], "APPROVED")}
+                      onUnpublish={(id) => void changeState([id], "PENDING")}
                       onDelete={(id) => setDeleteIds([id])}
                       isApproving={stateMutation.isPending}
                     />

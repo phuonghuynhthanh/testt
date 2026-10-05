@@ -1,11 +1,12 @@
 import React, { useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Check, PencilSimple, LinkedinLogo, Trash, Tag, Folder, Globe } from "@phosphor-icons/react";
+import { ArrowLeft, ArrowUUpLeft, Check, PencilSimple, LinkedinLogo, Trash, Tag, Folder, Globe } from "@phosphor-icons/react";
 import { toast } from "react-toastify";
 import { getBlogDetail, deleteBlog, patchBlogState } from "../../../services/blog/handleBlog";
 import { formatCmsDate } from "../../../utils/date";
 import { apiErrorMessage } from "../../../types/Api";
+import type { BlogState } from "../../../types/Blog";
 import { StatusBadge, ConfirmDialog, BlogThumbnail } from "../../../shared/ui";
 import MarkdownContent from "../../../shared/markdown/MarkdownContent";
 
@@ -33,9 +34,9 @@ export const BlogDetailPage: React.FC = () => {
   });
 
   const approveMutation = useMutation({
-    mutationFn: () => patchBlogState(blogId, "APPROVED"),
-    onSuccess: () => {
-      toast.success("Đã duyệt bài viết thành công.");
+    mutationFn: (nextState: BlogState) => patchBlogState(blogId, nextState),
+    onSuccess: (_, nextState) => {
+      toast.success(nextState === "APPROVED" ? "Đã duyệt bài viết thành công." : "Đã gỡ xuất bản, bài viết về trạng thái chờ duyệt.");
       queryClient.invalidateQueries({ queryKey: ["blogs"] });
       queryClient.invalidateQueries({ queryKey: ["blogDetail", blogId] });
     },
@@ -80,15 +81,27 @@ export const BlogDetailPage: React.FC = () => {
         </Link>
 
         <div className="flex flex-wrap items-center gap-2.5">
-          {blog.state === "PENDING" && (
+          {blog.state !== "APPROVED" && (
             <button
               type="button"
-              onClick={() => approveMutation.mutate()}
+              onClick={() => approveMutation.mutate("APPROVED")}
               disabled={approveMutation.isPending}
               className="btn btn-outline"
             >
               <Check size={16} weight="light" />
               <span>Duyệt bài</span>
+            </button>
+          )}
+
+          {blog.state === "APPROVED" && (
+            <button
+              type="button"
+              onClick={() => approveMutation.mutate("PENDING")}
+              disabled={approveMutation.isPending}
+              className="btn btn-outline"
+            >
+              <ArrowUUpLeft size={16} weight="light" />
+              <span>Gỡ xuất bản</span>
             </button>
           )}
 

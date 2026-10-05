@@ -11,3 +11,6 @@ export const API_SERVICES = readEnv("VITE_API_SERVICES");
 export const DOMAIN_WEBSITE = readEnv("VITE_DOMAIN_WEBSITE", "VITE_BASE_URL");
 
 export const IMAGE_URL = import.meta.env.VITE_IMAGE_URL;
+
+// Public marketing site that hosts published articles under /insights/<slug>.
+export const PUBLIC_SITE_URL = readEnv("VITE_PUBLIC_SITE_URL") ?? "https://vietquant.com";

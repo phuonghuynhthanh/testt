@@ -12,6 +12,7 @@ interface BlogTableRowProps {
   onToggleSelect: (id: string) => void;
   onOpen: (id: string) => void;
   onApprove: (id: string) => void;
+  onUnpublish: (id: string) => void;
   onDelete: (id: string) => void;
   isApproving?: boolean;
 }
@@ -25,6 +26,7 @@ export const BlogTableRow: React.FC<BlogTableRowProps> = ({
   onToggleSelect,
   onOpen,
   onApprove,
+  onUnpublish,
   onDelete,
   isApproving,
 }) => {
@@ -78,6 +80,7 @@ export const BlogTableRow: React.FC<BlogTableRowProps> = ({
           state={blog.state}
           onOpen={onOpen}
           onApprove={onApprove}
+          onUnpublish={onUnpublish}
           onDelete={onDelete}
           isApproving={isApproving}
         />

@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowSquareOut, CaretDown, CaretUp, Check, PencilSimple, Trash, X, XCircle } from "@phosphor-icons/react";
+import { ArrowSquareOut, ArrowUUpLeft, CaretDown, CaretUp, Check, PencilSimple, Trash, X, XCircle } from "@phosphor-icons/react";
 import { getBlogDetail } from "../../../../services/blog/handleBlog";
 import type { BlogState } from "../../../../types/Blog";
 import { formatCmsDate } from "../../../../utils/date";
@@ -156,15 +156,22 @@ export const BlogDetailDrawer: React.FC<BlogDetailDrawerProps> = ({
           </div>
 
           <div className="d-foot">
-            <button
-              type="button"
-              className="btn btn-primary btn-lg"
-              disabled={!blog || blog.state === "APPROVED"}
-              onClick={() => blog && onSetState(blogId, "APPROVED")}
-            >
-              <Check size={16} weight="light" />
-              Duyệt
-            </button>
+            {blog?.state === "APPROVED" ? (
+              <button type="button" className="btn btn-outline btn-lg" onClick={() => onSetState(blogId, "PENDING")}>
+                <ArrowUUpLeft size={16} weight="light" />
+                Gỡ xuất bản
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="btn btn-primary btn-lg"
+                disabled={!blog}
+                onClick={() => blog && onSetState(blogId, "APPROVED")}
+              >
+                <Check size={16} weight="light" />
+                Duyệt
+              </button>
+            )}
             <button
               type="button"
               className="btn btn-ghost btn-lg"

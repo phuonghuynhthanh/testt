@@ -2,7 +2,7 @@ import { Link, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, ArrowUpRight, Eye } from "@phosphor-icons/react";
 import { getBlogDetail } from "../../services/blog/handleBlog";
-import { DOMAIN_WEBSITE } from "../../config/config";
+import { PUBLIC_SITE_URL } from "../../config/config";
 import { BlogThumbnail, PageHeader, SectionHeading } from "../../shared/ui";
 import PublicationConfigWorkspace from "./components/PublicationConfigWorkspace";
 
@@ -38,7 +38,7 @@ const PublicationConfigPage = () => {
     );
   }
 
-  const websiteUrl = DOMAIN_WEBSITE ? `${DOMAIN_WEBSITE}/blog/${encodeURIComponent(blog.link_post)}` : undefined;
+  const websiteUrl = `${PUBLIC_SITE_URL}/insights/${encodeURIComponent(blog.link_post.replace(/^\/+/, ""))}`;
 
   return (
     <section className="mx-auto max-w-[1096px]">

@@ -80,7 +80,7 @@ Container: `vqcms-api-1`, `vqcms-postgres-1`, `vqcms-minio-1`. Image: `vqcms-api
 |---|---|
 | `API_IMAGE` | Tag image API đang chạy, ví dụ `vqcms-api:1` |
 | `API_HOST_PORT` / `MINIO_HOST_PORT` | `8020` / `9120` |
-| `ALLOWED_ORIGINS` | `https://salmon-ram-204391.hostingersite.com` (CORS; phải khớp chính xác scheme + domain, không có `/` cuối) |
+| `ALLOWED_ORIGINS` | `https://salmon-ram-204391.hostingersite.com,https://vietquant.com,https://www.vietquant.com` (CORS, ngăn cách bằng dấu phẩy; phải khớp chính xác scheme + domain, không có `/` cuối) |
 | `MINIO_PUBLIC_ENDPOINT` / `MINIO_PUBLIC_SECURE` | `vietquant.qtus.net` / `true`: host dùng để **ký URL ảnh** cho trình duyệt |
 | `RATE_LIMIT_TRUST_PROXY` | `true` (an toàn vì Nginx **ghi đè** `X-Forwarded-For`) |
 | `ADMIN_PASSWORD_HASH` | Hash argon2, **phải đặt trong dấu nháy đơn** (chứa ký tự `$`) |

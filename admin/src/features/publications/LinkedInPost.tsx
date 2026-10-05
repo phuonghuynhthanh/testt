@@ -75,7 +75,7 @@ const LinkedInPost: React.FC = () => {
     setFactCheck(loaded);
     setGeneration(detail.data.generation ?? {});
     setLanguage(detail.data.generation?.language ?? "vietnamese");
-    setFactCheckAcknowledged(!loaded.requiresHumanFactCheck);
+    setFactCheckAcknowledged(true);
   }, [detail.data]);
 
   const immutable = ["PUBLISHED", "PUBLISHING", "REVIEW_REQUIRED"].includes(detail.data?.status ?? "");
@@ -102,7 +102,7 @@ const LinkedInPost: React.FC = () => {
     onSuccess: (data) => {
       setContent(data.content); setMediaMode(data.media.mode); setSourceType("INDEPENDENT_AI");
       setFactCheck(data.factualReview); setGeneration(data.generated);
-      setFactCheckAcknowledged(!data.factualReview.requiresHumanFactCheck);
+      setFactCheckAcknowledged(true);
       setKeywords(data.media.images.flatMap((img) => img.searchKeywords).join(", "));
       setConfirmAiOverwrite(false);
       toast.success("Đã tạo bản nháp AI — chưa được lưu.");

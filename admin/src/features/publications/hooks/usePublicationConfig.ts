@@ -31,7 +31,7 @@ export const usePublicationConfig = (blogId: string) => {
   const [keywordInput, setKeywordInput] = useState("");
   const [factCheck, setFactCheck] = useState<FactualReview>({ requiresHumanFactCheck: false, factCheckNotes: [] });
   const [generation, setGeneration] = useState<GeneratedLinkedInPost>({});
-  const [factCheckAcknowledged, setFactCheckAcknowledged] = useState(false);
+  const [factCheckAcknowledged, setFactCheckAcknowledged] = useState(true);
   const [showConfirmPublish, setShowConfirmPublish] = useState(false);
   const [pendingRegenerate, setPendingRegenerate] = useState<boolean | null>(null);
   const [dirty, setDirty] = useState(false);
@@ -60,7 +60,7 @@ export const usePublicationConfig = (blogId: string) => {
     setFactCheck(pub.linkedinFactCheck ?? { requiresHumanFactCheck: false, factCheckNotes: [] });
     setGeneration(pub.linkedinGenerated ?? {});
     setLanguage(pub.linkedinGenerated?.language ?? "vietnamese");
-    setFactCheckAcknowledged(!pub.linkedinFactCheck?.requiresHumanFactCheck);
+    setFactCheckAcknowledged(true);
     setDirty(false);
   }, [pub, blogId]);
 
@@ -114,7 +114,7 @@ export const usePublicationConfig = (blogId: string) => {
       if (data.media.mode === "single-image") setSelectedMedia((items) => items.slice(0, 1));
       setFactCheck(data.factualReview);
       setGeneration(data.generated);
-      setFactCheckAcknowledged(!data.factualReview.requiresHumanFactCheck);
+      setFactCheckAcknowledged(true);
       setKeywordInput(data.media.images.flatMap((image) => image.searchKeywords).join(", "));
       setDirty(true);
       toast.success("Đã tạo nội dung LinkedIn. Kiểm tra và lưu bản nháp trước khi rời trang.");

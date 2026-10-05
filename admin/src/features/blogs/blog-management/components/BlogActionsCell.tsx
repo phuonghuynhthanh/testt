@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Check, LinkedinLogo, PencilSimple, Trash, Eye } from "@phosphor-icons/react";
+import { ArrowUUpLeft, Check, LinkedinLogo, PencilSimple, Trash, Eye } from "@phosphor-icons/react";
 import type { BlogState } from "../../../../types/Blog";
 
 interface BlogActionsCellProps {
@@ -9,6 +9,7 @@ interface BlogActionsCellProps {
   state: BlogState;
   onOpen: (blogId: string) => void;
   onApprove: (blogId: string) => void;
+  onUnpublish: (blogId: string) => void;
   onDelete: (blogId: string) => void;
   isApproving?: boolean;
 }
@@ -20,6 +21,7 @@ export const BlogActionsCell: React.FC<BlogActionsCellProps> = ({
   state,
   onOpen,
   onApprove,
+  onUnpublish,
   onDelete,
   isApproving = false,
 }) => {
@@ -34,14 +36,26 @@ export const BlogActionsCell: React.FC<BlogActionsCellProps> = ({
       </Link>
 
       {state === "APPROVED" ? (
-        <Link
-          to={`/publications/${blogId}`}
-          title="Tạo bài LinkedIn"
-          aria-label={`Tạo bài LinkedIn từ ${title}`}
-          className="ib li"
-        >
-          <LinkedinLogo size={18} weight="light" />
-        </Link>
+        <>
+          <Link
+            to={`/publications/${blogId}`}
+            title="Tạo bài LinkedIn"
+            aria-label={`Tạo bài LinkedIn từ ${title}`}
+            className="ib li"
+          >
+            <LinkedinLogo size={18} weight="light" />
+          </Link>
+          <button
+            type="button"
+            onClick={() => onUnpublish(blogId)}
+            disabled={isApproving}
+            title="Gỡ xuất bản (về chờ duyệt)"
+            aria-label={`Gỡ xuất bản ${title}`}
+            className="ib bad"
+          >
+            <ArrowUUpLeft size={18} weight="light" />
+          </button>
+        </>
       ) : (
         <button
           type="button"

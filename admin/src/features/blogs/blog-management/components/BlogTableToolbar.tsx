@@ -1,5 +1,5 @@
 import React from "react";
-import { Check, DownloadSimple, List, MagnifyingGlass, Rows, Trash, XCircle } from "@phosphor-icons/react";
+import { ArrowUUpLeft, Check, DownloadSimple, List, MagnifyingGlass, Rows, Trash, XCircle } from "@phosphor-icons/react";
 import type { BlogSortKey } from "../../../../services/blog/handleBlog";
 import type { BlogState } from "../../../../types/Blog";
 
@@ -29,6 +29,7 @@ interface BlogTableToolbarProps {
   selectedCount: number;
   onBulkApprove: () => void;
   onBulkReject: () => void;
+  onBulkUnpublish: () => void;
   onBulkDelete: () => void;
   onClearSelection: () => void;
 }
@@ -67,6 +68,7 @@ export const BlogTableToolbar: React.FC<BlogTableToolbarProps> = ({
   selectedCount,
   onBulkApprove,
   onBulkReject,
+  onBulkUnpublish,
   onBulkDelete,
   onClearSelection,
 }) => {
@@ -162,6 +164,10 @@ export const BlogTableToolbar: React.FC<BlogTableToolbarProps> = ({
           <button type="button" className="btn btn-ghost" onClick={onBulkApprove}>
             <Check size={16} weight="light" />
             Duyệt
+          </button>
+          <button type="button" className="btn btn-ghost" onClick={onBulkUnpublish}>
+            <ArrowUUpLeft size={16} weight="light" />
+            Gỡ xuất bản
           </button>
           <button type="button" className="btn btn-ghost" onClick={onBulkReject}>
             <XCircle size={16} weight="light" />

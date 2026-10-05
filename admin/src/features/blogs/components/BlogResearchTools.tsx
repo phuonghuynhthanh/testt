@@ -19,6 +19,13 @@ const TAG_CLASSES: Record<string, string> = {
   SPAM: "chip !border-rose-500/30 !bg-rose-950/40 !text-rose-300",
 };
 
+// Split extracted text into readable paragraphs, dropping empty lines and extra whitespace.
+const extractParagraphs = (text?: string | null): string[] =>
+  (text || "")
+    .split(/\n{1,}/)
+    .map((line) => line.replace(/\s+/g, " ").trim())
+    .filter(Boolean);
+
 // Vietnamese labels for reference tags and link categories.
 const TAG_LABELS: Record<string, string> = { NORMAL: "Bình thường", ADS: "Quảng cáo", SPAM: "Rác" };
 const CATEGORY_LABELS: Record<string, string> = { organic: "Tự nhiên", ad: "Quảng cáo", spam: "Rác", duplicate: "Trùng lặp" };
@@ -246,16 +253,31 @@ const BlogResearchTools = () => {
               </button>
             </div>
             {fetched?.success && (
-              <div className="rounded-lg border border-surface-border bg-surface-card p-4 text-xs">
-                <strong className="text-sm">{fetched.title || fetched.url}</strong>
-                <p className="mt-1 text-content-muted">
-                  {fetched.author || "Không rõ tác giả"}
-                  {fetched.published_date ? ` · ${fetched.published_date}` : ""}
-                </p>
-                <p className="mt-3 line-clamp-5 whitespace-pre-wrap leading-relaxed text-content-secondary">
-                  {fetched.text_content || fetched.content}
-                </p>
-              </div>
+              <article className="rounded-lg border border-surface-border bg-surface-card">
+                <header className="space-y-1 border-b border-surface-border p-4">
+                  <a
+                    href={fetched.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-base font-semibold leading-snug hover:text-primary-green-dark hover:underline"
+                  >
+                    {fetched.title || fetched.url}
+                  </a>
+                  <p className="text-xs text-content-muted">
+                    {fetched.author || "Không rõ tác giả"}
+                    {fetched.published_date ? ` · ${fetched.published_date}` : ""}
+                    {fetched.language ? ` · ${fetched.language}` : ""}
+                  </p>
+                </header>
+                <div className="max-h-[32rem] space-y-3 overflow-y-auto p-4 text-sm leading-7 text-content-secondary">
+                  {extractParagraphs(fetched.text_content || fetched.content).map((paragraph, index) => (
+                    <p key={index} className="break-words">{paragraph}</p>
+                  ))}
+                  {extractParagraphs(fetched.text_content || fetched.content).length === 0 && (
+                    <p className="italic text-content-muted">Trang này không có nội dung văn bản đọc được.</p>
+                  )}
+                </div>
+              </article>
             )}
           </div>
         </details>
