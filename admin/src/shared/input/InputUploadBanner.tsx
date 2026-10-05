@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useId, useState } from "react";
 import { FaUpload } from "react-icons/fa";
 import { toast } from "react-toastify";
 import { IMAGE_URL } from "../../config/config";
@@ -7,21 +7,36 @@ interface InputUploadBannerProps {
   fileImage?: File | null;
   bannerUrl?: string;
   setBannerImage: (file: File) => void;
+  disabled?: boolean;
 }
 
+// Show the active banner and release local object URLs after replacement or unmount.
 const InputUploadBanner: React.FC<InputUploadBannerProps> = ({
   fileImage,
   setBannerImage,
   bannerUrl,
+  disabled = false,
 }) => {
   const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2 MB
   const [isDragging, setIsDragging] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState("");
+  const inputId = useId();
 
-  const handleOnDropBanner = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setIsDragging(false);
-    const file = e.dataTransfer.files?.[0];
-    if (!file) return;
+  // Revoke each file preview when the selected local file changes.
+  useEffect(() => {
+    if (!fileImage) { setPreviewUrl(""); return; }
+    const url = URL.createObjectURL(fileImage);
+    setPreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [fileImage]);
+
+  // Validate both picked and dropped files through one consistent upload boundary.
+  const selectFile = (file?: File) => {
+    if (!file || disabled) return;
+    if (!["image/jpeg", "image/png", "image/webp", "image/gif"].includes(file.type)) {
+      toast.info("Vui lòng chọn ảnh JPEG, PNG, WebP hoặc GIF.");
+      return;
+    }
     if (file.size > MAX_FILE_SIZE) {
       toast.info("Tệp quá lớn. Kích thước tối đa là 2MB.");
       return;
@@ -29,14 +44,17 @@ const InputUploadBanner: React.FC<InputUploadBannerProps> = ({
     setBannerImage(file);
   };
 
+  // Accept a dropped image without allowing the browser to navigate to the file.
+  const handleOnDropBanner = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+    selectFile(e.dataTransfer.files?.[0]);
+  };
+
+  // Permit choosing the same file again after clearing the previous selection.
   const handleOnChangeBanner = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.size > MAX_FILE_SIZE) {
-      toast.info("Tệp quá lớn. Kích thước tối đa là 2MB.");
-      return;
-    }
-    setBannerImage(file);
+    selectFile(e.target.files?.[0]);
+    e.currentTarget.value = "";
   };
 
   return (
@@ -48,7 +66,7 @@ const InputUploadBanner: React.FC<InputUploadBannerProps> = ({
         <div
           onDragOver={(e) => {
             e.preventDefault();
-            setIsDragging(true);
+            if (!disabled) setIsDragging(true);
           }}
           onDragLeave={() => setIsDragging(false)}
           onDrop={handleOnDropBanner}
@@ -58,13 +76,14 @@ const InputUploadBanner: React.FC<InputUploadBannerProps> = ({
         >
           <input
             type="file"
-            accept="image/*"
+            accept="image/jpeg,image/png,image/webp,image/gif"
+            disabled={disabled}
             className="hidden"
-            id="banner-upload"
+            id={inputId}
             onChange={handleOnChangeBanner}
           />
           <label
-            htmlFor="banner-upload"
+            htmlFor={inputId}
             className="flex flex-col items-center justify-center space-y-2 cursor-pointer"
           >
             <FaUpload className="text-2xl text-primary-green" />
@@ -76,7 +95,7 @@ const InputUploadBanner: React.FC<InputUploadBannerProps> = ({
 
         {fileImage ? (
           <img
-            src={URL.createObjectURL(fileImage)}
+            src={previewUrl}
             alt="Xem trước Banner"
             className="rounded-xl h-[140px] sm:h-[150px] w-full sm:w-[250px] object-cover border border-surface-border"
           />

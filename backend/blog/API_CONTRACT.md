@@ -45,7 +45,7 @@ Các API danh sách quản trị sử dụng cấu trúc phân trang chuẩn:
 - **Lỗi nghiệp vụ / Thông báo thông thường (400, 404, 409, 500)**:
 ```json
 {
-  "detail": "Thông báo chi tiết lỗi bằng tiếng Việt hoặc tiếng Anh"
+  "detail": "Thông báo tiếng Việt phù hợp với thao tác của người dùng"
 }
 ```
 - **Lỗi Validation FastAPI / Pydantic (422 Unprocessable Entity)**:
@@ -55,8 +55,7 @@ Các API danh sách quản trị sử dụng cấu trúc phân trang chuẩn:
     {
       "type": "missing",
       "loc": ["body", "title"],
-      "msg": "Field required",
-      "input": {}
+      "msg": "Vui lòng nhập tiêu đề."
     }
   ]
 }
@@ -66,12 +65,30 @@ Các API danh sách quản trị sử dụng cấu trúc phân trang chuẩn:
 {
   "detail": {
     "code": "rate_limited | linkedin_unavailable | token_expired | ...",
-    "message": "Chi tiết lỗi từ LinkedIn API",
+    "message": "Thông báo tiếng Việt; chi tiết nội bộ chỉ được ghi ở server",
     "duplicateRisk": false,
     "retryable": false
   }
 }
 ```
+
+Validation responses retain `loc` and `type` but omit submitted `input` and exception `ctx`. Invalid multipart `blog_data` JSON also returns 422. Clients should use stable error codes and retain `retryable`, `duplicateRisk`, and retry metadata rather than matching provider messages.
+
+### Rate limiting (429 Too Many Requests)
+
+Rate limiting is enabled by default (`RATE_LIMIT_ENABLED=true`). Limits apply per client IP and endpoint: `RATE_LIMIT_DEFAULT=120/minute` on routes without a stricter limit, `RATE_LIMIT_LOGIN=5/minute` on `POST /auth/login`, and `RATE_LIMIT_WRITE=30/minute` on uploads and Blog/LinkedIn saves, and `RATE_LIMIT_AI=10/minute` on AI generation and publication commands. Public image redirects (`GET /{object_key}`) are not throttled. Changing a Blog/post ID does not create a new bucket for the same endpoint.
+
+The 10/minute AI limit covers `/media/ai/generate`, `/media/pexels/import`, `/openai/*`, `/linkedin/ai/*`, `POST /linkedin/posts` (which can publish immediately), `/linkedin/posts/{post_id}/publish|retry`, and `/publications/blogs/{blog_id}/publish` plus its `/linkedin*` commands. The 30/minute write limit covers `/media/image`, `/linkedin/media/upload`, Blog create/update, and LinkedIn preview/save. AI draft generation and its legacy alias, title generation, reference search, and classification also use this limit.
+
+When exhausted, the backend returns HTTP **429** with `Retry-After` (integer seconds until retry), and the following JSON:
+
+```json
+{"detail": "Có quá nhiều yêu cầu. Vui lòng chờ một lúc rồi thử lại."}
+```
+
+Clients should wait for `Retry-After` before retrying. Successful limited responses expose `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset`; these headers and `Retry-After` are readable through CORS. CORS preflight OPTIONS requests do not consume limits.
+
+`RATE_LIMIT_STORAGE_URI=memory://` resets counters on restart and does not share them between workers or replicas. Before scaling, use `RATE_LIMIT_STORAGE_URI=redis://...` and install the optional Redis client (`limits[redis]`). Behind a controlled reverse proxy, enable `RATE_LIMIT_TRUST_PROXY=true` only when the proxy overwrites client-supplied `X-Forwarded-For`: its first address becomes the rate-limit key. Otherwise the connection's client address is used and forwarded headers are ignored. Set `RATE_LIMIT_ENABLED=false` to disable throttling.
 
 ### 1.6 CMS 2.0 authoritative fields and migrations
 - `link_post` and `seo.url` are response-only Blog fields. `POST /blog` and `PUT /blog/{id}` accept only `tag`, `title`, `banner_url`, `category`, `content`, `state` (update), and editable SEO fields `title`, `description`, `keywords`, `author`. Legacy `link_post` and `seo.url` are silently ignored; other unknown fields return 422.
@@ -87,6 +104,7 @@ Các API danh sách quản trị sử dụng cấu trúc phân trang chuẩn:
 - The selected language controls generated copy, CTA and Blog SEO metadata. Administrator-entered Blog titles remain unchanged. SAME mode preserves source wording and ignores the generation-language selection.
 - Generated LinkedIn metadata includes `generation.language` (or `generated.language` in draft responses) for restoring authoring settings and localizing attached links.
 - Separately generated SEO keyword/description requests accept optional `language`; omitted values keep legacy language inference.
+- The language selector appears beside AI generation actions only. Changing it preserves the current draft; preview uses the language recorded in that draft's generation metadata.
 
 ### 1.7 AI image generation
 `POST /media/ai/generate` is Admin-only and stores a reviewable Cloudflare-generated object without attaching it to a Blog or LinkedIn post.
@@ -95,16 +113,37 @@ Các API danh sách quản trị sử dụng cấu trúc phân trang chuẩn:
 {
   "purpose": "BLOG_BANNER | LINKEDIN",
   "prompt": "optional, max 2000",
-  "context": "required when prompt is blank, max 1000",
+  "context": "required when prompt is blank, max 20000; current unsaved title and article",
   "negativePrompt": "optional, max 1000",
-  "aspectRatio": "16:9 | 1:1 | 4:5 | 4:3",
   "size": "1K",
-  "quality": "FAST | BALANCED | HIGH",
   "altText": "optional"
 }
 ```
 
-The response is `{ media, width, height, aspectRatio, size, quality }`; `media` follows `UploadedMedia` and has `origin: "cloudflare-ai"`. Provider failures use safe domain codes such as `ai_image_quota_exceeded`, `ai_image_rate_limited`, `ai_image_capacity`, `ai_image_model_unavailable`, `ai_image_timeout`, `ai_image_invalid_response`, and `ai_image_provider_error`; no automatic provider retry or object deletion occurs.
+Gemini first prepares one realistic photographic scene from the article and optional visual direction. The final prompt is at most 2,048 characters. The default model is `@cf/black-forest-labs/flux-1-schnell`; its Cloudflare payload contains only `prompt` and `steps: 8`. The server decodes `result.image` Base64, validates the actual image dimensions, and stores the original bytes without cropping or resizing.
+
+Legacy `aspectRatio` (`16:9 | 1:1 | 4:5 | 4:3`) and `quality` (`FAST | BALANCED | HIGH`) remain accepted but are deprecated and do not affect generation. The response is `{ media, width, height, aspectRatio, size, quality }`, with actual dimensions, the reduced actual ratio (for example `1:1`), and `quality: "BALANCED"`. `media` follows `UploadedMedia` with `origin: "cloudflare-ai"`; omitted `altText` defaults to the first title/topic line, limited to 300 characters.
+
+Provider failures use safe domain codes such as `ai_image_quota_exceeded`, `ai_image_rate_limited`, `ai_image_capacity`, `ai_image_model_unavailable`, `ai_image_timeout`, `ai_image_invalid_response`, and `ai_image_provider_error`. `ai_image_brief_unavailable` or `ai_image_invalid_brief` stops the request before Cloudflare is called. No automatic provider retry or object deletion occurs.
+
+### 1.8 Pexels Blog banners
+
+Admin-only `POST /linkedin/media/search` remains the shared search endpoint: submit an array of keywords and receive `{ "items": PexelsCandidate[] }`. Searching does not attach an image.
+
+Admin-only `POST /media/pexels/import` accepts one complete `PexelsCandidate` (`provider`, `providerId`, `sourceUrl`, `imageUrl`, `photographer`, `attribution`, `altText`, `order`). It downloads only an allowed HTTPS Pexels image URL, enforces byte and image validation, and stores the selected banner before returning 201:
+
+```json
+{
+  "provider": "upload",
+  "origin": "pexels",
+  "objectKey": "blog-pexels/selected.jpg",
+  "fileName": "selected.jpg",
+  "altText": "Server room",
+  "order": 1
+}
+```
+
+The frontend replaces its selected banner only after import succeeds and later submits this `objectKey` as Blog `banner_url`. Clearing a banner submits `banner_url: ""`. Blog banner keys remain separate from LinkedIn upload keys, which must keep their existing `linkedin/` prefix.
 
 ---
 

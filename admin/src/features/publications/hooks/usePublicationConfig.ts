@@ -201,9 +201,9 @@ export const usePublicationConfig = (blogId: string) => {
   const canSaveDraft = Boolean(pub && !immutable && valid && !busy);
   const canPublish = canSaveDraft && pub?.linkedinStatus !== "FAILED";
   const canRetry = pub?.linkedinStatus === "FAILED" && pub.linkedinError?.retryable === true && !dirty && !busy;
-  const guidance = immutable ? (pub?.linkedinStatus === "PUBLISHED" ? "Bài đã đăng lên LinkedIn."
-    : pub?.linkedinStatus === "PUBLISHING" ? "Đang đăng bài. Vui lòng chờ."
-      : "Hãy kiểm tra bài trên LinkedIn trước khi thao tác tiếp.")
+  const guidance = immutable ? (pub?.linkedinStatus === "PUBLISHED" ? "Bài đã đăng lên LinkedIn và không thể chỉnh sửa."
+    : pub?.linkedinStatus === "PUBLISHING" ? "Đang đăng bài. Tạm thời không thể chỉnh sửa."
+      : "Bài đang chờ xác minh và không thể chỉnh sửa. Kiểm tra Trang Doanh nghiệp LinkedIn trước khi tiếp tục.")
     : !content.trim() ? "Soạn nội dung hoặc tạo nội dung từ bài website."
       : !mediaCountValid ? "Chọn đủ số ảnh theo chế độ đã chọn."
         : !altTextValid ? "Nhập mô tả cho từng ảnh đã chọn."

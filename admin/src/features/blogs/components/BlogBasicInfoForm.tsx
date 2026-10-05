@@ -1,13 +1,12 @@
 import type { ChangeEvent, Dispatch, SetStateAction } from "react";
 
 import InputField from "../../../shared/input/InputField";
-import InputUploadBanner from "../../../shared/input/InputUploadBanner";
 import type { IBlogData } from "../../../types/Blog";
 import { useQuery } from "@tanstack/react-query";
 import { listCategories } from "../../../services/category/handleCategory";
 
 import { formatCmsDate } from "../../../utils/date";
-import { AIImagePanel } from "../../../shared/media/AIImagePanel";
+import { BlogBannerPicker } from "../../../shared/media/BlogBannerPicker";
 
 interface BlogBasicInfoFormProps {
   blogData: IBlogData;
@@ -16,7 +15,11 @@ interface BlogBasicInfoFormProps {
   onFieldChange: (
     event: ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => void;
-  onAIImageUse: (objectKey: string) => void;
+  onBannerUse: (objectKey: string) => void;
+  blogContent: string;
+  bannerBusy: boolean;
+  disabled: boolean;
+  onBannerBusyChange: (busy: boolean) => void;
 }
 
 // Render basic blog metadata inputs and banner image upload.
@@ -25,7 +28,11 @@ const BlogBasicInfoForm = ({
   bannerImage,
   setBannerImage,
   onFieldChange,
-  onAIImageUse,
+  onBannerUse,
+  blogContent,
+  bannerBusy,
+  disabled,
+  onBannerBusyChange,
 }: BlogBasicInfoFormProps) => {
   const categories = useQuery({
     queryKey: ["categories", { page: 1, pageSize: 100 }],
@@ -39,13 +46,9 @@ const BlogBasicInfoForm = ({
           <span>Cập nhật lần cuối: <strong className="text-content-secondary font-medium">{formatCmsDate(blogData.modified_at)}</strong></span>
         </div>
       )}
-      <InputUploadBanner
-        fileImage={bannerImage}
-        bannerUrl={blogData.banner_url}
-        setBannerImage={setBannerImage}
-      />
-      <AIImagePanel purpose="BLOG_BANNER" context={`${blogData.title}\n${blogData.content}`}
-        onUse={(generated) => onAIImageUse(generated.media.objectKey)} />
+      <BlogBannerPicker file={bannerImage} objectKey={blogData.banner_url} context={`${blogData.title}\n${blogContent}`}
+        disabled={disabled || bannerBusy} onBusyChange={onBannerBusyChange}
+        onFileChange={(file) => { onBannerUse(""); setBannerImage(file); }} onUse={onBannerUse} />
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
         <InputField
           label="Thẻ tag"

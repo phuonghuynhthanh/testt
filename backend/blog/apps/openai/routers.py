@@ -1,8 +1,10 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Request, Response, status
 
 from apps.openai import schemas
 from apps.openai.services.gemini_ai import GeminiAiService
 from apps.auth.services import require_admin
+from apps.core.rate_limit import limiter
+from config import settings
 
 router = APIRouter(prefix="/openai", tags=["OpenAI"])
 
@@ -14,7 +16,10 @@ router = APIRouter(prefix="/openai", tags=["OpenAI"])
     description="Endpoint này tạo từ khóa SEO dựa trên tiêu đề và nội dung bài viết.",
     status_code=status.HTTP_200_OK,
 )
+@limiter.limit(settings.RATE_LIMIT_AI)
 async def generate_seo_keywords(
+    request: Request,
+    response: Response,
     data: schemas.GenerateSEOKeywordsIn,
     _: str = Depends(require_admin),
 ):
@@ -30,7 +35,10 @@ async def generate_seo_keywords(
     description="Endpoint này tạo mô tả SEO dựa trên tiêu đề và nội dung bài viết.",
     status_code=status.HTTP_200_OK,
 )
+@limiter.limit(settings.RATE_LIMIT_AI)
 async def generate_seo_description(
+    request: Request,
+    response: Response,
     data: schemas.GenerateSEOKeywordsIn,
     _: str = Depends(require_admin),
 ):

@@ -1,4 +1,5 @@
 from contextlib import contextmanager
+import logging
 from datetime import timedelta
 from typing import Optional
 from fastapi import HTTPException, UploadFile, status
@@ -18,6 +19,8 @@ from apps.core.language import PostLanguage
 from apps.openai.services.gemini_ai import GeminiAiService
 from config import settings
 from config.database import DatabaseManager
+
+logger = logging.getLogger(__name__)
 
 
 class BlogServices:
@@ -71,6 +74,7 @@ class BlogServices:
             except Exception:
                 pass
 
+    # Build JSON-safe SEO metadata while preserving an existing publication timestamp.
     @staticmethod
     def _create_seo_data(
         seo_input: schemas.SEODataSchema,
@@ -88,7 +92,7 @@ class BlogServices:
             "url": canonical_blog_url(link_post),
             "keywords": seo_input.keywords,
             "author": seo_input.author,
-            "published_time": existing_published_time if is_update else current_time,
+            "published_time": (existing_published_time or current_time) if is_update else current_time,
             "modified_time": current_time,
         }
 
@@ -185,6 +189,7 @@ class BlogServices:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Tạo bài viết thất bại",
             )
+    # Apply partial edits and state changes without introducing datetime values into JSON.
     @classmethod
     def update_blog(
         cls,
@@ -232,13 +237,13 @@ class BlogServices:
                     image, folder=folder_for_new_banner
                 )
                 uploaded_banner_url = new_banner_url
-            elif (data.banner_url is not None) & (data.banner_url != ""):
+            elif data.banner_url is not None:
                 new_banner_url = data.banner_url
             update_data["banner_url"] = new_banner_url
 
             # Handle SEO update
             if data.seo is not None:
-                existing_published_time = blog.seo["published_time"]
+                existing_published_time = (blog.seo or {}).get("published_time")
                 seo_data = cls._create_seo_data(
                     data.seo,
                     new_banner_url,
@@ -252,7 +257,7 @@ class BlogServices:
                 seo_data = dict(blog.seo or {})
                 seo_data["url"] = canonical_blog_url(blog.link_post)
                 seo_data["banner_url"] = new_banner_url
-                seo_data["modified_time"] = DateTime.now()
+                seo_data["modified_time"] = str(DateTime.now())
                 update_data["seo"] = seo_data
 
             updated_blog = Blog.update(id, **update_data)
@@ -262,11 +267,12 @@ class BlogServices:
         except HTTPException:
             cls.delete_image_url(uploaded_banner_url)
             raise
-        except Exception as e:
+        except Exception:
             cls.delete_image_url(uploaded_banner_url)
+            logger.exception("Blog update failed for %s", id)
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Cập nhật bài viết thất bại: {str(e)}",
+                detail="Chưa thể cập nhật bài viết. Vui lòng thử lại sau.",
             )
 
     @classmethod

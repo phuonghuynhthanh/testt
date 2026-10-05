@@ -232,7 +232,7 @@ const LinkedInPost: React.FC = () => {
         </div>
       )}
       {detail.data?.lastError && (
-        <div className="p-4 rounded-xl bg-rose-950/30 border border-rose-500/30 text-rose-300 text-xs">{detail.data.lastError}</div>
+        <div role="alert" className="p-4 rounded-xl bg-rose-950/30 border border-rose-500/30 text-rose-300 text-xs">{apiErrorMessage(detail.data.lastError)}</div>
       )}
       {!immutable && (
         <div className="flex w-fit gap-1 rounded-xl border border-surface-border bg-surface-card p-1">
@@ -274,7 +274,6 @@ const LinkedInPost: React.FC = () => {
           <input disabled={immutable} value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="Nhập chủ đề bài đăng..." className="w-full rounded-lg border border-surface-border bg-surface-elevated px-3.5 py-2 text-sm text-content-primary placeholder-content-muted focus:border-primary-green focus:outline-none focus:ring-1 focus:ring-primary-green transition disabled:opacity-50" />
         </div>
         {authorMode === "ai" && !immutable && <div className="space-y-4 rounded-xl border border-purple-500/20 bg-purple-950/10 p-4">
-          <PostLanguageSelect value={language} onChange={setLanguage} disabled={draft.isPending || propose.isPending} />
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
               <label className="mb-1.5 block text-xs font-medium text-content-secondary">Ngữ cảnh bổ sung</label>
@@ -286,7 +285,8 @@ const LinkedInPost: React.FC = () => {
               <input value={audience ?? ""} onChange={(event) => setAudience(event.target.value)} maxLength={300} placeholder="Hoặc nhập đối tượng riêng" className="mt-2 w-full rounded-lg border border-surface-border bg-surface-elevated px-3 py-2 text-xs text-content-primary" />
             </div>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-end gap-3">
+            <PostLanguageSelect value={language} onChange={setLanguage} disabled={draft.isPending || propose.isPending} />
             <button
               type="button"
               title={draft.isPending ? "Đang tạo bằng AI" : content ? "Tạo lại bằng AI" : "Tạo bản nháp AI"}
@@ -359,7 +359,7 @@ const LinkedInPost: React.FC = () => {
               </label>
             </div>
             <p className="text-xs text-content-muted">Đã chọn: <strong className="text-content-primary">{media.length}</strong> ảnh {mediaMode === "multi-image" ? "(cần 2–20 ảnh)" : "(cần 1 ảnh)"}</p>
-            <AIImagePanel purpose="LINKEDIN" context={`${topic}\n${content}`} onUse={(generated) => { const item = { ...generated.media, order: media.length + 1 }; setCandidates((current) => [item, ...current]); }} />
+            <AIImagePanel purpose="LINKEDIN" context={`${topic}\n${content}`} disabled={immutable} onUse={(generated) => { const item = { ...generated.media, order: media.length + 1 }; setCandidates((current) => [item, ...current]); }} />
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {candidates.map((item) => {
                 const key = linkedinMediaKey(item);
@@ -406,8 +406,12 @@ const LinkedInPost: React.FC = () => {
       )}
 
       {/* Keep draft and publication actions accessible from every editing section. */}
-      {!immutable && <BottomActionBar>
-        <span role="status" className="max-w-md text-xs text-content-muted">{!topic.trim() ? "Nhập chủ đề bài đăng để tiếp tục." : !content.trim() ? "Soạn nội dung hoặc tạo bản nháp bằng AI." : !mediaCountValid ? "Chọn đủ số ảnh theo chế độ đã chọn." : !media.every((item) => item.altText.trim()) ? "Nhập mô tả cho từng ảnh đã chọn." : factCheckBlocked ? "Xác nhận đã kiểm tra thông tin trước khi tiếp tục." : "Lưu bản nháp để giữ nội dung; Đăng lên LinkedIn để xuất bản công khai."}</span>
+      <BottomActionBar>
+        <span role="status" className={`max-w-md text-xs ${immutable ? "text-amber-300" : "text-content-muted"}`}>{immutable
+          ? detail.data?.status === "PUBLISHED" ? "Bài đã đăng lên LinkedIn và không thể chỉnh sửa."
+            : detail.data?.status === "PUBLISHING" ? "Đang đăng lên LinkedIn. Tạm thời không thể chỉnh sửa."
+              : "Bài đang chờ xác minh và không thể chỉnh sửa. Kiểm tra Trang Doanh nghiệp LinkedIn trước khi tiếp tục."
+          : !topic.trim() ? "Nhập chủ đề bài đăng để tiếp tục." : !content.trim() ? "Soạn nội dung hoặc tạo bản nháp bằng AI." : !mediaCountValid ? "Chọn đủ số ảnh theo chế độ đã chọn." : !media.every((item) => item.altText.trim()) ? "Nhập mô tả cho từng ảnh đã chọn." : factCheckBlocked ? "Xác nhận đã kiểm tra thông tin trước khi tiếp tục." : "Lưu bản nháp để giữ nội dung; Đăng lên LinkedIn để xuất bản công khai."}</span>
         <div className="flex flex-wrap items-center gap-3">
         {!immutable && (
           <button
@@ -449,7 +453,7 @@ const LinkedInPost: React.FC = () => {
           </button>
         )}
         </div>
-      </BottomActionBar>}
+      </BottomActionBar>
 
       <ConfirmDialog
         isOpen={confirmAiOverwrite}

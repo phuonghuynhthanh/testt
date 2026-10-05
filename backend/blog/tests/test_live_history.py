@@ -144,8 +144,8 @@ def test_topic_proposal_retries_recent_and_batch_duplicates(monkeypatch):
     )
 
     result = asyncio.run(
-        linkedin_routers.propose_topics(
-            TopicProposalRequest(count=2, recentLimit=5), "admin"
+        linkedin_routers.propose_topics.__wrapped__(
+            request=None, response=None, data=TopicProposalRequest(count=2, recentLimit=5), _="admin"
         )
     )
 

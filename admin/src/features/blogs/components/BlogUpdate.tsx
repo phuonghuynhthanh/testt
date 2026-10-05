@@ -15,6 +15,7 @@ import BlogPreviewDemo from "./BlogPreviewDemo";
 import BlogBasicInfoForm from "./BlogBasicInfoForm";
 import BlogSeoForm from "./BlogSeoForm";
 import { PageHeader, StatusBadge, BottomActionBar } from "../../../shared/ui";
+import { apiErrorMessage } from "../../../types/Api";
 
 const INIT_BLOG_DATA: IBlogData = {
   id: "",
@@ -50,6 +51,7 @@ const BlogUpdate = () => {
   const [keywordInput, setKeywordInput] = useState("");
   const [openEditBlogContent, setOpenEditBlogContent] = useState(false);
   const [bannerImage, setBannerImage] = useState<File | null>(null);
+  const [bannerBusy, setBannerBusy] = useState(false);
   const [blogContent, setBlogContent] = useState("");
   const [dataSeoGenerate, setDataSeoGenerate] = useState<IDataSeoGenerate>({
     listSeoKey: [],
@@ -133,6 +135,7 @@ const BlogUpdate = () => {
 
   // Submit blog update payload to the backend API.
   const handleUpdate = async () => {
+    if (isLoading || bannerBusy) return;
     const toastId = toast.loading("Đang cập nhật bài viết...");
     try {
       setIsLoading(true);
@@ -156,8 +159,8 @@ const BlogUpdate = () => {
       queryClient.invalidateQueries({ queryKey: ["blogs", "pending"] });
       queryClient.invalidateQueries({ queryKey: ["blogs", "approved"] });
       toast.success("Cập nhật bài viết thành công.");
-    } catch {
-      toast.error("Đã xảy ra lỗi. Vui lòng thử lại sau.");
+    } catch (error) {
+      toast.error(apiErrorMessage(error));
     } finally {
       toast.dismiss(toastId);
       setIsLoading(false);
@@ -223,7 +226,7 @@ const BlogUpdate = () => {
           onClose={closeEditBlogContent}
           onChange={handleContentChange}
           onSave={handleUpdate}
-          isLoading={isLoading}
+          isLoading={isLoading || bannerBusy}
         />
       )}
 
@@ -255,7 +258,7 @@ const BlogUpdate = () => {
           <button
             type="button"
             onClick={handleUpdate}
-            disabled={isLoading}
+            disabled={isLoading || bannerBusy}
             className="inline-flex items-center gap-2 rounded-lg bg-primary-green px-4 py-2 text-xs font-semibold text-primary-black shadow-md transition-colors hover:bg-primary-green-dark disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <FiSave className={`text-sm ${isLoading ? "animate-pulse" : ""}`} />
@@ -270,7 +273,11 @@ const BlogUpdate = () => {
           bannerImage={bannerImage}
           setBannerImage={setBannerImage}
           onFieldChange={handleChange}
-          onAIImageUse={(objectKey) => { setBannerImage(null); setBlogData((current) => ({ ...current, banner_url: objectKey })); }}
+          onBannerUse={(objectKey) => { setBannerImage(null); setBlogData((current) => ({ ...current, banner_url: objectKey })); }}
+          blogContent={blogContent}
+          bannerBusy={bannerBusy}
+          disabled={isLoading}
+          onBannerBusyChange={setBannerBusy}
         />
       </div>
 

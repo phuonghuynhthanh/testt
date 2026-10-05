@@ -7,10 +7,14 @@ from pwdlib import PasswordHash
 
 from apps.auth.routers import router as auth_router
 from apps.auth.services import require_admin
+from apps.core.rate_limit import limiter, rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 
 TEST_JWT_SECRET = "test-only-jwt-secret-with-at-least-32-characters"
 
 auth_app = FastAPI()
+auth_app.state.limiter = limiter
+auth_app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
 auth_app.include_router(auth_router)
 
 

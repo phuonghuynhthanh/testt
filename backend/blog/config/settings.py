@@ -21,6 +21,15 @@ JWT_SECRET = os.getenv("JWT_SECRET", "")
 JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
 JWT_EXPIRE_MINUTES = int(os.getenv("JWT_EXPIRE_MINUTES", "480"))
 
+# Per-IP API throttling; trust forwarded headers only behind a controlled proxy.
+RATE_LIMIT_ENABLED = os.getenv("RATE_LIMIT_ENABLED", "true").strip().lower() in {"1", "true", "yes"}
+RATE_LIMIT_DEFAULT = os.getenv("RATE_LIMIT_DEFAULT", "120/minute")
+RATE_LIMIT_LOGIN = os.getenv("RATE_LIMIT_LOGIN", "5/minute")
+RATE_LIMIT_AI = os.getenv("RATE_LIMIT_AI", "10/minute")
+RATE_LIMIT_WRITE = os.getenv("RATE_LIMIT_WRITE", "30/minute")
+RATE_LIMIT_TRUST_PROXY = os.getenv("RATE_LIMIT_TRUST_PROXY", "false").strip().lower() in {"1", "true", "yes"}
+RATE_LIMIT_STORAGE_URI = os.getenv("RATE_LIMIT_STORAGE_URI", "memory://")
+
 # MinIO storage used by Blog and the media upload endpoint.
 MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT", "").strip()
 MINIO_ACCESS_KEY = os.getenv("MINIO_ACCESS_KEY", "")
@@ -61,7 +70,7 @@ PEXELS_API_KEY = os.getenv("PEXELS_API_KEY", "")
 CLOUDFLARE_ACCOUNT_ID = os.getenv("CLOUDFLARE_ACCOUNT_ID", "").strip()
 CLOUDFLARE_API_TOKEN = os.getenv("CLOUDFLARE_API_TOKEN", "")
 CLOUDFLARE_IMAGE_MODEL = os.getenv(
-    "CLOUDFLARE_IMAGE_MODEL", "@cf/bytedance/stable-diffusion-xl-lightning"
+    "CLOUDFLARE_IMAGE_MODEL", "@cf/black-forest-labs/flux-1-schnell"
 ).strip()
 
 # CORS

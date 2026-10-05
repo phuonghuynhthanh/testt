@@ -1,8 +1,10 @@
 """Admin-only APIs for publication configuration and explicit side effects."""
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request, Response
 
 from apps.auth.services import require_admin
+from apps.core.rate_limit import limiter
+from config import settings
 from apps.linkedin_posts.schemas import LinkedInPreviewRequest
 from apps.publications.schemas import (
     DraftRequest,
@@ -32,7 +34,10 @@ def update_publication(
 
 # Preview Blog-derived copy without persisting an association.
 @router.post("/{blog_id}/linkedin/preview")
+@limiter.limit(settings.RATE_LIMIT_WRITE)
 def preview_linkedin(
+    request: Request,
+    response: Response,
     blog_id: str, data: LinkedInPreviewRequest, _: str = Depends(require_admin)
 ):
     return PublicationService.preview(blog_id, data)
@@ -40,7 +45,10 @@ def preview_linkedin(
 
 # Generate a reviewable SAME or SUMMARY draft; this endpoint never publishes.
 @router.post("/{blog_id}/linkedin/draft")
+@limiter.limit(settings.RATE_LIMIT_AI)
 async def draft_linkedin(
+    request: Request,
+    response: Response,
     blog_id: str, data: DraftRequest, _: str = Depends(require_admin)
 ):
     return await PublicationService.draft(blog_id, data)
@@ -48,7 +56,10 @@ async def draft_linkedin(
 
 # Save or immediately publish reviewed Blog-derived LinkedIn content.
 @router.post("/{blog_id}/linkedin")
+@limiter.limit(settings.RATE_LIMIT_AI)
 async def command_linkedin(
+    request: Request,
+    response: Response,
     blog_id: str, data: LinkedInCommandRequest, _: str = Depends(require_admin)
 ):
     return await PublicationService.save_linkedin(blog_id, data)
@@ -56,7 +67,10 @@ async def command_linkedin(
 
 # Save administrator-owned text edits or selected Pexels media metadata.
 @router.put("/{blog_id}/linkedin")
+@limiter.limit(settings.RATE_LIMIT_WRITE)
 def save_linkedin(
+    request: Request,
+    response: Response,
     blog_id: str, data: LinkedInContentUpdate, _: str = Depends(require_admin)
 ):
     return PublicationService.save_custom(blog_id, data)
@@ -64,7 +78,10 @@ def save_linkedin(
 
 # Return ranked Pexels candidates without mutating the Blog banner or publication state.
 @router.post("/{blog_id}/linkedin/media/suggest")
+@limiter.limit(settings.RATE_LIMIT_AI)
 async def suggest_linkedin_media(
+    request: Request,
+    response: Response,
     blog_id: str, data: MediaSuggestionRequest, _: str = Depends(require_admin)
 ):
     return await PublicationService.suggest_media(blog_id, data)
@@ -72,11 +89,13 @@ async def suggest_linkedin_media(
 
 # Explicitly publish configured channels with Web before LinkedIn when required.
 @router.post("/{blog_id}/publish")
-async def publish(blog_id: str, _: str = Depends(require_admin)):
+@limiter.limit(settings.RATE_LIMIT_AI)
+async def publish(request: Request, response: Response, blog_id: str, _: str = Depends(require_admin)):
     return await PublicationService.publish(blog_id)
 
 
 # Retry only a failed LinkedIn channel; an already published Web article is never reposted.
 @router.post("/{blog_id}/linkedin/retry")
-async def retry_linkedin(blog_id: str, _: str = Depends(require_admin)):
+@limiter.limit(settings.RATE_LIMIT_AI)
+async def retry_linkedin(request: Request, response: Response, blog_id: str, _: str = Depends(require_admin)):
     return await PublicationService.publish(blog_id, retry=True)

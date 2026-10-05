@@ -1,9 +1,13 @@
 import json
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, File, Form, Query, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, Response, UploadFile, status
+from fastapi.exceptions import RequestValidationError
+from pydantic import ValidationError
 
 from apps.auth.services import require_admin
+from apps.core.rate_limit import limiter
+from config import settings
 from apps.blogs import schemas
 from apps.blogs.models import Blog
 from apps.blogs.services.blog import BlogServices
@@ -11,6 +15,18 @@ from apps.blogs.services.reference_search import ReferenceSearchService
 from apps.openai.services.gemini_ai import GeminiAiService
 
 router = APIRouter(prefix="/blog", tags=["Blogs"])
+
+
+# Validate multipart JSON through the same friendly boundary as regular request bodies.
+def _parse_blog_payload(value: str, schema: type[schemas.BlogCreate] | type[schemas.BlogUpdate]):
+    try:
+        return schema.model_validate(json.loads(value))
+    except json.JSONDecodeError as error:
+        raise HTTPException(status_code=422, detail="Dữ liệu bài viết không hợp lệ. Vui lòng kiểm tra và thử lại.") from error
+    except ValidationError as error:
+        raise RequestValidationError([
+            {**item, "loc": ("body", "blog_data", *item["loc"])} for item in error.errors()
+        ]) from error
 
 
 # Return approved Blog summaries for the public landing page.
@@ -81,13 +97,16 @@ def get_blog_content_by_link_post(link_post: str, limit: Optional[int] = 4):
     description="Endpoint này cho phép tạo bài viết mới với dữ liệu cung cấp.",
     status_code=status.HTTP_201_CREATED,
 )
+@limiter.limit(settings.RATE_LIMIT_WRITE)
 def create_blog(
+    request: Request,
+    response: Response,
     blog_data: str = Form(...),
     _: str = Depends(require_admin),
     image: UploadFile = File(None),
     action: schemas.BlogCreateAction = Form(schemas.BlogCreateAction.SAVE_PENDING),
 ):
-    blog_data = schemas.BlogCreate(**json.loads(blog_data))
+    blog_data = _parse_blog_payload(blog_data, schemas.BlogCreate)
     return BlogServices.create_blog(blog_data=blog_data, image=image, action=action)
 
 
@@ -98,13 +117,16 @@ def create_blog(
     description="Endpoint này cho phép cập nhật bài viết với dữ liệu cung cấp.",
     status_code=status.HTTP_200_OK,
 )
+@limiter.limit(settings.RATE_LIMIT_WRITE)
 def update_blog(
+    request: Request,
+    response: Response,
     id: str,
     blog_data: str = Form(...),
     _: str = Depends(require_admin),
     image: UploadFile = File(None),
 ):
-    blog_data = schemas.BlogUpdate(**json.loads(blog_data))
+    blog_data = _parse_blog_payload(blog_data, schemas.BlogUpdate)
     return BlogServices.update_blog(id=id, data=blog_data, image=image)
 
 
@@ -139,7 +161,10 @@ def restore_blog(blog_id: str, _: str = Depends(require_admin)):
     status_code=status.HTTP_200_OK,
 )
 # Generate a Blog proposal without writing any database or storage state.
+@limiter.limit(settings.RATE_LIMIT_AI)
 async def generate_blog_draft(
+    request: Request,
+    response: Response,
     data: schemas.GenerateBlogData, _: str = Depends(require_admin)
 ):
     return await BlogServices.ai_generate_blog_markdown_with_title(
@@ -154,7 +179,10 @@ async def generate_blog_draft(
     description="Endpoint này tạo bài viết bằng AI dựa trên tiêu đề.",
     status_code=status.HTTP_200_OK,
 )
+@limiter.limit(settings.RATE_LIMIT_AI)
 async def ai_generate_blog_markdown(
+    request: Request,
+    response: Response,
     data: schemas.GenerateBlogData,
     _: str = Depends(require_admin),
 ):
@@ -171,7 +199,10 @@ async def ai_generate_blog_markdown(
     status_code=status.HTTP_200_OK,
     response_model=List[str],
 )
+@limiter.limit(settings.RATE_LIMIT_AI)
 async def ai_generate_blog_list_title(
+    request: Request,
+    response: Response,
     keyword: str,
     quantity: int = Query(1, ge=5, le=10),
     language: str = Query("vietnamese", enum=["vietnamese", "english"]),
@@ -205,7 +236,10 @@ def is_duplicate_link_post(
     status_code=status.HTTP_200_OK,
     response_model=List[schemas.LinkReference],
 )
+@limiter.limit(settings.RATE_LIMIT_AI)
 async def search_references(
+    request: Request,
+    response: Response,
     payload: schemas.SearchReferencesRequest,
     _: str = Depends(require_admin),
 ):
@@ -223,7 +257,10 @@ async def search_references(
     status_code=status.HTTP_200_OK,
     response_model=schemas.ClassifyLinksResponse,
 )
+@limiter.limit(settings.RATE_LIMIT_AI)
 async def classify_links(
+    request: Request,
+    response: Response,
     payload: schemas.ClassifyLinksRequest,
     _: str = Depends(require_admin),
 ):

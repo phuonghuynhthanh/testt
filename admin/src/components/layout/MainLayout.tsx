@@ -4,11 +4,13 @@ import useWindowDimensions from "../../hook/useWindowDimensions";
 import HeaderMbl from "../header/HeaderBbl";
 import Header from "../header/Header";
 import Sidebar from "../sidebar";
+import { BottomActionHostContext } from "../../shared/ui/BottomActionHostContext";
 
 // Render the primary administrative layout shell with responsive sidebar and header.
 const MainLayout: React.FC = () => {
   const { width } = useWindowDimensions();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [actionHost, setActionHost] = useState<HTMLDivElement | null>(null);
   const isMobile = width < 1024;
 
   // Toggle mobile sidebar drawer visibility.
@@ -57,10 +59,13 @@ const MainLayout: React.FC = () => {
           <Sidebar onClose={isMobile ? closeSidebar : undefined} />
         </div>
 
-        <main className="flex-1 min-w-0 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-surface-base">
-          <div className="max-w-7xl mx-auto w-full">
-            <Outlet />
+        <main className="relative flex min-w-0 flex-1 flex-col overflow-hidden bg-surface-base">
+          <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 [scrollbar-gutter:stable]">
+            <div className="mx-auto w-full max-w-7xl">
+              <BottomActionHostContext.Provider value={actionHost}><Outlet /></BottomActionHostContext.Provider>
+            </div>
           </div>
+          <div ref={setActionHost} className="pointer-events-none absolute inset-x-0 bottom-4 z-30 px-4 sm:px-6 lg:px-8 [scrollbar-gutter:stable] overflow-y-auto" />
         </main>
       </div>
     </div>

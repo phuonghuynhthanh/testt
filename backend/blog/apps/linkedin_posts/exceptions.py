@@ -26,9 +26,11 @@ class LinkedInError(Exception):
 
     # Serialize only operational metadata that is safe for an administrator response.
     def as_dict(self) -> dict:
+        from apps.core.errors import user_error_message
+
         return {
             "code": self.code,
-            "message": str(self),
+            "message": user_error_message(str(self), self.code, self.provider_status or 422),
             "providerStatus": self.provider_status,
             "retryable": self.retryable,
             "duplicateRisk": self.duplicate_risk,

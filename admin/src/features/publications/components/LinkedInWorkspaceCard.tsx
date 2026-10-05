@@ -11,6 +11,7 @@ import type {
   PexelsCandidate,
 } from "../../../types/Publication";
 import { linkedinMediaKey, linkedinMediaUrl } from "../../../utils/linkedinMedia";
+import { PostLanguageSelect } from "../../../shared/ui/PostLanguageSelect";
 
 interface LinkedInWorkspaceCardProps {
   blogId: string;
@@ -21,6 +22,9 @@ interface LinkedInWorkspaceCardProps {
   isGeneratingDraft: boolean;
   onGenerateDraft: () => void;
   showGenerateDraft?: boolean;
+  generationLanguage: PostLanguage;
+  onLanguageChange: (language: PostLanguage) => void;
+  showLanguageSelect: boolean;
   mediaMode: LinkedInMediaMode;
   onMediaModeChange: (mode: LinkedInMediaMode) => void;
   candidates: (LinkedInMediaAsset | PexelsCandidate)[];
@@ -50,6 +54,9 @@ export const LinkedInWorkspaceCard: React.FC<LinkedInWorkspaceCardProps> = ({
   isGeneratingDraft,
   onGenerateDraft,
   showGenerateDraft = true,
+  generationLanguage,
+  onLanguageChange,
+  showLanguageSelect,
   mediaMode,
   onMediaModeChange,
   candidates,
@@ -70,12 +77,14 @@ export const LinkedInWorkspaceCard: React.FC<LinkedInWorkspaceCardProps> = ({
 }) => {
   return (
     <div className="rounded-xl border border-surface-border bg-surface-card p-5 shadow-sm space-y-5">
-      <div className="flex items-center justify-between border-b border-surface-border pb-3">
+      <div className="flex flex-wrap items-end justify-between gap-3 border-b border-surface-border pb-3">
         <h3 className="font-semibold text-content-primary text-sm flex items-center gap-2">
           <FaLinkedin className="text-[#0a66c2]" />
           <span>2. Chuẩn bị bài LinkedIn</span>
         </h3>
         {showGenerateDraft && (
+          <div className="flex flex-wrap items-end gap-3">
+          {showLanguageSelect && !isPublished && <PostLanguageSelect value={generationLanguage} onChange={onLanguageChange} disabled={isGeneratingDraft} />}
           <button
             type="button"
             onClick={onGenerateDraft}
@@ -84,6 +93,7 @@ export const LinkedInWorkspaceCard: React.FC<LinkedInWorkspaceCardProps> = ({
           >
             {isGeneratingDraft ? "Đang tạo..." : content ? "Tạo lại" : "Tạo bản nháp"}
           </button>
+          </div>
         )}
       </div>
 

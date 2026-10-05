@@ -31,7 +31,7 @@ export interface UploadedMedia {
   fileName: string;
   altText: string;
   order: number;
-  origin?: "manual" | "cloudflare-ai";
+  origin?: "manual" | "cloudflare-ai" | "pexels";
 }
 
 export type LinkedInMediaAsset = PexelsCandidate | UploadedMedia;

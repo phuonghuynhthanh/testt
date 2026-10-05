@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { BsStars, BsFileEarmarkText } from "react-icons/bs";
-import { FiUpload, FiSave, FiSend } from "react-icons/fi";
+import { FiSave, FiSend } from "react-icons/fi";
 import { toast } from "react-toastify";
 import { apiErrorMessage } from "../../../types/Api";
 import type { IBlogData, SEO } from "../../../types/Blog";
@@ -14,8 +14,7 @@ import BlogContentEditorCard from "./BlogContentEditorCard";
 import CategoryCombobox from "./CategoryCombobox";
 import { getSeoData } from "../../../services/openai/handleSeoGenerate";
 import type { PostLanguage } from "../../../types/Language";
-import { PostLanguageSelect } from "../../../shared/ui/PostLanguageSelect";
-import { AIImagePanel } from "../../../shared/media/AIImagePanel";
+import { BlogBannerPicker } from "../../../shared/media/BlogBannerPicker";
 
 const EMPTY_BLOG: IBlogData = {
   tag: "",
@@ -42,6 +41,7 @@ const BlogCreate: React.FC = () => {
   const [language, setLanguage] = useState<PostLanguage>("vietnamese");
   const [blog, setBlog] = useState<IBlogData>(EMPTY_BLOG);
   const [image, setImage] = useState<File | null>(null);
+  const [bannerBusy, setBannerBusy] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [confirmRegenerate, setConfirmRegenerate] = useState(false);
   const [confirmPublish, setConfirmPublish] = useState(false);
@@ -91,11 +91,12 @@ const BlogCreate: React.FC = () => {
 
   const draft = useMutation({
     mutationFn: () => generateBlogDraft(blog.title, blog.category, language),
+    // Preserve the selected banner when replacing only article copy and SEO.
     onSuccess: (data) => {
       setBlog((current) => ({
         ...current,
         ...data,
-        banner_url: data.banner_url ?? current.banner_url,
+        banner_url: current.banner_url,
         seo: { ...current.seo, ...data.seo },
       }));
       setDirty(true);
@@ -186,7 +187,7 @@ const BlogCreate: React.FC = () => {
             type="button"
             title={save.isPending ? "Đang lưu" : "Lưu chờ duyệt"}
             aria-label={save.isPending ? "Đang lưu" : "Lưu chờ duyệt"}
-            disabled={!formValid || save.isPending || generateSeo.isPending || createCategoryMutation.isPending || draft.isPending}
+            disabled={!formValid || bannerBusy || save.isPending || generateSeo.isPending || createCategoryMutation.isPending || draft.isPending}
             onClick={() => save.mutate("SAVE_PENDING")}
             className="inline-flex items-center gap-2 rounded-lg border border-surface-border bg-surface-elevated px-4 py-2.5 text-xs font-medium text-content-primary transition-colors hover:bg-surface-hover disabled:cursor-not-allowed disabled:opacity-40 shadow-xs"
           >
@@ -195,7 +196,7 @@ const BlogCreate: React.FC = () => {
           </button>
           <button
             type="button"
-            disabled={!formValid || save.isPending || generateSeo.isPending || createCategoryMutation.isPending || draft.isPending}
+            disabled={!formValid || bannerBusy || save.isPending || generateSeo.isPending || createCategoryMutation.isPending || draft.isPending}
             onClick={() => setConfirmPublish(true)}
             className="inline-flex items-center gap-2 rounded-lg bg-primary-green px-4 py-2.5 text-xs font-semibold text-primary-black hover:bg-primary-green-dark disabled:cursor-not-allowed disabled:opacity-40"
           >
@@ -238,7 +239,6 @@ const BlogCreate: React.FC = () => {
 
       <div className="bg-surface-card p-6 rounded-xl border border-surface-border space-y-4">
         <SectionHeading title="Thông tin cơ bản" description="Tiêu đề, thể loại và định danh bài viết" />
-        {source === "ai" && <PostLanguageSelect value={language} onChange={setLanguage} disabled={draft.isPending} />}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="md:col-span-2">
@@ -284,33 +284,10 @@ const BlogCreate: React.FC = () => {
       {/* Section 2: Ảnh bìa bài viết (moved right after Thông tin cơ bản) */}
       <div className="bg-surface-card p-6 rounded-xl border border-surface-border space-y-3">
         <SectionHeading title="Ảnh bìa bài viết" description="Tải lên tệp ảnh (JPEG, PNG, WebP) - Tùy chọn" />
-        <div className="flex items-center gap-3">
-          <label
-            title={image ? `Đổi ảnh bìa: ${image.name}` : "Chọn ảnh bìa"}
-            aria-label={image ? `Đổi ảnh bìa: ${image.name}` : "Chọn ảnh bìa"}
-            className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-surface-border bg-surface-elevated px-3.5 py-2 text-xs font-medium text-content-secondary transition-colors hover:bg-surface-hover hover:text-content-primary"
-          >
-            <FiUpload className="text-sm" />
-            <span>{image ? "Đổi ảnh bìa" : "Chọn ảnh bìa"}</span>
-            <input
-              type="file"
-              accept="image/jpeg,image/png,image/webp,image/gif"
-              onChange={(e) => { setImage(e.target.files?.[0] ?? null); setDirty(true); }}
-              className="hidden"
-            />
-          </label>
-          {image && (
-            <button
-              type="button"
-              onClick={() => setImage(null)}
-              className="text-xs text-rose-400 hover:text-rose-300 underline"
-            >
-              Gỡ ảnh
-            </button>
-          )}
-        </div>
-        <AIImagePanel purpose="BLOG_BANNER" context={`${blog.title}\n${blog.content}`}
-          onUse={(generated) => { setImage(null); updateBlog("banner_url", generated.media.objectKey); }} />
+        <BlogBannerPicker file={image} objectKey={blog.banner_url} context={`${blog.title}\n${blog.content}`}
+          disabled={save.isPending || bannerBusy} onBusyChange={setBannerBusy}
+          onFileChange={(file) => { setImage(file); updateBlog("banner_url", ""); }}
+          onUse={(objectKey) => { setImage(null); updateBlog("banner_url", objectKey); }} />
       </div>
 
       {/* Section 3: Nội dung bài viết với các chế độ Soạn thảo / Markdown / Xem trước */}
@@ -322,6 +299,8 @@ const BlogCreate: React.FC = () => {
         isAiPending={draft.isPending}
         onAiGenerate={handleRegenerateClick}
         canAiGenerate={Boolean(blog.title.trim() && blog.category.trim())}
+        language={language}
+        onLanguageChange={setLanguage}
       />
 
       {/* Section 4: Cấu hình SEO */}

@@ -3,7 +3,7 @@ import LinkedInWorkspaceCard from "./LinkedInWorkspaceCard";
 import { usePublicationConfig } from "../hooks/usePublicationConfig";
 import { linkedinMediaKey } from "../../../utils/linkedinMedia";
 import type { LinkedInMediaAsset, LinkedInMediaMode, LinkedInMode } from "../../../types/Publication";
-import { PostLanguageSelect } from "../../../shared/ui/PostLanguageSelect";
+import { apiErrorMessage } from "../../../types/Api";
 import { AIImagePanel } from "../../../shared/media/AIImagePanel";
 
 const STATUS_LABELS = {
@@ -85,7 +85,6 @@ export const PublicationConfigWorkspace = ({ blogId }: { blogId: string }) => {
             </label>
           ))}
         </div>
-        {mode === "SUMMARY" && <PostLanguageSelect value={language} onChange={editor.setLanguage} disabled={locked} />}
         <p className="text-xs text-content-muted">Đổi cách soạn giữ nguyên nội dung hiện tại. Bạn có thể chỉnh sửa nội dung trước khi đăng.</p>
         <div className="flex flex-wrap gap-2">{(["NONE", "IN_POST"] as const).map((placement) => <button key={placement} type="button" disabled={locked} onClick={() => { editor.setLinkPlacement(placement); editor.setDirty(true); }} className={`rounded-lg border px-3 py-2 text-xs ${linkPlacement === placement ? "border-primary-green bg-primary-green/10 text-content-primary" : "border-surface-border text-content-muted"}`}>{placement === "NONE" ? "Không liên kết" : "Trong bài đăng"}</button>)}</div>
         <p className="text-xs text-content-muted">Hệ thống xác định URL bài website khi đăng; nội dung đã duyệt luôn không chứa URL.</p>
@@ -100,6 +99,9 @@ export const PublicationConfigWorkspace = ({ blogId }: { blogId: string }) => {
         isGeneratingDraft={editor.draftMutation.isPending}
         onGenerateDraft={editor.generateDraft}
         showGenerateDraft={mode !== "CUSTOM"}
+        showLanguageSelect={mode === "SUMMARY"}
+        generationLanguage={language}
+        onLanguageChange={editor.setLanguage}
         mediaMode={mediaMode}
         onMediaModeChange={changeMediaMode}
         candidates={displayedCandidates}
@@ -125,7 +127,7 @@ export const PublicationConfigWorkspace = ({ blogId }: { blogId: string }) => {
 
       <div className="rounded-xl border border-surface-border bg-surface-card p-5 space-y-2 text-xs">
         <h2 className="font-semibold text-content-primary">Trạng thái LinkedIn: {STATUS_LABELS[pub.linkedinStatus]}</h2>
-        {pub.linkedinError && <p className="text-rose-400">{pub.linkedinError.message}</p>}
+        {pub.linkedinError && <p className="text-rose-400">{apiErrorMessage(pub.linkedinError)}</p>}
         {pub.linkedinStatus === "REVIEW_REQUIRED" && <p className="text-amber-300">Kết quả đăng chưa rõ ràng. Kiểm tra Trang Doanh nghiệp LinkedIn để tránh đăng trùng.</p>}
         {pub.linkedinPublishedAt && <p className="text-content-muted">Thời gian đăng: {pub.linkedinPublishedAt}</p>}
 

@@ -26,6 +26,7 @@ psycopg2-binary = "^2.9.11"
 PyJWT = "^2.10.1"
 pwdlib = {extras = ["argon2"], version = "^0.3.0"}
 minio = "^7.2.15"
+slowapi = "^0.1.10"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^9.0.0"

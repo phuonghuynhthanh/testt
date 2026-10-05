@@ -37,11 +37,11 @@ class AIImageGenerateRequest(BaseModel):
 
     purpose: AIImagePurpose
     prompt: str | None = Field(default=None, max_length=2000)
-    context: str | None = Field(default=None, max_length=1000)
+    context: str | None = Field(default=None, max_length=20000)
     negativePrompt: str | None = Field(default=None, max_length=1000)
-    aspectRatio: AIImageAspectRatio = AIImageAspectRatio.WIDE
+    aspectRatio: AIImageAspectRatio = Field(default=AIImageAspectRatio.WIDE, json_schema_extra={"deprecated": True})
     size: Literal["1K"] = "1K"
-    quality: AIImageQuality = AIImageQuality.FAST
+    quality: AIImageQuality = Field(default=AIImageQuality.BALANCED, json_schema_extra={"deprecated": True})
     altText: str | None = Field(default=None, max_length=4086)
 
     # Normalize text and reject empty requests before provider billing.

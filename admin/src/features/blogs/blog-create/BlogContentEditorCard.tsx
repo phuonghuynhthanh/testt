@@ -3,6 +3,8 @@ import { MdEdit, MdCode, MdPreview } from "react-icons/md";
 import { BsStars } from "react-icons/bs";
 import MarkdownEditor from "../../../shared/markdown/MarkdownEditor";
 import MarkdownContent from "../../../shared/markdown/MarkdownContent";
+import { PostLanguageSelect } from "../../../shared/ui/PostLanguageSelect";
+import type { PostLanguage } from "../../../types/Language";
 
 type EditorDisplayMode = "edit" | "markdown" | "preview";
 
@@ -20,6 +22,8 @@ interface BlogContentEditorCardProps {
   isAiPending?: boolean;
   onAiGenerate?: () => void;
   canAiGenerate?: boolean;
+  language: PostLanguage;
+  onLanguageChange: (language: PostLanguage) => void;
 }
 
 // Render multi-mode blog content editor supporting rich editor, raw markdown, and live preview.
@@ -31,6 +35,8 @@ export const BlogContentEditorCard: React.FC<BlogContentEditorCardProps> = ({
   isAiPending = false,
   onAiGenerate,
   canAiGenerate = false,
+  language,
+  onLanguageChange,
 }) => {
   const [mode, setMode] = useState<EditorDisplayMode>("edit");
 
@@ -67,7 +73,8 @@ export const BlogContentEditorCard: React.FC<BlogContentEditorCardProps> = ({
       </div>
 
       {showAiButton && (
-        <div className="flex items-center justify-between pb-1">
+        <div className="flex flex-wrap items-end gap-3 pb-1">
+          <PostLanguageSelect value={language} onChange={onLanguageChange} disabled={isAiPending} />
           <button
             type="button"
             title={isAiPending ? "Đang tạo bản nháp bằng AI" : content ? "Tạo lại bằng AI" : "Tạo bản nháp AI"}

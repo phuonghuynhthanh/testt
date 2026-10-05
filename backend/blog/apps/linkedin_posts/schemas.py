@@ -277,7 +277,7 @@ class UploadedMedia(StrictModel):
     """Reference an administrator upload stored under the LinkedIn prefix."""
 
     provider: Literal["upload"] = "upload"
-    origin: Literal["manual", "cloudflare-ai"] = "manual"
+    origin: Literal["manual", "cloudflare-ai", "pexels"] = "manual"
     objectKey: str = Field(pattern=r"^linkedin/[^/]+$")
     fileName: str = Field(min_length=1, max_length=255)
     altText: str = Field(min_length=1, max_length=4086)

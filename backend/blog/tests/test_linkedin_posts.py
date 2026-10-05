@@ -319,7 +319,8 @@ def test_linkedin_upload_contract(monkeypatch):
     monkeypatch.setattr(StorageService, "upload_image", lambda *_args, **_kwargs: "linkedin/image.gif")
     image = UploadFile(filename="market-chart.gif", file=BytesIO(b"GIF89a\x01\x00\x01\x00"), headers=Headers({"content-type": "image/gif"}))
 
-    result = upload_media(image, "admin")
+    # Test upload validation directly; HTTP throttling has separate boundary tests.
+    result = upload_media.__wrapped__(request=None, response=None, image=image, _="admin")
 
     assert result == {
         "provider": "upload",
@@ -331,18 +332,18 @@ def test_linkedin_upload_contract(monkeypatch):
     }
     webp = UploadFile(filename="chart.webp", file=BytesIO(b"webp"), headers=Headers({"content-type": "image/webp"}))
     with pytest.raises(HTTPException) as error:
-        upload_media(webp, "admin")
+        upload_media.__wrapped__(request=None, response=None, image=webp, _="admin")
     assert error.value.status_code == 415
 
     spoofed = UploadFile(filename="chart.png", file=BytesIO(b"GIF89a\x01\x00\x01\x00"), headers=Headers({"content-type": "image/png"}))
     with pytest.raises(HTTPException) as error:
-        upload_media(spoofed, "admin")
+        upload_media.__wrapped__(request=None, response=None, image=spoofed, _="admin")
     assert error.value.status_code == 415
 
     monkeypatch.setattr("apps.linkedin_posts.routers.settings.MEDIA_MAX_UPLOAD_MB", 0)
     oversized = UploadFile(filename="chart.gif", file=BytesIO(b"GIF89a\x01\x00\x01\x00"), headers=Headers({"content-type": "image/gif"}))
     with pytest.raises(HTTPException) as error:
-        upload_media(oversized, "admin")
+        upload_media.__wrapped__(request=None, response=None, image=oversized, _="admin")
     assert error.value.status_code == 413
 
 

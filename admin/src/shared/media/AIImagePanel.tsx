@@ -1,16 +1,14 @@
 import { useState } from "react";
 import { BsStars } from "react-icons/bs";
 import { toast } from "react-toastify";
-import { generateAIImage, type AIAspectRatio, type AIImagePurpose, type AIImageQuality, type GeneratedAIImage } from "../../services/media/handleMedia";
+import { generateAIImage, type AIImagePurpose, type GeneratedAIImage } from "../../services/media/handleMedia";
 import { apiErrorMessage } from "../../types/Api";
 import { linkedinMediaUrl } from "../../utils/linkedinMedia";
 
 // Generate a Cloudflare image candidate and require an explicit selection callback.
-export const AIImagePanel = ({ purpose, context, onUse }: { purpose: AIImagePurpose; context: string; onUse: (image: GeneratedAIImage) => void }) => {
+export const AIImagePanel = ({ purpose, context, onUse, disabled = false }: { purpose: AIImagePurpose; context: string; onUse: (image: GeneratedAIImage) => void; disabled?: boolean }) => {
   const [prompt, setPrompt] = useState("");
   const [altText, setAltText] = useState("");
-  const [aspectRatio, setAspectRatio] = useState<AIAspectRatio>(purpose === "BLOG_BANNER" ? "16:9" : "1:1");
-  const [quality, setQuality] = useState<AIImageQuality>("BALANCED");
   const [candidate, setCandidate] = useState<GeneratedAIImage | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -18,7 +16,7 @@ export const AIImagePanel = ({ purpose, context, onUse }: { purpose: AIImagePurp
   const generate = async () => {
     setLoading(true);
     try {
-      const result = await generateAIImage({ purpose, prompt: prompt || undefined, context: context || undefined, altText: altText || undefined, aspectRatio, size: "1K", quality });
+      const result = await generateAIImage({ purpose, prompt: prompt.trim() || undefined, context: context.trim().slice(0, 20000) || undefined, altText: altText.trim() || undefined, size: "1K" });
       setCandidate(result);
       setAltText(result.media.altText || altText);
       toast.success("Đã tạo ảnh AI để xem trước.");
@@ -31,13 +29,12 @@ export const AIImagePanel = ({ purpose, context, onUse }: { purpose: AIImagePurp
 
   return <div className="mt-4 space-y-3 rounded-xl border border-purple-500/20 bg-purple-950/10 p-4">
     <div className="flex items-center gap-2 text-xs font-semibold text-purple-200"><BsStars /> Tạo ảnh bằng AI</div>
-    <textarea value={prompt} onChange={(event) => setPrompt(event.target.value)} maxLength={2000} rows={2} placeholder="Mô tả ảnh (không bắt buộc nếu có ngữ cảnh)" className="w-full rounded-lg border border-surface-border bg-surface-elevated px-3 py-2 text-xs text-content-primary" />
-    <input value={altText} onChange={(event) => setAltText(event.target.value)} maxLength={1000} placeholder="Mô tả ảnh (alt text)" className="w-full rounded-lg border border-surface-border bg-surface-elevated px-3 py-2 text-xs text-content-primary" />
+    <p className="text-xs text-content-muted">AI đề xuất ảnh chân thực dựa trên nội dung đang soạn. Kiểm tra ảnh trước khi sử dụng.</p>
+    <textarea aria-label="Mô tả ảnh AI" disabled={disabled || loading} value={prompt} onChange={(event) => setPrompt(event.target.value)} maxLength={2000} rows={2} placeholder="Góc nhìn hoặc cảnh bạn muốn thể hiện (không bắt buộc)" className="w-full rounded-lg border border-surface-border bg-surface-elevated px-3 py-2 text-xs text-content-primary disabled:opacity-50" />
+    <input aria-label="Mô tả ảnh AI cho người đọc" disabled={disabled || loading} value={altText} onChange={(event) => setAltText(event.target.value)} maxLength={1000} placeholder="Mô tả ảnh (alt text)" className="w-full rounded-lg border border-surface-border bg-surface-elevated px-3 py-2 text-xs text-content-primary disabled:opacity-50" />
     <div className="flex flex-wrap gap-2">
-      <select value={aspectRatio} onChange={(event) => setAspectRatio(event.target.value as AIAspectRatio)} className="rounded-lg border border-surface-border bg-surface-elevated px-2 py-1.5 text-xs text-content-primary"><option>16:9</option><option>1:1</option><option>4:5</option><option>4:3</option></select>
-      <select value={quality} onChange={(event) => setQuality(event.target.value as AIImageQuality)} className="rounded-lg border border-surface-border bg-surface-elevated px-2 py-1.5 text-xs text-content-primary"><option value="FAST">Nhanh</option><option value="BALANCED">Cân bằng</option><option value="HIGH">Cao</option></select>
-      <button type="button" disabled={loading || (!prompt.trim() && !context.trim())} onClick={generate} className="rounded-lg border border-purple-500/30 px-3 py-1.5 text-xs text-purple-200 disabled:opacity-50">{loading ? "Đang tạo…" : candidate ? "Tạo lại" : "Tạo ảnh"}</button>
+      <button type="button" disabled={disabled || loading || (!prompt.trim() && !context.trim())} onClick={generate} className="rounded-lg border border-purple-500/30 px-3 py-1.5 text-xs text-purple-200 disabled:opacity-50">{loading ? "Đang chuẩn bị và tạo ảnh…" : candidate ? "Tạo lại" : "Tạo ảnh"}</button>
     </div>
-    {candidate && <div className="space-y-2"><img src={linkedinMediaUrl(candidate.media)} alt={altText || candidate.media.altText} className="max-h-56 rounded-lg border border-surface-border" /><button type="button" onClick={() => onUse({ ...candidate, media: { ...candidate.media, altText } })} className="rounded-lg bg-primary-green px-3 py-1.5 text-xs font-semibold text-primary-black">Dùng ảnh này</button></div>}
+    {candidate && <div className="space-y-2"><img src={linkedinMediaUrl(candidate.media)} alt={altText || candidate.media.altText} className="max-h-56 rounded-lg border border-surface-border object-contain" /><button type="button" disabled={disabled || loading} onClick={() => onUse({ ...candidate, media: { ...candidate.media, altText: altText.trim() || candidate.media.altText } })} className="rounded-lg bg-primary-green px-3 py-1.5 text-xs font-semibold text-primary-black disabled:opacity-50">Dùng ảnh này</button></div>}
   </div>;
 };

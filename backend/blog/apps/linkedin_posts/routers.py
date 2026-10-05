@@ -3,7 +3,7 @@
 import json
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, UploadFile, status
 
 from apps.auth.services import require_admin
 from apps.linkedin_posts.exceptions import LinkedInError
@@ -21,6 +21,7 @@ from apps.linkedin_posts.services.history import LinkedInHistoryService
 from apps.linkedin_posts.services.image import validate_image_bytes
 from apps.linkedin_posts.services.posts import LinkedInPostService
 from apps.core.storage import StorageService
+from apps.core.rate_limit import limiter
 from config import settings
 
 router = APIRouter(prefix="/linkedin", tags=["LinkedIn"])
@@ -42,7 +43,10 @@ def preview_post(
 
 # Generate a standalone preview without persisting or posting it.
 @router.post("/ai/generate-draft")
+@limiter.limit(settings.RATE_LIMIT_AI)
 async def generate_draft(
+    request: Request,
+    response: Response,
     data: IndependentDraftRequest, _: str = Depends(require_admin)
 ):
     try:
@@ -65,7 +69,8 @@ def get_post(post_id: str, _: str = Depends(require_admin)):
 
 # Save reviewed content or explicitly persist and publish it in one request.
 @router.post("/posts")
-async def create_post(data: LinkedInPostCreate, _: str = Depends(require_admin)):
+@limiter.limit(settings.RATE_LIMIT_AI)
+async def create_post(request: Request, response: Response, data: LinkedInPostCreate, _: str = Depends(require_admin)):
     return await LinkedInPostService.create(data)
 
 
@@ -109,7 +114,8 @@ async def sync_history(_: str = Depends(require_admin)):
 
 # Propose fresh topics from real recent Company Page content without persistence.
 @router.post("/ai/propose-topics")
-async def propose_topics(data: TopicProposalRequest, _: str = Depends(require_admin)):
+@limiter.limit(settings.RATE_LIMIT_AI)
+async def propose_topics(request: Request, response: Response, data: TopicProposalRequest, _: str = Depends(require_admin)):
     try:
         history = await LinkedInHistoryService().recent(data.recentLimit)
     except LinkedInError as error:
@@ -169,13 +175,15 @@ async def propose_topics(data: TopicProposalRequest, _: str = Depends(require_ad
 
 # Publish an existing reviewed post without generating or selecting new media.
 @router.post("/posts/{post_id}/publish")
-async def publish_post(post_id: str, _: str = Depends(require_admin)):
+@limiter.limit(settings.RATE_LIMIT_AI)
+async def publish_post(request: Request, response: Response, post_id: str, _: str = Depends(require_admin)):
     return await LinkedInPostService.publish(post_id)
 
 
 # Retry only a safely failed provider operation.
 @router.post("/posts/{post_id}/retry")
-async def retry_post(post_id: str, _: str = Depends(require_admin)):
+@limiter.limit(settings.RATE_LIMIT_AI)
+async def retry_post(request: Request, response: Response, post_id: str, _: str = Depends(require_admin)):
     return await LinkedInPostService.publish(post_id, retry=True)
 
 
@@ -243,7 +251,8 @@ async def search_media(keywords: list[str], _: str = Depends(require_admin)):
     status_code=status.HTTP_201_CREATED,
     response_model=UploadedMedia,
 )
-def upload_media(image: UploadFile, _: str = Depends(require_admin)):
+@limiter.limit(settings.RATE_LIMIT_WRITE)
+def upload_media(request: Request, response: Response, image: UploadFile, _: str = Depends(require_admin)):
     if image.content_type not in {"image/jpeg", "image/png", "image/gif"}:
         raise HTTPException(
             status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
