@@ -156,6 +156,10 @@ def apply(engine) -> None:
         if "deleted_at" not in linkedin_columns:
             connection.execute(text("ALTER TABLE linkedin_posts ADD COLUMN deleted_at TIMESTAMP"))
         blog_columns = {column["name"] for column in inspector.get_columns("blogs")}
+        # Default legacy rows and old-backend inserts to Vietnamese without rewriting content.
+        if "language" not in blog_columns:
+            connection.execute(text("ALTER TABLE blogs ADD COLUMN language VARCHAR NOT NULL DEFAULT 'vietnamese'"))
+        connection.execute(text("CREATE INDEX IF NOT EXISTS ix_blogs_language ON blogs (language)"))
         if "deleted_at" not in blog_columns:
             connection.execute(text("ALTER TABLE blogs ADD COLUMN deleted_at TIMESTAMP"))
         if "search_text" not in blog_columns:

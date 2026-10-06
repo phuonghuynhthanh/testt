@@ -4,7 +4,7 @@ import type { PaginatedResponse } from "../../types/Api";
 import type { BlogCreateInput, BlogState, BlogUpdateInput, ClassifyLinksResponse, FetchContentResponse, IBlogData, IBlogItemData, LinkReference } from "../../types/Blog";
 
 export type BlogSortKey = "modified" | "title" | "category" | "state";
-export interface BlogListParams { page: number; pageSize: number; state?: BlogState; category?: string; search?: string; sort?: BlogSortKey; dir?: "asc" | "desc"; include?: "linkedin"; }
+export interface BlogListParams { page: number; pageSize: number; state?: BlogState; category?: string; language?: PostLanguage; search?: string; sort?: BlogSortKey; dir?: "asc" | "desc"; include?: "linkedin"; }
 
 export type BlogCounts = Record<BlogState | "ALL", number>;
 export interface BlogStatBucket { count: number; last7: number; prev7: number; daily14: number[]; }

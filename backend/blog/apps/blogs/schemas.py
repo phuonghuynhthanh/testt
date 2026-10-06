@@ -116,6 +116,7 @@ class SEOInputSchema(BaseModel):
 
 
 class BlogSchema(BaseModel):
+    language: PostLanguage = "vietnamese"
     id: str
     tag: str
     title: str
@@ -128,6 +129,7 @@ class BlogSchema(BaseModel):
 
 
 class ListBlogAdmin(BaseModel):
+    language: PostLanguage = "vietnamese"
     id: str
     tag: str
     title: str
@@ -150,6 +152,7 @@ class ContentSchema(BaseModel):
 class BlogCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
+    language: PostLanguage = "vietnamese"
     tag: str
     title: str
     banner_url: Optional[str] = None
@@ -170,6 +173,7 @@ class BlogCreate(BaseModel):
 class BlogUpdate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
+    language: Optional[PostLanguage] = None
     tag: Optional[str] = None
     title: Optional[str] = None
     banner_url: Optional[str] = None

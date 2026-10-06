@@ -65,9 +65,9 @@ export const BlogContentEditorCard: React.FC<BlogContentEditorCardProps> = ({
         </div>
       </div>
 
-      {showAiButton && (
-        <div className="flex flex-wrap items-end gap-3 pb-1">
-          <PostLanguageSelect value={language} onChange={onLanguageChange} disabled={isAiPending} />
+      <div className="flex flex-wrap items-end gap-3 pb-1">
+        <PostLanguageSelect value={language} onChange={onLanguageChange} disabled={isAiPending} />
+        {showAiButton && (
           <button
             type="button"
             title={isAiPending ? "Đang tạo bản nháp bằng AI" : content ? "Tạo lại bằng AI" : "Tạo bản nháp AI"}
@@ -79,8 +79,8 @@ export const BlogContentEditorCard: React.FC<BlogContentEditorCardProps> = ({
             <Sparkle size={14} weight="light" className={isAiPending ? "animate-spin" : ""} />
             <span>{isAiPending ? "Đang tạo bản nháp..." : content ? "Tạo lại bằng AI" : "Tạo bản nháp bằng AI"}</span>
           </button>
-        </div>
-      )}
+        )}
+      </div>
 
       {mode === "edit" && (
         <MarkdownEditor

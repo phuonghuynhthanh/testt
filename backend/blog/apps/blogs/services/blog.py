@@ -2,6 +2,7 @@ from contextlib import contextmanager
 import logging
 from datetime import date, timedelta
 from typing import Optional
+from urllib.parse import urlencode
 from fastapi import HTTPException, UploadFile, status
 from slugify import slugify
 from sqlalchemy import desc, func, or_, select
@@ -185,6 +186,7 @@ class BlogServices:
                             ),
                             category=category.name,
                             category_id=category.id,
+                            language=blog_data.language,
                             seo=cls._create_seo_data(
                                 blog_data.seo, banner_url, slug
                             ),
@@ -253,6 +255,7 @@ class BlogServices:
                 "tag": data.tag,
                 "state": data.state,
                 "category": data.category,
+                "language": data.language,
             }
 
             for field_name, field_value in field_mappings.items():
@@ -345,12 +348,14 @@ class BlogServices:
 
     # Share active-record and additive search filters between lists, counts, and export.
     @staticmethod
-    def _admin_filters(query, category=None, search=None, state=None):
+    def _admin_filters(query, category=None, search=None, state=None, language=None):
         query = query.where(Blog.deleted_at.is_(None))
         if state is not None:
             query = query.where(Blog.state == state)
         if category is not None:
             query = query.where(Blog.category == category)
+        if language is not None:
+            query = query.where(Blog.language == language)
         if search and search.strip():
             term = search.strip()
             query = query.where(
@@ -376,6 +381,7 @@ class BlogServices:
         sort: str = "modified",
         direction: str = "desc",
         include: Optional[str] = None,
+        language: Optional[PostLanguage] = None,
     ) -> dict:
         query = select(
             Blog.id,
@@ -388,9 +394,10 @@ class BlogServices:
             Blog.state,
             Blog.seo,
             Blog.category,
+            Blog.language,
         )
 
-        query = cls._admin_filters(query, category, search, state)
+        query = cls._admin_filters(query, category, search, state, language)
         if include == "linkedin":
             query = (
                 query.outerjoin(
@@ -578,7 +585,7 @@ class BlogServices:
                 session.rollback()
                 raise
 
-    # Keep legacy load-more URLs while carrying an explicitly customized limit.
+    # Keep load-more URLs compatible while preserving all selected feed filters.
     @classmethod
     def get_blog_for_client(
         cls,
@@ -586,6 +593,7 @@ class BlogServices:
         category: str,
         limit: int = 10,
         base_url: str = "blog/client/blogs",
+        language: Optional[PostLanguage] = None,
     ) -> schemas.BlogForClient:
         """
         Load-more pagination using num_of_blogs from FE.
@@ -603,6 +611,7 @@ class BlogServices:
                     Blog.modified_at,
                     Blog.seo,
                     Blog.category,
+                    Blog.language,
                 )
                 .filter(Blog.state == schemas.BlogState.APPROVED)
                 .filter(Blog.deleted_at.is_(None))
@@ -610,6 +619,8 @@ class BlogServices:
             )
             if category != "ALL":
                 query = query.filter(Blog.category == category.upper())
+            if language is not None:
+                query = query.filter(Blog.language == language)
             total_query = select(func.count()).select_from(query.subquery())
             total = session.execute(total_query).scalar()
 
@@ -623,12 +634,16 @@ class BlogServices:
             next_offset = num_of_blogs + len(blogs)
             has_next = next_offset < total
 
-            next_params = ""
+            # Encode selected filters so load-more requests stay in the same result set.
             if has_next:
-                next_params += f"?num_of_blogs={next_offset}"
+                next_params = {"num_of_blogs": next_offset}
                 if limit != 10:
-                    next_params += f"&limit={limit}"
-                next_req = f"{base_url}{next_params}"
+                    next_params["limit"] = limit
+                if category != "ALL":
+                    next_params["category"] = category
+                if language is not None:
+                    next_params["language"] = language
+                next_req = f"{base_url}?{urlencode(next_params)}"
             else:
                 next_req = None
 
@@ -661,6 +676,7 @@ class BlogServices:
                     "content": blog.content,
                     "seo": blog.seo,
                     "category": blog.category,
+                    "language": blog.language,
                     "state": blog.state,
                     "created_at": blog.created_at,
                     "modified_at": blog.modified_at,
@@ -713,9 +729,11 @@ class BlogServices:
                                 Blog.created_at,
                                 Blog.modified_at,
                                 Blog.category,
+                                Blog.language,
                             )
                             .where(
                                 Blog.category_id == blog.category_id,
+                                Blog.language == blog.language,
                                 Blog.id != blog.id,
                                 Blog.state == schemas.BlogState.APPROVED,
                                 Blog.deleted_at.is_(None),
@@ -741,6 +759,7 @@ class BlogServices:
                     "link_post": blog.link_post,
                     "content": blog.content,
                     "category": blog.category,
+                    "language": blog.language,
                     "seo": blog.seo,
                     "state": blog.state,
                     "created_at": blog.created_at,
@@ -849,8 +868,11 @@ class BlogServices:
                         Blog.created_at,
                         Blog.modified_at,
                         Blog.category,
+                        Blog.language,
                     )
                     .filter(Blog.id != current_blog)
+                    .filter(Blog.language == blog.language)
+                    .filter(Blog.deleted_at.is_(None))
                     .filter(
                         (Blog.tag == blog.tag)
                         & (Blog.state == schemas.BlogState.APPROVED)

@@ -10,6 +10,7 @@ from pydantic import ValidationError
 
 from apps.auth.services import require_admin
 from apps.core.rate_limit import limiter
+from apps.core.language import PostLanguage
 from config import settings
 from apps.blogs import schemas
 from apps.blogs.models import Blog
@@ -46,9 +47,10 @@ def get_blog_list_for_client(
     ),
     category: Optional[str] = "ALL",
     limit: int = Query(10, ge=1, le=24),
+    language: Optional[PostLanguage] = Query(None),
 ):
     return BlogServices.get_blog_for_client(
-        num_of_blogs=num_of_blogs, category=category, limit=limit
+        num_of_blogs=num_of_blogs, category=category, limit=limit, language=language
     )
 
 
@@ -69,8 +71,9 @@ def get_admin_blog_list(
     sort: Literal["title", "category", "state", "modified"] = "modified",
     dir: Literal["asc", "desc"] = "desc",
     include: Literal["linkedin"] | None = None,
+    language: Optional[PostLanguage] = Query(None),
 ):
-    return BlogServices.get_blogs_for_admin(state, category, page, pageSize, search, sort, dir, include)
+    return BlogServices.get_blogs_for_admin(state, category, page, pageSize, search, sort, dir, include, language)
 
 
 # Count filtered Blogs regardless of the selected state tab.

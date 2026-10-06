@@ -46,6 +46,7 @@ const BlogCreate: React.FC<{ blogId?: string }> = ({ blogId }) => {
   // Load the stored article into the editor once.
   useEffect(() => {
     if (!detail.data) return;
+    setLanguage(detail.data.language ?? "vietnamese");
     setBlog({ ...detail.data, seo: { ...detail.data.seo, keywords: [...new Set(detail.data.seo.keywords)] } });
     setSource("manual");
     setDirty(false);
@@ -140,12 +141,13 @@ const BlogCreate: React.FC<{ blogId?: string }> = ({ blogId }) => {
           title: blog.title,
           banner_url: blog.banner_url,
           category: blog.category,
+          language,
           seo: { title: blog.seo.title, description: blog.seo.description, keywords: blog.seo.keywords, author: blog.seo.author },
           content: blog.content,
         }, image);
         return { saved: { id: blogId, ...saved }, mode };
       }
-      const saved = await createBlogPost(blog, image, mode);
+      const saved = await createBlogPost({ ...blog, language }, image, mode);
       return { saved, mode };
     },
     onSuccess: async ({ saved, mode }) => {
@@ -288,7 +290,7 @@ const BlogCreate: React.FC<{ blogId?: string }> = ({ blogId }) => {
         onAiGenerate={handleRegenerateClick}
         canAiGenerate={Boolean(blog.title.trim() && blog.category.trim())}
         language={language}
-        onLanguageChange={setLanguage}
+        onLanguageChange={(value) => { setLanguage(value); setDirty(true); }}
       />
 
       <BlogSeoCollapse

@@ -2,7 +2,7 @@
 
 Tài liệu đặc tả toàn bộ API endpoints của hệ thống Blog & CMS Quant-VN dành cho đội ngũ phát triển Frontend (Admin CMS & Client Website).
 
-> **Contract version:** 2.1.0<br>
+> **Contract version:** 2.2.0<br>
 > **Backend baseline:** commit bàn giao chứa tài liệu này<br>
 > **Nguồn kiểm chứng:** FastAPI OpenAPI tại `GET /openapi.json` (Swagger UI: `GET /docs`)<br>
 > **Quy tắc thay đổi:** Mọi thay đổi request, response, status code hoặc enum phải cập nhật tài liệu này và OpenAPI trong cùng pull request.
@@ -91,7 +91,9 @@ Clients should wait for `Retry-After` before retrying. Successful limited respon
 `RATE_LIMIT_STORAGE_URI=memory://` resets counters on restart and does not share them between workers or replicas. Before scaling, use `RATE_LIMIT_STORAGE_URI=redis://...` and install the optional Redis client (`limits[redis]`). Behind a controlled reverse proxy, enable `RATE_LIMIT_TRUST_PROXY=true` only when the proxy overwrites client-supplied `X-Forwarded-For`: its first address becomes the rate-limit key. Otherwise the connection's client address is used and forwarded headers are ignored. Set `RATE_LIMIT_ENABLED=false` to disable throttling.
 
 ### 1.6 CMS 2.0 authoritative fields and migrations
-- `link_post` and `seo.url` are response-only Blog fields. `POST /blog` and `PUT /blog/{id}` accept only `tag`, `title`, `banner_url`, `category`, `content`, `state` (update), and editable SEO fields `title`, `description`, `keywords`, `author`. Legacy `link_post` and `seo.url` are silently ignored; other unknown fields return 422.
+- `link_post` and `seo.url` are response-only Blog fields. `POST /blog` and `PUT /blog/{id}` accept only `tag`, `title`, `banner_url`, `category`, `language`, `content`, `state` (update), and editable SEO fields `title`, `description`, `keywords`, `author`. Legacy `link_post` and `seo.url` are silently ignored; other unknown fields return 422.
+- Each persisted Blog has `language: "vietnamese" | "english"`. Create defaults to `vietnamese`; update omission or `null` preserves the stored language. Client/admin list and detail responses (including related summaries) expose `language`. Unsupported language values return 422.
+- Startup migration adds `blogs.language VARCHAR NOT NULL DEFAULT 'vietnamese'` and `ix_blogs_language` idempotently. Existing rows become Vietnamese; the server default also permits inserts from an older backend during rollout. The language migration preserves IDs, slugs, content, SEO, timestamps, and publication/LinkedIn history. Rolling back the API leaves the additive column and index in place.
 - The API creates a slug from the title (`blog`, `blog-2`, …), reserves soft-deleted slugs, retries a uniqueness race, and always returns `seo.url = DOMAIN_URL + /blog/{slug}`. `/blog/is-duplicate-link-post` remains deprecated compatibility-only.
 - `LinkedInLinkPlacement` is `NONE | IN_POST`. Legacy `includeWebLink` / `linkedinIncludeWebLink` map to `IN_POST` only when no placement is supplied; conflicting values return 422. New responses omit legacy booleans.
 - Comment creation and comment retries are retired. Migration converts editable unpublished `FIRST_COMMENT` drafts to `IN_POST`; historical fields remain in storage but are omitted from responses.
@@ -258,6 +260,7 @@ The frontend replaces its selected banner only after import succeeds and later s
 - **Query Parameters**:
   - `num_of_blogs` *(integer, optional, default: 0)*: Số lượng bài viết đã nạp trên client (hỗ trợ infinite scroll / load more).
   - `category` *(string, optional, default: "ALL")*: Lọc theo tên danh mục, hoặc `"ALL"` để lấy tất cả.
+  - `language` *(enum: `vietnamese`, `english`; optional)*: Lọc ngôn ngữ của bài đã lưu. Không truyền = tất cả ngôn ngữ, giữ tương thích với website hiện tại. Chuỗi rỗng hoặc giá trị khác trả 422.
   - `limit` *(integer, optional, default: 10, min: 1, max: 24)*: Số bài mỗi lần nạp; xem quy tắc `next_req` tại mục 6.
 - **Response (200 OK)**:
 ```json
@@ -270,6 +273,7 @@ The frontend replaces its selected banner only after import succeeds and later s
       "banner_url": "quant-trading-ml/banner.png",
       "link_post": "ung-dung-machine-learning-trong-du-bao-gia",
       "category": "Quant Trading",
+      "language": "vietnamese",
       "created_at": "2026-03-30T10:00:00.000000",
       "modified_at": "2026-03-30T10:00:00.000000",
       "seo": {
@@ -284,7 +288,7 @@ The frontend replaces its selected banner only after import succeeds and later s
   "next_req": "blog/client/blogs?num_of_blogs=10"
 }
 ```
-> *Ghi chú*: Nếu không còn trang kế tiếp, `next_req` sẽ trả về `null`.
+> *Ghi chú*: Nếu không còn trang kế tiếp, `next_req` sẽ trả về `null`. Offset và số trang dựa trên kết quả sau lọc. `next_req` giữ `language`, `category` khác `ALL` và `limit` khác 10; ví dụ `blog/client/blogs?num_of_blogs=6&limit=6&category=NEWS&language=english`. Không truyền bộ lọc/limit thì URL vẫn có dạng cũ `blog/client/blogs?num_of_blogs=10`.
 
 #### 3. Lấy chi tiết bài viết công khai theo URL slug (Public Blog Detail)
 - **Method & Path**: `GET /blog/link/{link_post}`
@@ -292,7 +296,8 @@ The frontend replaces its selected banner only after import succeeds and later s
 - **Path Parameters**:
   - `link_post` *(string, required)*: Slug định danh của bài viết (ví dụ: `bai-viet-so-1`).
 - **Query Parameters**:
-  - `limit` *(integer, optional, default: 4)*: Số lượng bài viết liên quan cần lấy kèm.
+  - `limit` *(integer, optional, default: 4, min: 1, max: 12)*: Số lượng bài viết liên quan cần lấy kèm.
+  - `related` *(optional: `category`)*: Lấy bài cùng `category_id`; không truyền vẫn dùng tag và thời gian tạo ±10 phút. Cả hai cách chỉ trả bài cùng ngôn ngữ với bài đang đọc, APPROVED và Web-visible, loại bài hiện tại và bài xóa mềm. Bài không có `category_id` trả danh sách rỗng khi dùng `related=category`.
 - **Response (200 OK)**:
 ```json
 {
@@ -303,6 +308,7 @@ The frontend replaces its selected banner only after import succeeds and later s
   "link_post": "ung-dung-machine-learning-trong-du-bao-gia",
   "content": "# Nội dung bài viết định dạng Markdown...",
   "category": "Quant Trading",
+  "language": "vietnamese",
   "seo": {
     "title": "Ứng dụng Machine Learning trong Dự báo Giá",
     "description": "Mô tả SEO bài viết...",
@@ -323,6 +329,7 @@ The frontend replaces its selected banner only after import succeeds and later s
       "banner_url": "path/to/banner.jpg",
       "link_post": "bai-viet-cung-chu-de",
       "category": "Quant Trading",
+      "language": "vietnamese",
       "created_at": "2026-03-30T10:05:00.000000",
       "modified_at": "2026-03-30T10:05:00.000000",
       "seo": { "..." : "..." }
@@ -339,6 +346,7 @@ The frontend replaces its selected banner only after import succeeds and later s
 - **Query Parameters**:
   - `state` *(string, optional)*: Lọc theo trạng thái: `"PENDING"`, `"APPROVED"`, `"REJECTED"`.
   - `category` *(string, optional)*: Lọc theo tên chuyên mục.
+  - `language` *(enum: `vietnamese`, `english`; optional)*: Lọc theo ngôn ngữ, áp dụng cùng state/category/search trước khi đếm `total` và phân trang. Không truyền = mọi ngôn ngữ; giá trị không hợp lệ trả 422. Bộ lọc này chỉ có trên admin list; counts/stats/export giữ tham số hiện tại.
   - `search` *(string, optional, max: 100)*: Tìm title/slug như trước, OR thêm title/slug/tag không dấu.
   - `sort` *(enum: title, category, state, modified; default: modified)* và `dir` *(enum: asc, desc; default: desc)*: Luôn tie-break theo `id` cùng chiều.
   - `include` *(optional: linkedin)*: Thêm `linkedinPost: {id, status} | null` cho từng item; không truyền thì giữ response cũ.
@@ -364,7 +372,8 @@ The frontend replaces its selected banner only after import succeeds and later s
         "keywords": ["quant"],
         "author": "Admin"
       },
-      "category": "Quant Trading"
+      "category": "Quant Trading",
+      "language": "vietnamese"
     }
   ],
   "page": 1,
@@ -388,6 +397,7 @@ The frontend replaces its selected banner only after import succeeds and later s
   "banner_url": "quant-trading-ml/banner.png",
   "link_post": "ung-dung-machine-learning-trong-du-bao-gia",
   "content": "# Toàn bộ nội dung Markdown...",
+  "language": "vietnamese",
   "seo": {
     "title": "Tiêu đề SEO",
     "description": "Mô tả SEO",
@@ -423,6 +433,7 @@ The frontend replaces its selected banner only after import succeeds and later s
   "banner_url": "",
   "link_post": "chien-luoc-pair-trading-voi-reinforcement-learning",
   "category": "Algorithmic Trading",
+  "language": "vietnamese",
   "content": "# Nội dung bài viết...",
   "seo": {
     "title": "Chiến lược Pair Trading với RL",
@@ -433,7 +444,8 @@ The frontend replaces its selected banner only after import succeeds and later s
   }
 }
 ```
-- **Response (201 Created)**: Trả về đối tượng Blog hoàn chỉnh sau khi lưu vào database.
+- `blog_data.language` *(optional, enum: `vietnamese`, `english`, default: `vietnamese`)*: Ngôn ngữ nội dung bài; `null` hoặc giá trị khác trả 422. Ngôn ngữ được lưu theo lựa chọn, không tự dịch nội dung.
+- **Response (201 Created)**: Trả về đối tượng Blog hoàn chỉnh sau khi lưu vào database, bao gồm `language`.
 - **Errors**:
   - `400 Bad Request`: `{"detail": "Bài viết với liên kết '...' đã tồn tại"}`
   - `415 Unsupported Media Type`: `{"detail": "Chỉ hỗ trợ định dạng ảnh JPEG, PNG, WebP và GIF"}`
@@ -452,6 +464,7 @@ The frontend replaces its selected banner only after import succeeds and later s
 ```json
 {
   "title": "Tiêu đề mới cập nhật",
+  "language": "vietnamese",
   "content": "# Nội dung cập nhật...",
   "state": "APPROVED",
   "category": "Quant Trading",
@@ -464,7 +477,8 @@ The frontend replaces its selected banner only after import succeeds and later s
   }
 }
 ```
-- **Response (200 OK)**: Trả về đối tượng Blog đã cập nhật.
+- `blog_data.language` *(optional, enum: `vietnamese`, `english`)*: Không truyền hoặc `null` = giữ ngôn ngữ cũ; giá trị khác trả 422. Không làm đổi slug hay dịch nội dung.
+- **Response (200 OK)**: Trả về đối tượng Blog đã cập nhật, bao gồm `language`.
 - **Errors**:
   - `404 Not Found`: `{"detail": "Không tìm thấy bài viết"}`
   - `400 Bad Request`: `{"detail": "Bài viết với liên kết '...' đã tồn tại"}`
@@ -1514,9 +1528,9 @@ Mỗi batch nhận 1..100 ID không trùng; sai state, ID trống, duplicate ho�
 
 ### Public feed và related articles
 
-`GET /blog/client/blogs?limit=6` giới hạn 1..24 (default 10). `next_req` chỉ thêm `&limit=6` khi limit khác 10; offset và đường dẫn giữ nguyên. Lỗi sẵn có `next_req` thiếu `category` được giữ theo phạm vi tương thích của kế hoạch, frontend tiếp tục giữ category khi nạp trang sau.
+`GET /blog/client/blogs?limit=6` giới hạn 1..24 (default 10). Từ contract 2.2.0, `next_req` giữ `language`, `category` khác `ALL` và `limit` khác 10; mọi giá trị được URL-encode. Offset tính trên tập kết quả đã lọc. Không truyền `language` vẫn trả tất cả ngôn ngữ.
 
-`GET /blog/link/{slug}?related=category&limit=4` trả related APPROVED cùng `category_id`, loại bài hiện tại và bài soft-deleted/không Web-visible, sort `modified_at desc, id desc`. Bài không có `category_id` trả related rỗng. Không truyền `related` vẫn dùng tag ±10 phút như cũ.
+`GET /blog/link/{slug}?related=category&limit=4` trả related APPROVED cùng `category_id` và `language`, loại bài hiện tại và bài soft-deleted/không Web-visible, sort `modified_at desc, id desc`. Bài không có `category_id` trả related rỗng. Không truyền `related` vẫn dùng tag ±10 phút như cũ, thêm điều kiện cùng ngôn ngữ. Website nên chuyển sang `related=category` ở giai đoạn frontend vì khoảng ±10 phút thường không có bài phù hợp.
 
 ### LinkedIn và category usage
 
@@ -1532,6 +1546,6 @@ Item của `GET /linkedin/posts` và response `GET /linkedin/posts/{id}` thêm `
 
 ### Migration và phạm vi
 
-Startup migration thêm cột nullable `blogs.search_text` và backfill title + slug + tag bằng helper Unicode không phụ thuộc Postgres `unaccent`. Migration idempotent và giữ timestamp cũ. Mọi create/update qua ORM cập nhật search tự động. Không sửa default `quantity` hay lỗi category của `next_req`; không thêm alias `by-blog` hoặc SEO gộp vì API hiện tại đã hỗ trợ các luồng đó.
+Startup migration thêm cột nullable `blogs.search_text` và backfill title + slug + tag bằng helper Unicode không phụ thuộc Postgres `unaccent`. Migration idempotent và giữ timestamp cũ. Mọi create/update qua ORM cập nhật search tự động. Default `quantity` giữ nguyên; lỗi category của `next_req` đã được sửa từ contract 2.2.0. Không thêm alias `by-blog` hoặc SEO gộp vì API hiện tại đã hỗ trợ các luồng đó.
 
 `GET /blog/link/{slug}` giới hạn `limit` trong 1..12. `POST /blog/{id}/restore` giữ hành vi cũ (cập nhật `modified_at`); chỉ `POST /blog/admin/bulk-restore` giữ nguyên `modified_at` để undo.

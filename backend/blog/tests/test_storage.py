@@ -88,6 +88,7 @@ def blog_data(banner_url=None):
         link_post="quant-trading",
         content="Content",
         category="NEWS",
+        language="vietnamese",
         seo=SimpleNamespace(
             title="SEO",
             description="Description",
@@ -101,6 +102,7 @@ def blog_data(banner_url=None):
 # Build the minimum Blog update payload used by rollback tests.
 def blog_update_data():
     return SimpleNamespace(
+        language=None,
         title=None,
         link_post=None,
         content=None,

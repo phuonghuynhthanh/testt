@@ -16,6 +16,7 @@ class Blog(FastModel):
     content = Column(String, nullable=False)
     seo = Column(JSON, nullable=False)
     category = Column(String, nullable=False, default="All")
+    language = Column(String, nullable=False, default="vietnamese", server_default="vietnamese", index=True)
     category_id = Column(String, ForeignKey("categories.id"), nullable=True, index=True)
     state = Column(String, nullable=False)
     search_text = Column(String, nullable=True)

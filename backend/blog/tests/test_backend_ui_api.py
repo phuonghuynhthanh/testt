@@ -511,7 +511,7 @@ def test_category_counts_sort_and_strict(api):
     )
 
 
-# Bound public pages and preserve legacy next_req behavior except the added limit.
+# Bound public pages and preserve the category and customized limit in next_req.
 def test_public_limit_and_category_related(api):
     client, factory = api
     categories(factory)
@@ -535,10 +535,10 @@ def test_public_limit_and_category_related(api):
     seed(factory, BlogPublication(blog_id="private", publish_web=False))
     feed = client.get("/blog/client/blogs?category=NEWS&limit=6").json()
     assert len(feed["blogs"]) == 6
-    assert feed["next_req"] == "blog/client/blogs?num_of_blogs=6&limit=6"
+    assert feed["next_req"] == "blog/client/blogs?num_of_blogs=6&limit=6&category=NEWS"
     assert (
         client.get("/blog/client/blogs?category=NEWS").json()["next_req"]
-        == "blog/client/blogs?num_of_blogs=10"
+        == "blog/client/blogs?num_of_blogs=10&category=NEWS"
     )
     assert client.get("/blog/client/blogs?limit=25").status_code == 422
     related = client.get("/blog/link/slug-0?related=category&limit=3").json()[

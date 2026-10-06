@@ -1,4 +1,4 @@
-"""Shared output-language contract for AI authoring."""
+"""Shared language contract for persisted Blogs and AI authoring."""
 
 from typing import Literal
 

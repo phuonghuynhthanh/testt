@@ -83,6 +83,8 @@ def test_bulk_and_patch_write_limits(client, monkeypatch, path, payload, service
 # Read the disabled environment setting and verify repeated requests remain unblocked.
 def test_rate_limit_disabled(client, failed_login, monkeypatch):
     monkeypatch.setenv("RATE_LIMIT_ENABLED", "false")
+    # Keep a local dotenv file from overriding the explicit test environment.
+    monkeypatch.setattr("dotenv.load_dotenv", lambda **_kwargs: None)
     configured = runpy.run_path("config/settings.py")
     assert configured["RATE_LIMIT_ENABLED"] is False
     monkeypatch.setattr(limiter, "enabled", configured["RATE_LIMIT_ENABLED"])

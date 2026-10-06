@@ -1,3 +1,5 @@
+import type { PostLanguage } from "./Language";
+
 export type BlogState = "PENDING" | "APPROVED" | "REJECTED";
 
 export interface SEO {
@@ -20,6 +22,7 @@ export interface BlogCreateInput {
   title: string;
   banner_url: string;
   category: string;
+  language?: PostLanguage;
   seo: SEOInput;
   content: string;
 }
@@ -34,6 +37,7 @@ export interface IBlogData {
   banner_url: string;
   link_post: string;
   category: string;
+  language?: PostLanguage;
   seo: SEO;
   content: string;
   state?: BlogState;
@@ -98,6 +102,7 @@ export interface ClientBlogItem {
   banner_url: string;
   link_post: string;
   category: string;
+  language?: PostLanguage;
   created_at: string;
   modified_at: string;
   seo?: SEO;

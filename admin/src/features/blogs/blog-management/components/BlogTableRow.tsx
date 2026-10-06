@@ -56,6 +56,7 @@ export const BlogTableRow: React.FC<BlogTableRowProps> = ({
             <span className="sub">
               <span className="slug mono">{formattedSlug}</span>
               <span className="cat-in">{category}</span>
+              <span className="cat-in">{blog.language === "english" ? "EN" : "VI"}</span>
             </span>
           </div>
         </div>

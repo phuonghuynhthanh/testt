@@ -110,10 +110,24 @@ curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:8020/docs   # kỳ v�
 **Quay lui:** đặt lại `API_IMAGE` về tag cũ và chạy lại lệnh `up -d`. Chỉ xóa image cũ (`docker rmi vqcms-api:<cũ>`) sau khi bản mới ổn định; **không** dùng `docker image prune`.
 
 ### 5.2 Thay đổi cấu trúc database (quan trọng)
-Backend dùng `create_all` và một vài hàm migration thủ công lúc khởi động: chỉ **tạo bảng mới**, **không tự thêm cột** vào bảng đã có. Khi thêm/đổi cột cần viết migration (`ALTER TABLE`) trước khi deploy, nếu không API sẽ lỗi. Luôn sao lưu trước:
+`create_all` chỉ **tạo bảng mới**, **không tự thêm cột** vào bảng đã có. Backend chạy các migration thủ công lúc khởi động để nâng cấp bảng cũ. Khi thêm/đổi cột cần viết migration (`ALTER TABLE`) trước khi deploy, nếu không API sẽ lỗi. Luôn sao lưu trước:
 ```bash
 docker exec vqcms-postgres-1 pg_dump -U <DATABASE_USERNAME> <DATABASE_NAME> | gzip > ~/vqcms-backup-$(date +%F).sql.gz
 ```
+
+**Blog language (contract 2.2.0):** `apps/publications/migrations.py::apply()` tự thêm `blogs.language VARCHAR NOT NULL DEFAULT 'vietnamese'` và index `ix_blogs_language` khi khởi động; chạy lặp không làm đổi ngôn ngữ đã lưu. Bài cũ nhận `vietnamese`; backend cũ đang chạy song song vẫn INSERT được nhờ server default. Cột mới không đổi ID, slug, nội dung, SEO hoặc lịch sử LinkedIn.
+
+Trước rollout, xác nhận ngôn ngữ các bài hiện có bằng admin hoặc truy vấn `SELECT id, title, link_post FROM blogs`; nếu có bài EN, ghi lại slug để gán `english` sau migration. Sao lưu và restore vào DB tạm, thử migration trên bản sao trước. Chạy kiểm thử theo kế hoạch:
+
+```bash
+cd backend/blog
+poetry run pytest tests/test_blog_language.py tests/test_pagination_soft_delete.py tests/test_blog_slug.py tests/test_content_lifecycle.py -q
+poetry run pytest -q
+```
+
+Build/chuyển image/cập nhật `API_IMAGE` theo mục 5.1, rồi kiểm tra `/docs` và ba request `GET /blog/client/blogs`, `?language=vietnamese`, `?language=english`. Nếu toàn bộ bài cũ là VI: request không lọc và lọc VI có cùng tập bài (đối chiếu từng trang), lọc EN trả `blogs: []`, `next_req: null`; mọi bài trả thêm `language`. Kiểm tra log `docker logs vqcms-api-1 --tail 100`; thử tạo bài EN và đọc list/detail/related trên DB tạm. Nếu có bài EN cũ, cập nhật theo slug đã xác minh: `UPDATE blogs SET language='english' WHERE link_post IN (...)`.
+
+Rollback chỉ cần đặt lại `API_IMAGE` tag cũ như mục 5.1; giữ cột/index mới và DEFAULT, không DROP cột. Triển khai backend trước, sau đó mới thêm chọn ngôn ngữ trong admin và lọc/fallback ngôn ngữ trên website. Việc website dùng `?related=category` và cách xử lý khi chưa có bài EN thuộc giai đoạn frontend.
 
 ### 5.3 Đổi biến môi trường
 Sửa `/opt/vietquant-cms/.env.production` trên VPS rồi chạy lại lệnh `up -d` (mục 5.1) để container nhận giá trị mới. Không đưa bí mật vào git hay chat.
